@@ -34,6 +34,18 @@ def load(ws,e,channel):
     if builtin['id']==selected:result['template']=builtin
   return result
  return {'channel':channel,'format':'longform','title':e.get('title',''),'body':e.get('body',''),'images':[a['ref'] for a in e.get('assets',[])],'template':longform_catalog(ws.root)[0] if channel=='xiaohongshu' else BUILTINS[0],'revision':None,'source_revision':e.get('revision'),'publication':None}
+IMAGE_REF=re.compile(r'!\[[^\]]*\]\(\s*<?([^)\s>]+)')
+def completeness(e,edition):
+ """How the edition compares with the full source; longform must not drop text or images."""
+ images=edition.get('images',[])
+ return {'title_matches_source':edition.get('title')==e.get('title'),'body_matches_source':edition.get('body')==e.get('body'),
+         'source_chars':len(e.get('body','')),'edition_chars':len(edition.get('body','')),
+         'missing_images':[a['ref'] for a in e.get('assets',[]) if a.get('ref') not in images],
+         'body_images_not_listed':[ref for ref in IMAGE_REF.findall(edition.get('body','')) if ref not in images]}
+def longform_template(ws,value,edition):
+ if value:return validate(value)
+ current=edition.get('template') if edition.get('format')=='longform' else None
+ return validate(current or longform_catalog(ws.root)[0])
 def dispatch(ws,route,data):
  if route.startswith('/api/channels/templates/') and data.get('format')=='longform':
   from xhs_longform_templates import dispatch as templates_dispatch
@@ -54,9 +66,14 @@ def dispatch(ws,route,data):
   return connect(ws.root).call('login' if route.endswith('/login') else 'status')
  e=json.loads(ws.pending_path(data.get('id')).read_text())
  channel=data.get('channel','xiaohongshu');edition=load(ws,e,channel)
- if route=='/api/channels/get':return {**edition,'layout_protocol':'longform-v1','source_changed':edition['source_revision']!=e['revision'],'templates':(longform_catalog(ws.root) if edition.get('format')=='longform' else xhs_catalog(ws.root)) if channel=='xiaohongshu' else []}
+ if route=='/api/channels/get':return {**edition,'layout_protocol':'longform-v1','source_changed':edition['source_revision']!=e['revision'],'completeness':completeness(e,edition),'templates':(longform_catalog(ws.root) if edition.get('format')=='longform' else xhs_catalog(ws.root)) if channel=='xiaohongshu' else []}
  if route=='/api/channels/brief':
-  return {'layout_protocol':'longform-v1','content_id':e['id'],'channel':channel,'source_revision':e['revision'],'expected_revision':edition['revision'],'source':{'title':e['title'],'markdown':e['body'],'agent_context':e.get('agent_context',''),'assets':e.get('assets',[])},'template':edition['template'],'current_edition':edition,'instructions':'保留原稿标题、完整正文、段落顺序、图片和全部参考资料。只按所选模板排版，不总结、不删减、不改写事实，不生成摘要卡片。除非用户明确要求改写，否则 body 与源稿一致。用 save_channel_edition 写回本渠道，不修改源稿，不同步或发布。'}
+  xhs=channel=='xiaohongshu'
+  return {'layout_protocol':'longform-v1','format':'longform','content_id':e['id'],'channel':channel,'source_revision':e['revision'],'expected_revision':edition['revision'],
+          'source':{'title':e['title'],'markdown':e['body'],'agent_context':e.get('agent_context',''),'assets':e.get('assets',[]),'cover':e.get('cover','')},
+          'template':longform_template(ws,None,edition) if xhs else edition['template'],'templates':longform_catalog(ws.root) if xhs else [],
+          'current_edition':edition,'completeness':completeness(e,edition),
+          'instructions':'保留原稿标题、完整正文、段落顺序、图片和全部参考资料。只按所选模板排版，不总结、不删减、不改写事实，不生成摘要卡片。除非用户明确要求改写，否则 body 与源稿一致，images 包含全部素材（含封面）。用 save_channel_edition 写回本渠道（format=longform，template 取 templates 中的一项），不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。'}
  if route=='/api/channels/save':
   if data.get('expected_revision')!=edition['revision']:raise ValueError('渠道版本已变化，请重新载入')
   if data.get('source_revision')!=e['revision']:raise ValueError('源内容已变化，请重新载入渠道版本')
@@ -68,7 +85,8 @@ def dispatch(ws,route,data):
   format=data.get('format',edition.get('format','cards'))
   if data.get('cards'):format='cards'
   if channel=='wechat':format='longform'
-  template=validate(data.get('template') or BUILTINS[0]) if format=='longform' else xhs_template(data.get('template'),ws.root)
+  if format=='longform':template=longform_template(ws,data.get('template'),edition) if channel=='xiaohongshu' else validate(data.get('template') or BUILTINS[0])
+  else:template=xhs_template(data.get('template'),ws.root)
   edition['format']=format
   if channel=='xiaohongshu' and format=='cards':
    from xhs_cards import cards
@@ -103,7 +121,7 @@ def dispatch(ws,route,data):
    edition.update(cards=[],render_pending=not bool(edition.get('page_images')))
 
   edition.update(title=title,body=body,images=images,template=template,revision=uuid.uuid4().hex,source_revision=e['revision'])
-  save_json(path(ws,e['id'],channel),edition);return edition
+  save_json(path(ws,e['id'],channel),edition);return {**edition,'completeness':completeness(e,edition)}
  if route=='/api/channels/preview':
   html=render(edition['body'],edition['template']) if channel=='wechat' or edition.get('format')=='longform' else '<p>'+__import__('html').escape(edition['body']).replace('\n','<br/>')+'</p>'
   from wechat import image_bytes

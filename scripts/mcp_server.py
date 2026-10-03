@@ -224,9 +224,26 @@ def get_channel_edition(content_id:str,channel:str)->dict:
  return route('get_channel_edition','/api/channels/get',{'id':content_id,'channel':channel})
 
 @mcp.tool(annotations=LOCAL)
-def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None)->dict:
- """Save local channel copy with optimistic revision checks; never publishes. Read edition first. Wechat template is a template object. XHS defaults to full longform: preserve original title, body, images and references, change typography only. Never summarize or split into cards unless explicitly requested."""
- return route('save_channel_edition','/api/channels/save',{'id':content_id,'channel':channel,'title':title,'body':body,'images':images,'source_revision':source_revision,'expected_revision':expected_revision,'template':template,**({'cards':cards} if cards is not None else {})})
+def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None,format:Optional[str]=None,page_images:Optional[list[str]]=None,page_count:Optional[int]=None,rendered_for_revision:Optional[str]=None)->dict:
+ """Save local channel copy with optimistic revision checks; never publishes. Read get_channel_brief first. Wechat template is a template object. XHS is full longform (layout_protocol longform-v1) unless cards are explicitly passed: preserve original title, full body, every image (including the cover) and all references; pick a template from list_channel_templates and change typography only. Never summarize, truncate or split into cards unless explicitly requested. page_images/page_count/rendered_for_revision are set only by the workbench or MCP App after rendering pages; check completeness in the result."""
+ if format not in (None,'longform','cards'):raise ValueError('format must be longform or cards')
+ if format is None and channel=='xiaohongshu':format='cards' if cards is not None else 'longform'
+ data={'id':content_id,'channel':channel,'title':title,'body':body,'images':images,'source_revision':source_revision,'expected_revision':expected_revision,'template':template}
+ if format:data['format']=format
+ if cards is not None:data['cards']=cards
+ if rendered_for_revision:data.update(page_images=page_images or [],page_count=page_count,rendered_for_revision=rendered_for_revision)
+ return route('save_channel_edition','/api/channels/save',data)
+
+@mcp.tool(annotations=READ)
+def list_channel_templates(channel:str='xiaohongshu')->dict:
+ """List Xiaohongshu longform page templates (layout_protocol longform-v1): built-ins and saved local templates. Pass one as template to save_channel_edition."""
+ if channel!='xiaohongshu':raise ValueError('公众号模板请使用 list_article_templates')
+ return {'layout_protocol':'longform-v1',**route('list_channel_templates','/api/channels/templates/list',{'format':'longform'})}
+
+@mcp.tool(annotations=LOCAL)
+def save_channel_template(template:dict)->dict:
+ """Save a reusable Xiaohongshu longform template (font_size, line_height, paragraph_gap, reference_size, reference_gap, accent, layout, page_ratio). Built-ins are copied, never overwritten. Templates change typography only, never content."""
+ return route('save_channel_template','/api/channels/templates/save',{'template':template,'format':'longform'})
 
 @mcp.tool(annotations=LOCAL,meta={'ui':{'visibility':['app']},'openai/widgetAccessible':True})
 def content_app_channel(path:str,data:dict)->dict:

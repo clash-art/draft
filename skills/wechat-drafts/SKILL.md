@@ -86,3 +86,5 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 小红书默认使用完整长文：标题、正文、段落顺序、配图及参考资料全部保留。模板切换只改变排版。不得主动压缩到1000字、改成摘要或生成卡片；只有用户明确要求短图文/卡片才走该流程。长文不得调用短图文上传入口。
 
 小红书与公众号使用相同完整原稿。小红书自动填充后先生成分页 HTML 预览，最终逐页转为图片。Agent 微调只调整模板参数，不修改标题和正文；手动排版与富文本编辑保留。分页图片保存在 page_images，原始素材 images 不被替换。
+
+小红书长文流程（`layout_protocol: longform-v1`）：先 `get_channel_brief`，确认 `format` 为 longform；用 `list_channel_templates` 选择内置「刊物」「研报」「轻读」或已保存模板，需要自定义时用 `save_channel_template`（只改字号、行距、段距、参考资料字号/间距、强调色、版式、比例）。`save_channel_edition` 传完整 body 和全部 images（含封面），保存后检查返回的 `completeness`：`body_matches_source` 为 true、`missing_images` 为空。分页图片由工作台或 App 生成后写入 page_images；Agent 不自行截图，也不传 page_images。
