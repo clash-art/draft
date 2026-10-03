@@ -1,0 +1,26 @@
+{
+  "name": "wechat-drafts",
+  "displayName": "微信草稿助手",
+  "version": "0.1.0",
+  "description": "微信公众号草稿、图片排版审核与图文数据分析",
+  "author": {
+    "name": "Local developer"
+  },
+  "keywords": [
+    "wechat",
+    "weixin",
+    "公众号",
+    "xiaohongshu",
+    "小红书",
+    "mcp"
+  ],
+  "category": "productivity",
+  "skills": "./skills/",
+  "mcpServers": {
+    "wechat-drafts": {
+      "command": "${CURSOR_PLUGIN_ROOT}/scripts/run-mcp.sh",
+      "args": [],
+      "cwd": "${CURSOR_PLUGIN_ROOT}"
+    }
+  }
+}

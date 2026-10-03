@@ -6,6 +6,28 @@ Codex 插件：Markdown/HTML → 配图自动上传 → 封面 → 公众号草�
 
 在 Codex 的个人插件市场找到 `wechat-drafts` 并安装，然后在新任务中使用。插件目录可整体分享，依赖不随包打入。建议 Python 3.10+（带 OpenSSL）。
 
+### 在 Cursor 中使用
+
+本仓库同时提供 Cursor 插件清单（`.cursor-plugin/plugin.json`），与 Codex 共用 `skills/` 与 `.mcp.json` 注册的 MCP 服务。
+
+**从 GitHub 导入（推荐）**
+
+1. 打开 Cursor 侧栏 **Customize（自定义）** → **Plugins（插件）** → **Add（添加）** → **From GitHub Repository（从 GitHub 仓库）**。
+2. 填写仓库地址：`github.com/clash-art/draft`（不要带 `https://` 前缀）。
+3. 导入后在市场列表中安装 **微信草稿助手**（`wechat-drafts`），选择 **用户** 或 **项目** 作用域。
+4. 在新对话中启用 MCP 工具；首次调用 MCP 时，`scripts/run-mcp.sh` 会优先用 [uv](https://docs.astral.sh/uv/) 按 `mcp_server.py` 内联依赖启动；若无 `uv`，请在插件目录创建 `.venv` 并 `pip install -r requirements.txt`（与下方 Codex 说明相同）。
+5. 凭据仍通过环境变量或 `~/.config/wechat-drafts/credentials.json` 配置，勿写入仓库；可在本机运行 `python scripts/config_ui.py` 打开配置页。
+
+**本地开发**
+
+将本仓库复制或链接到 `~/.cursor/plugins/local/wechat-drafts/`，执行 **Developer: Reload Window** 后在 Customize 中确认插件已加载。
+
+**与 Codex 的差异**
+
+- Cursor 通过 `${CURSOR_PLUGIN_ROOT}` 解析 MCP 启动路径（见 `.cursor-plugin/plugin.json`）；Codex 仍使用根目录 `.mcp.json` 的相对路径。
+- 原生 **MCP Apps** 界面（`open_content_app` / `ui://wechat-drafts/content-workbench`）在支持 MCP Apps 扩展的 Cursor 版本中可渲染；不支持时工具仍返回文本结果，完整交互可用本机 `config_ui.py` 工作台。
+- 技能正文里提到的「Codex 浏览器」「Codex 任务」在 Cursor 中对应为 Cursor 对话与内置浏览器/工具能力。
+
 在插件目录执行：
 
 ```bash
