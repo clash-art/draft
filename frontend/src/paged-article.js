@@ -1,64 +1,186 @@
+import {marked} from 'marked';
+import DOMPurify from 'dompurify';
+import {toPng} from 'html-to-image';
 import {articleCover} from './longform-cover';
 import {pageSize} from './page-size';
-import {toPng} from 'html-to-image';
-import {longformPreview} from './longform-preview';
+import {articleBlocks,articleSections,articleStats} from './longform-blocks';
+import {themeFor} from './longform-themes';
 export const PAGE_WIDTH=360,PAGE_HEIGHT=480;
-function pageShell(template={}){
- const {width,height}=pageSize(template);const page=document.createElement('article');
- Object.assign(page.style,{boxSizing:'border-box',width:width+'px',height:height+'px',padding:'18px 18px 30px',background:['essay','letter','journal'].includes(template.layout)?'#faf8f2':'#fff',color:'#252525',position:'relative',fontFamily:'"PingFang SC",sans-serif',fontSize:`${template.font_size||14}px`,lineHeight:String(template.line_height||1.65),overflow:'hidden'});
- const content=document.createElement('div');Object.assign(content.style,{height:(height-48)+'px',display:'flow-root',overflowWrap:'anywhere'});page.append(content);return {page,content};
-}
+const SPLITTABLE=new Set(['lead','p','quote','list','pair']);
+const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
+// Characters that must not start a line (and therefore a continued page).
+const NO_LINE_START=/[，。、；：？！）》」』”’…—\)\],.;:?!%·]/;
+const imageRef=src=>/^images\/[a-f0-9]{32}\.png$/.test(src||'')?src:'';
+async function resolveImage(src,api,imageMap){const ref=imageRef(src);return {ref,src:ref?imageMap[ref]||(await api('/api/image/preview',{ref})).preview:src}}
 function cutAt(node,count){
  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);let left=count,n;
  while((n=walker.nextNode())){if(left<=n.length)return [n,left];left-=n.length}return [node,node.childNodes.length];
 }
 function fragment(node,start,end){const range=document.createRange();const [a,ao]=cutAt(node,start),[b,bo]=cutAt(node,end);range.setStart(a,ao);range.setEnd(b,bo);const copy=node.cloneNode(false);copy.append(range.cloneContents());return copy}
-export async function paginateArticle(edition,api,imageMap={}){
- const html=await longformPreview(edition,api,imageMap);
- const source=document.createElement('div');source.innerHTML=html;
- const title=document.createElement('h1');title.textContent=edition.title;Object.assign(title.style,{fontSize:'23px',lineHeight:'1.35',margin:'0 0 16px',fontFamily:['essay','journal'].includes(edition.template?.layout)?'"Songti SC",serif':'inherit',color:edition.template?.accent||'#333'});source.prepend(title);
- for(const img of source.querySelectorAll('img')){img.style.maxHeight=Math.min(310,pageSize(edition.template).height-100)+'px';img.style.objectFit='contain';await img.decode()}
- for(const el of source.querySelectorAll('pre,table')){el.style.whiteSpace='pre-wrap';el.style.overflowWrap='anywhere';el.style.maxWidth='100%';el.style.fontSize='12px'}
+// Text that counts as article content: everything except decoration.
+export function contentText(node){const copy=node.cloneNode(true);copy.querySelectorAll('[data-deco]').forEach(d=>d.remove());return copy.textContent.replace(/\s/g,'')}
+function sourceText(body){const div=document.createElement('div');div.innerHTML=DOMPurify.sanitize(marked.parse(body||''));return div}
+function shell(theme,width,height){
+ const page=document.createElement('article');
+ Object.assign(page.style,{boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',fontSize:theme.size+'px',lineHeight:String(theme.leading),...theme.shell});
+ if(theme.sheet){const sheet=document.createElement('div');sheet.dataset.deco='true';Object.assign(sheet.style,theme.sheet);page.append(sheet)}
+ const content=document.createElement('div');
+ Object.assign(content.style,{position:'absolute',top:theme.pad.top+'px',left:theme.pad.left+'px',right:theme.pad.right+'px',height:(height-theme.pad.top-theme.pad.bottom)+'px',display:'flow-root',overflowWrap:'anywhere'});
+ content.dataset.content='true';page.append(content);return {page,content};
+}
+function buildBlock(theme,block,images,figures){
+ const make={lead:theme.lead,p:theme.p,section:theme.section,heading:theme.heading,label:theme.label,pair:theme.pair,quote:theme.quote,'refs-heading':theme.refsHeading,ref:theme.ref}[block.role];
+ let node;
+ if(block.role==='figure'){node=theme.figure(block,images.get(block),++figures.n);node.style.margin=theme.figureMargin}
+ else if(make)node=make(block);
+ else{node=document.createElement('div');node.innerHTML=DOMPurify.sanitize(block.html||'');Object.assign(node.style,{margin:`0 0 ${theme.gap}px`,fontSize:theme.size+'px',lineHeight:String(theme.leading),color:theme.body});
+  for(const el of node.querySelectorAll('pre,table'))Object.assign(el.style,{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:'100%',fontSize:'12px',lineHeight:'1.6'});
+  for(const a of node.querySelectorAll('a'))Object.assign(a.style,{display:'inline',color:theme.link,wordBreak:'break-all'})}
+ node.dataset.role=block.role;return node;
+}
+export async function paginateArticle(edition,api,imageMap={}){return (await layoutArticle(edition,api,imageMap)).pages}
+// Returns page HTML plus layout metadata (sections, page roles) for verification and fixtures.
+// A final page holding only a few references is avoided by tightening the reference list.
+export async function layoutArticle(edition,api,imageMap={}){
+ const cache={...imageMap},cached=async(path,data)=>{if(path!=='/api/image/preview')return api(path,data);if(!cache[data.ref])cache[data.ref]=(await api(path,data)).preview;return {preview:cache[data.ref]}};
+ let result;
+ for(let compact=0;compact<=2;compact++){
+  result=await layoutOnce(edition,cached,cache,{compact});
+  const last=result.meta.pages.at(-1);
+  if(!(last.roles.length===1&&last.roles[0]==='ref'&&last.fill<0.35))break;
+ }
+ return result;
+}
+async function layoutOnce(edition,api,imageMap,opts){
+ const template=edition.template||{},theme=themeFor(template,opts),{width,height}=pageSize(template);
+ const blocks=articleBlocks(edition.body);
+ const images=new Map();
+ for(const b of blocks)if(b.role==='figure')images.set(b,await resolveImage(b.src,api,imageMap));
+ const bodyRefs=new Set(blocks.filter(b=>b.role==='figure').map(b=>imageRef(b.src)).filter(Boolean));
+ const coverRef=(edition.images||[]).find(ref=>!bodyRefs.has(ref));
+ const coverImage=coverRef?await resolveImage(coverRef,api,imageMap):null;
  await document.fonts.ready;
- const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0',width:'360px'});document.body.append(host);
- const pages=[];let current;
- const next=()=>{current=pageShell(edition.template);host.replaceChildren(current.page);pages.push(current.page)};
- const fits=()=>[...current.content.children].every(n=>n.getBoundingClientRect().bottom<=current.content.getBoundingClientRect().bottom+0.5)&&current.content.scrollWidth<=current.content.clientWidth+1;
- const tryNode=node=>{current.content.append(node);if(fits())return true;node.remove();return false};
+ const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0',width:width+'px'});document.body.append(host);
  try{
-  next();const blocks=[...source.childNodes].filter(n=>n.nodeType===1||n.textContent.trim());
-  for(let i=0;i<blocks.length;i++){
-   let block=blocks[i];if(block.nodeType!==1){const p=document.createElement('p');p.textContent=block.textContent;block=p}
-   // Keep a heading with the following block, and an image with its caption when they fit together.
-   if(i+1<blocks.length&&( /^H[1-6]$/.test(block.tagName)||block.querySelector('img'))){
-    const group=document.createElement('div');group.append(block.cloneNode(true),blocks[i+1].cloneNode(true));
-    if(tryNode(group)){i++;continue}
-    if(current.content.childNodes.length){const probe=pageShell(edition.template);host.append(probe.page);probe.content.append(group);const rect=group.getBoundingClientRect();const ok=rect.bottom<=probe.content.getBoundingClientRect().bottom;probe.page.remove();if(ok){next();tryNode(group);i++;continue}}
+  const figures={n:0},nodes=blocks.map(b=>buildBlock(theme,b,images,figures));
+  const endAt=blocks.findIndex(b=>b.role==='refs-heading');
+  if(theme.end){const end=theme.end();end.dataset.role='end';nodes.splice(endAt<0?nodes.length:endAt,0,end);blocks.splice(endAt<0?blocks.length:endAt,0,{role:'end'})}
+  await Promise.all(nodes.flatMap(n=>[...n.querySelectorAll('img')].map(img=>img.decode().catch(()=>{}))));
+  const measure=shell(theme,width,height);host.append(measure.page);
+  const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
+  const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
+  const bottom=()=>current.content.getBoundingClientRect().bottom;
+  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+(theme.bleed||0))};
+  const empty=()=>!current.content.childElementCount;
+  const place=node=>{if(empty())node.style.marginTop='0';current.content.append(node);if(fits())return true;node.remove();return false};
+  const used=()=>{const last=current.content.lastElementChild;if(!last)return 0;return last.getBoundingClientRect().bottom+parseFloat(getComputedStyle(last).marginBottom||0)-current.content.getBoundingClientRect().top};
+  const free=()=>current.content.clientHeight-used();
+  const heightOf=node=>{const c=node.cloneNode(true);measure.content.replaceChildren(c);const r=c.getBoundingClientRect(),s=getComputedStyle(c);const h=r.height+parseFloat(s.marginTop)+parseFloat(s.marginBottom);measure.content.replaceChildren();return h};
+  const lineOf=node=>{const c=node.cloneNode(false);c.textContent='字';measure.content.replaceChildren(c);const s=getComputedStyle(c),h=parseFloat(s.lineHeight)||parseFloat(s.fontSize)*1.7;measure.content.replaceChildren();return h};
+  const linesOf=node=>{const c=node.cloneNode(true);c.style.margin='0';measure.content.replaceChildren(c);const s=getComputedStyle(c);const h=c.getBoundingClientRect().height-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom);measure.content.replaceChildren();return Math.round(h/lineOf(node))};
+  // Space the following block needs so a heading/label is never stranded at a page bottom.
+  const minNext=i=>{const b=blocks[i],n=nodes[i];if(!b)return 0;
+   if(SPLITTABLE.has(b.role)){const h=heightOf(n),two=lineOf(n)*2+parseFloat(getComputedStyle(n).marginTop||0)+4;return Math.min(h,two)}
+   if(b.role==='figure')return heightOf(n)*0.72;
+   if(KEEP_WITH_NEXT.has(b.role))return heightOf(n)+minNext(i+1);
+   return heightOf(n)};
+  const imageHeight=node=>{const c=node.cloneNode(true);measure.content.replaceChildren(c);const h=c.querySelector('img')?.getBoundingClientRect().height||0;measure.content.replaceChildren();return h};
+  const shrinkFigure=(node,room)=>{const img=node.querySelector('img');if(!img)return false;const cap=img.style.maxHeight,full=imageHeight(node);if(full<40)return false;
+   for(let k=0.97;k>=0.85;k-=0.03){img.style.maxHeight=Math.floor(full*k)+'px';if(heightOf(node)<=room)return true}img.style.maxHeight=cap;return false};
+  const capFigure=node=>{const img=node.querySelector('img');if(img)img.style.maxHeight=Math.round(current.content.clientHeight*0.62)+'px'};
+  // Reading order is strict: figures stay exactly where the source places them.
+  const newPage=next;
+  next();
+  for(let i=0;i<nodes.length;i++){
+   const b=blocks[i],node=nodes[i];
+   if(b.role==='section'){section={number:b.number,html:b.html};sectionIndex++}
+   if(KEEP_WITH_NEXT.has(b.role)){
+    if(!empty()&&free()<heightOf(node)+minNext(i+1))newPage();
+    if(!place(node)){if(!empty())newPage();if(!place(node))throw Error('标题超出页面，请调小字号；全文未截断')}
+    if(b.role==='section'){if(current.content.firstElementChild===node){current.section=section;current.sectionIndex=sectionIndex}sectionPages.push({...section,page:pages.length})}
+    current.roles.push(b.role);continue;
    }
-   if(tryNode(block.cloneNode(true)))continue;
-   if(current.content.childNodes.length&&(block.querySelector('img')||block.tagName==='IMG'||block.tagName==='TABLE'||block.dataset.reference==='true'||/^H[1-6]$/.test(block.tagName))){next();if(tryNode(block.cloneNode(true)))continue}
-   if(block.querySelector('img')||block.tagName==='IMG'||block.tagName==='TABLE')throw Error('有图片或表格超出页面，请调整模板字号或素材尺寸；全文未截断');
-   const text=block.textContent;let offset=0;
+   if(b.role==='figure'){
+    capFigure(node);
+    if(place(node)){current.roles.push('figure');continue}
+    if(!empty()&&shrinkFigure(node,free())&&place(node)){current.roles.push('figure');continue}
+    if(!empty())newPage();
+    if(place(node)||shrinkFigure(node,current.content.clientHeight)&&place(node)){current.roles.push('figure');continue}
+    throw Error('图片超出页面，请调整模板字号或素材尺寸；全文未截断');
+   }
+   if(!SPLITTABLE.has(b.role)){
+    if(place(node)){current.roles.push(b.role);continue}
+    if(!empty()){newPage();if(place(node)){current.roles.push(b.role);continue}}
+    if(b.role==='ref')throw Error('参考资料条目超出页面；全文未截断');
+    if(['table','code','html'].includes(b.role)&&node.querySelector('img,table'))throw Error('有图片或表格超出页面，请调整模板字号或素材尺寸；全文未截断');
+   }
+   // Text flow: split by characters with orphan, widow and punctuation control.
+   const text=node.textContent;let offset=0;
    while(offset<text.length){
+    const rest=fragment(node,offset,text.length);
+    if(offset)rest.style.marginTop='0';
+    if(place(rest)){current.roles.push(b.role);offset=text.length;break}
     let lo=0,hi=text.length-offset;
-    while(lo<hi){const mid=Math.ceil((lo+hi)/2),part=fragment(block,offset,offset+mid);if(tryNode(part)){part.remove();lo=mid}else hi=mid-1}
-    if(!lo){if(current.content.childNodes.length){next();continue}throw Error('当前模板无法容纳正文，请调小字号')}
-    // Do not break a UTF-16 surrogate pair.
-    if(lo<text.length-offset&&/[\uD800-\uDBFF]/.test(text[offset+lo-1]))lo--;
-    const part=fragment(block,offset,offset+lo);current.content.append(part);offset+=lo;if(offset<text.length)next();
+    while(lo<hi){const mid=Math.ceil((lo+hi)/2),part=fragment(node,offset,offset+mid);if(offset)part.style.marginTop='0';if(place(part)){part.remove();lo=mid}else hi=mid-1}
+    const adjust=n=>{let k=n;
+     while(k>1&&NO_LINE_START.test(text[offset+k]||''))k--;
+     if(/[A-Za-z0-9]/.test(text[offset+k]||'')){let w=k;while(w>1&&/[A-Za-z0-9._\-\/:]/.test(text[offset+w-1]))w--;if(k-w<24&&w>1)k=w}
+     if(/[\uD800-\uDBFF]/.test(text[offset+k-1]||''))k--;return k};
+    lo=adjust(lo);
+    const head=fragment(node,offset,offset+lo);if(offset)head.style.marginTop='0';
+    if(lo<=0||linesOf(head)<2){if(!empty()){newPage();continue}if(lo<=0)throw Error('当前模板无法容纳正文，请调小字号')}
+    const tailLines=linesOf(fragment(node,offset+lo,text.length)),headLines=linesOf(head);
+    if(tailLines<2&&headLines>=3){
+     let a=0,z=lo;const target=(headLines-1)*lineOf(node)+1;
+     while(a<z){const mid=Math.ceil((a+z)/2),part=fragment(node,offset,offset+mid);part.style.margin='0';measure.content.replaceChildren(part);const s=getComputedStyle(part);const h=part.getBoundingClientRect().height-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom);measure.content.replaceChildren();if(h<=target)a=mid;else z=mid-1}
+     if(a>0)lo=adjust(a);
+    }
+    const part=fragment(node,offset,offset+lo);if(offset)part.style.marginTop='0';
+    part.style.marginBottom='0';
+    current.content.append(part);
+    if(lastLineFill(part)>0.9)part.style.textAlignLast='justify';
+    current.roles.push(b.role);offset+=lo;newPage();
    }
   }
-  for(let i=pages.length-1;i>0;i--)if(!pages[i].firstChild.textContent.trim()&&!pages[i].querySelector('img,table,hr'))pages.splice(i,1);
-  const originals=source.textContent.replace(/\s/g,''),result=pages.map(p=>p.firstChild.textContent).join('').replace(/\s/g,'');
-  if(originals!==result)throw Error('分页内容校验失败，未生成图片');
-  const originalImages=[...source.querySelectorAll('img')].map(img=>img.getAttribute('src'));
-  const renderedImages=pages.flatMap(p=>[...p.querySelectorAll('img')].map(img=>img.getAttribute('src')));
-  if(JSON.stringify(originalImages)!==JSON.stringify(renderedImages))throw Error('分页图片顺序或数量校验失败');
-  pages.forEach((p,i)=>{const f=document.createElement('footer');const label=document.createElement('span');label.textContent=edition.title;Object.assign(label.style,{overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis',maxWidth:'245px'});const number=document.createElement('span');number.textContent=`${i+1} / ${pages.length}`;f.append(label,number);Object.assign(f.style,{position:'absolute',bottom:'10px',right:'22px',left:'22px',display:'flex',justifyContent:'space-between',gap:'12px',borderTop:'1px solid #d9d6cf',paddingTop:'6px',fontSize:'9px',lineHeight:'12px',color:'#68655f'});p.append(f)});
-  const {width,height}=pageSize(edition.template);const cover=await articleCover(edition,source,width,height);if(cover)pages.unshift(cover);
-  return pages.map(p=>p.outerHTML);
+  measure.page.remove();
+  for(let i=pages.length-1;i>0;i--)if(!pages[i].content.childElementCount)pages.splice(i,1);
+  const source=sourceText(edition.body);
+  if(contentText(source)!==pages.map(p=>contentText(p.content)).join(''))throw Error('分页内容校验失败，未生成图片');
+  const want=[...source.querySelectorAll('img')].map(img=>img.getAttribute('src'));
+  const got=pages.flatMap(p=>[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref||img.getAttribute('src')));
+  if(JSON.stringify(want)!==JSON.stringify(got))throw Error('分页图片顺序或数量校验失败');
+  if(pages.some(p=>[...p.content.querySelectorAll('img')].some(img=>img.getBoundingClientRect().height<40)))throw Error('有图片未能完整显示，未生成图片');
+  const title=edition.title||'',sections=articleSections(blocks),stats=articleStats(edition.body,blocks);
+  const offsetCover=1;
+  // Legacy Lieflat covers have no image slot, so they are used only when no cover image would be lost.
+  const legacyCover=template.cover_style&&!coverImage?await articleCover(edition,source,width,height):null;
+  const cover=legacyCover||theme.cover({title,image:coverImage,sections:sectionPages.map(s=>({...s,page:s.page+offsetCover})),stats,width,height});
+  const total=pages.length+1;
+  pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
+  host.append(cover);
+  const hero=cover.querySelector('[data-cover-image]');
+  if(hero){await hero.decode().catch(()=>{});const slot=hero.parentElement.parentElement,frame=hero.parentElement,s=getComputedStyle(frame);hero.style.maxHeight=Math.max(60,slot.clientHeight-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom)-2)+'px'}
+  const coverBottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);
+  if(!legacyCover&&[...cover.querySelectorAll('*')].some(c=>c.getBoundingClientRect().bottom>coverBottom+0.5))throw Error('封面内容超出页面，请缩短标题');
+  if(coverRef&&!cover.querySelector(`img[data-ref="${coverRef}"]`))throw Error('封面图片未显示');
+  const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
+  const meta={template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,cover_image:coverRef||null,
+   sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
+   pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
+  return {pages:html,meta};
  }finally{host.remove()}
 }
+function fillOf(content){const last=content.lastElementChild;return last?Math.round(Math.min(1,(last.getBoundingClientRect().bottom-content.getBoundingClientRect().top)/content.clientHeight)*100)/100:0}
+// Width of a block's last line relative to its text column (0–1).
+function lastLineFill(node){
+ const range=document.createRange();range.selectNodeContents(node);
+ const rects=[...range.getClientRects()].filter(r=>r.width>0);if(!rects.length)return 1;
+ const bottom=Math.max(...rects.map(r=>r.bottom)),line=rects.filter(r=>r.bottom>bottom-2);
+ const box=node.getBoundingClientRect(),s=getComputedStyle(node);
+ const width=box.width-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight);
+ return width>0?(Math.max(...line.map(r=>r.right))-Math.min(...line.map(r=>r.left)))/width:1;
+}
+function sourceTextOf(value){const d=document.createElement('div');d.innerHTML=DOMPurify.sanitize(value||'');return d.textContent}
 export async function exportArticlePages(pages,api,onProgress=()=>{}){
  if(!pages.length)throw Error('请等待分页预览完成');
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0'});document.body.append(host);const refs=[];
