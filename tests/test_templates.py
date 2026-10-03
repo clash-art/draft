@@ -71,6 +71,23 @@ class TemplateTests(unittest.TestCase):
     self.assertEqual(soup.get_text(),BeautifulSoup(render(html,BUILTINS[0]),'html.parser').get_text())
     self.assertEqual(soup.figure.figcaption.get_text(),'图')
     self.assertNotIn('<style',html);self.assertNotIn('class=',html)
+ def test_spark_sets_numeral_and_title_on_one_line_with_accent_emphasis(self):
+  spark=next(t for t in BUILTINS if t['id']=='spark')
+  body='导语\n\n01\n\n### 建一座城\n\n正文 **金句** 与 *Golconda*。\n\n![画](images/a.png)\n\n画'
+  for accent in ('#e9682e','#3d6b8f'):
+   with self.subTest(accent=accent):
+    html=render(body,dict(spark,accent=accent));soup=BeautifulSoup(html,'html.parser')
+    row=soup.find('section',attrs={'data-template-wrap':True})
+    number,heading=[n for n in row.children if getattr(n,'name',None)]
+    self.assertEqual((number.name,number.get_text(),heading.name,heading.get_text()),('p','01','h3','建一座城'))
+    self.assertIn('display:inline',number['style']);self.assertIn('display:inline',heading['style'])
+    self.assertIn(f'color:{accent}',number['style']);self.assertIn(f'color:{accent}',soup.strong['style'])
+    self.assertIn('font-weight:400',heading['style']);self.assertIn('font-style:italic',soup.em['style'])
+    self.assertIn('font-size:12px',soup.figcaption['style']);self.assertIn('text-align:center',soup.figcaption['style'])
+    for banned in ('<style','class=','display:flex','position:','float:','@font-face'):self.assertNotIn(banned,html)
+    again=BeautifulSoup(render(html,BUILTINS[0]),'html.parser')
+    self.assertIsNone(again.find(attrs={'data-template-wrap':True}))
+    self.assertEqual(again.get_text(),soup.get_text())
  def test_builtin_palettes_are_valid(self):
   from article_styles import PALETTES
   import json

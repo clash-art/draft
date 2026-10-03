@@ -24,6 +24,7 @@ BUILTINS=[
  builtin('lab','研究手记','冷灰纸面 · 左标章节 · 灰青点缀',font_size=15.5,line_height=1.9,paragraph_gap=18),
  builtin('essay','人文札记','暖米色纸 · 宋体居中 · 暖灰褐点缀',font_size=16,line_height=2,paragraph_gap=22),
  builtin('letter','周末来信','淡卡其纸面 · 宋体章节 · 橄榄灰点缀',font_size=16.5,line_height=2,paragraph_gap=24),
+ builtin('spark','火花','纯白留白 · 宋体章节配强调色编号 · 强调色加粗金句',font_size=14,line_height=1.8,paragraph_gap=25,reference_size=12,reference_gap=6,figure_tone='original'),
 ]
 
 def sample_image(name):
@@ -94,7 +95,7 @@ def render(body,template,palette=None,ws=None):
     blocks=[n for n in soup.contents if getattr(n,'name',None)]
     refs_at=next((i for i,n in enumerate(blocks) if n.name in ('h1','h2','h3','h4','p') and REFERENCE_HEADING.fullmatch(text_of(n))),None)
     body_blocks=blocks if refs_at is None else blocks[:refs_at]
-    lead_done=False
+    lead_done=False;kickers=[]
     for i,node in enumerate(body_blocks):
         name=node.name;nxt=body_blocks[i+1] if i+1<len(body_blocks) else None
         if name=='p':
@@ -107,7 +108,7 @@ def render(body,template,palette=None,ws=None):
                 lead_done=True;continue
             if node.get('data-caption'):
                 del node['data-caption'];node.name='figcaption';style(node,'caption');node.extract();body_blocks[i-1].append(node);continue
-            if re.fullmatch(r'\d{1,2}',text_of(node)) and nxt is not None and nxt.name in ('h2','h3','h4'):style(node,'kicker');continue
+            if re.fullmatch(r'\d{1,2}',text_of(node)) and nxt is not None and nxt.name in ('h2','h3','h4'):style(node,'kicker');kickers.append((node,nxt));continue
             if not lead_done and not re.match(r'[〔\[（(]?\d',text_of(node)):style(node,'lead');lead_done=True;continue
             style(node,'p')
         elif name in ('h1','h2'):style(node,'h2')
@@ -119,6 +120,11 @@ def render(body,template,palette=None,ws=None):
             if img:
                 frame=soup.new_tag('section');frame['data-template-frame']='true';frame['style']=css['frame'];img.wrap(frame)
         lead_done=lead_done or name in ('h2','h3','figure')
+    if css.get('heading_row'):
+        for number,heading in kickers:
+            row=soup.new_tag('section');row['data-template-wrap']='true';row['style']=css['heading_row']
+            number.insert_before(row);row.append(number.extract());row.append(heading.extract())
+            heading['style']=css['heading_inline']
     for h in soup.find_all(['h2','h3']):
         if css.get('h3_wrap') and h.contents:
             span=soup.new_tag('span');span['data-template-wrap']='true';span['style']=css['h3_wrap']

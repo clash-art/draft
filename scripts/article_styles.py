@@ -24,7 +24,12 @@ PALETTES={
  'letter':dict(paper='#f4f1ea',surface='#e9e5da',ink='#2b2a23',text='#433f37',muted='#8b877a',primary='#8a8466',on_primary='#ffffff',accent='#8a8466',rule='#dcd7c9'),
  'blueprint':dict(paper='#fbfbfa',surface='#eef1f4',ink='#16191d',text='#2c3035',muted='#7d858e',primary='#6e8098',on_primary='#ffffff',accent='#6e8098',rule='#c5cdd6'),
  'column':dict(paper='#f6f1f0',surface='#ece3e2',ink='#211c1c',text='#3a3332',muted='#877c7b',primary='#a07a7f',on_primary='#ffffff',accent='#a07a7f',rule='#ded3d2'),
+ 'spark':dict(paper='#ffffff',surface='#f7f7f7',ink='#4e4e4e',text='#333333',muted='#999999',primary='#e9682e',on_primary='#ffffff',accent='#e9682e',rule='#e6e6e6'),
 }
+# 火花: Latin in a Times-style serif over the reader's CJK sans for body text; section titles in a
+# regular-weight Song face with an accent numeral on the same line.
+SPARK_BODY="'Times New Roman',Times,Georgia,-apple-system,'PingFang SC','Hiragino Sans GB','Noto Sans CJK SC','Microsoft YaHei',sans-serif"
+SPARK_HEAD="'Times New Roman',Times,Georgia,'Songti SC','STSong','Noto Serif SC','Noto Serif CJK SC','Source Han Serif SC',serif"
 
 def spec(layout,c,t):
  """CSS per role. c: resolved palette, t: template typography."""
@@ -149,5 +154,29 @@ def spec(layout,c,t):
    quote=f"margin:28px 0;padding:18px 18px;background:{tint};border-left:3px solid {p};color:{c['ink']};font-size:{fs+1:g}px;line-height:{lh:g};font-weight:600;",
    caption=f"margin:10px 0 0;font-size:12px;line-height:1.65;color:{c['muted']};text-align:left;padding-top:8px;border-top:2px solid {p};display:inline-block;",
    ref_heading=f"margin:52px 0 16px;padding:0 0 8px;border-bottom:3px solid {p};color:{c['ink']};font-size:16px;line-height:1.5;font-weight:900;letter-spacing:2px;",
+  )
+ elif layout=='spark':
+  # Paragraphs are separated by one blank line (gap ≈ font size × line height); a section opens
+  # after two blank lines and sits 10px above its text.
+  title=f"font-family:{SPARK_HEAD};font-size:24px;line-height:1.4;font-weight:400;color:{c['ink']};letter-spacing:1px;text-align:left;"
+  open_gap=round(gap*2+10)
+  base.update(
+   root=f"margin:0;padding:0 10px;background:{c['paper']};font-family:{SPARK_BODY};text-align:justify;",
+   p=f"margin:0 0 {gap:g}px;font-size:{fs:g}px;line-height:{lh:g};color:{c['text']};text-align:justify;overflow-wrap:anywhere;",
+   lead=f"margin:0 0 {gap:g}px;font-size:{fs:g}px;line-height:{lh:g};color:{c['text']};text-align:justify;overflow-wrap:anywhere;",
+   heading_row=f"margin:{open_gap}px 0 10px;line-height:1.4;text-align:left;",
+   kicker=f"display:inline;margin:0 12px 0 0;font-family:{SPARK_HEAD};font-size:24px;line-height:1.4;font-weight:400;color:{p};",
+   heading_inline="display:inline;margin:0;"+title,
+   h2=f"margin:{open_gap}px 0 10px;"+title.replace('font-size:24px','font-size:26px'),
+   h3=f"margin:{open_gap}px 0 10px;"+title,
+   h4=f"margin:{gap:g}px 0 8px;font-size:{fs+1:g}px;line-height:1.6;font-weight:700;color:{c['ink']};",
+   strong=f"font-weight:700;color:{p};",
+   em="font-style:italic;",
+   quote=f"margin:{gap:g}px 0;padding:0 0 0 14px;border-left:2px solid {p};color:{mix(c['text'],c['paper'],0.25)};font-size:{fs:g}px;line-height:{lh:g};",
+   figure=f"margin:{gap+10:g}px 0 {gap:g}px;padding:0;",
+   caption=f"margin:10px 0 0;font-size:12px;line-height:1.8;color:{c['muted']};text-align:center;",
+   hr=f"margin:{gap*2:g}px auto;width:32px;border:0;border-top:1px solid {p};",
+   ref_heading=f"margin:{open_gap}px 0 14px;font-family:{SPARK_HEAD};font-size:18px;line-height:1.5;font-weight:400;color:{c['ink']};letter-spacing:1px;",
+   ref_num=f"display:inline-block;min-width:30px;text-indent:0;font-family:{SPARK_HEAD};font-size:12px;color:{p};",
   )
  return base
