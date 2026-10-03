@@ -10,8 +10,9 @@ from article_styles import PALETTES,spec
 
 # WeChat article layouts plus the Xiaohongshu longform page themes.
 ARTICLE_LAYOUTS=tuple(PALETTES)
-XHS_THEMES=('folio','blueprint','tweet','brief','press','marker','note')
-LAYOUTS=ARTICLE_LAYOUTS+('folio','brief','note','tweet','poster','swiss','press','marker')
+XHS_THEMES=('blueprint','tweet','wireframe','photo','xstyle','canvas','doodle','devlog','plain','parts','bigtype')
+# Retired page themes stay accepted; the renderer maps them onto current ones.
+LAYOUTS=ARTICLE_LAYOUTS+XHS_THEMES+('folio','brief','note','poster','swiss','press','marker')
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
 def builtin(id,name,description,**values):return dict(BASE,id=id,name=name,description=description,layout=id,accent=PALETTES[id]['primary'],**values)
 BUILTINS=[

@@ -178,8 +178,9 @@ async function layoutOnce(edition,api,imageMap,opts){
   // The cover is read as a feed thumbnail: title and key points only, figures stay on inner pages.
   const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
   const total=pages.length+1;
-  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),image:coverImage,stats,total,width,height});
-  pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
+  const content=coverContent(edition,sectionPages),parts=sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
+  const cover=legacyCover||theme.cover({...content,sections:parts,image:coverImage,stats,total,width,height});
+  pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title,byline:content.byline})});
   host.append(cover);
   const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
   for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}

@@ -98,10 +98,10 @@ class TemplateTests(unittest.TestCase):
    self.assertEqual(plain['src'],ref)
  def test_template_parts_are_composable(self):
   from templates import validate
-  t=validate({'name':'x','layout':'press','cover_layout':'tweet','palette_from':'note','figure_tone':'duotone'})
-  self.assertEqual((t['layout'],t['cover_layout'],t['palette_from'],t['figure_tone']),('press','tweet','note','duotone'))
-  t=validate({'name':'x','layout':'marker','cover_layout':'nope','palette_from':'graphite'})
-  self.assertEqual(t['layout'],'marker');self.assertNotIn('cover_layout',t);self.assertNotIn('palette_from',t)
+  t=validate({'name':'x','layout':'devlog','cover_layout':'photo','palette_from':'wireframe','figure_tone':'duotone'})
+  self.assertEqual((t['layout'],t['cover_layout'],t['palette_from'],t['figure_tone']),('devlog','photo','wireframe','duotone'))
+  t=validate({'name':'x','layout':'press','cover_layout':'folio','palette_from':'graphite'})
+  self.assertEqual(t['layout'],'press');self.assertNotIn('cover_layout',t);self.assertNotIn('palette_from',t)
  def test_palette_validation(self):
   self.assertEqual(validate_palette({'primary':'#7C8B78','name':'sage'}),{'primary':'#7c8b78','name':'sage'})
   self.assertEqual(validate_palette({'paper':'#f3efe9'}),{'paper':'#f3efe9'})

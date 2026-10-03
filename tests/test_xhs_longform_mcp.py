@@ -63,7 +63,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual((b['layout_protocol'],b['format'],b['channel']),('longform-v1','longform','xiaohongshu'))
   self.assertEqual(b['source']['markdown'],ARTICLE)
   self.assertEqual(b['source']['cover'],EDITOR['cover'])
-  self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note','xhs-combo-press-blueprint','xhs-combo-tweet-note','xhs-combo-folio-press'])
+  self.assertEqual([t['id'] for t in b['templates']],['xhs-blueprint','xhs-tweet','xhs-wireframe','xhs-photo','xhs-xstyle','xhs-canvas','xhs-doodle','xhs-devlog','xhs-plain','xhs-parts','xhs-bigtype','xhs-combo-photo-plain','xhs-combo-wireframe-tweet','xhs-combo-bigtype-devlog'])
   self.assertEqual(b['template']['id'],'xhs-blueprint')
   self.assertIn('palette',b['instructions'])
   self.assertIsNone(b['palette'])
@@ -77,9 +77,9 @@ class LongformMcpTests(unittest.TestCase):
  def test_legacy_cards_edition_is_saved_as_longform_with_longform_template(self):
   save_json(self.root/'channels'/self.id/'xiaohongshu.json',{'channel':'xiaohongshu','format':'cards','title':'旧卡片','body':'摘要','images':[],'template':{'id':'xhs-guide'},'cards':[{'title':'1','body':'x'}],'revision':'old','source_revision':EDITOR['revision'],'publication':None})
   b=self.brief()
-  self.assertEqual((b['format'],b['template']['id']),('longform','xhs-folio'))
+  self.assertEqual((b['format'],b['template']['id']),('longform','xhs-blueprint'))
   saved=server.save_channel_edition(self.id,'xiaohongshu',EDITOR['title'],ARTICLE,[a['ref'] for a in EDITOR['assets']],b['source_revision'],'old')
-  self.assertEqual((saved['format'],saved['template']['id'],saved['cards'],saved['condensed']),('longform','xhs-folio',[],False))
+  self.assertEqual((saved['format'],saved['template']['id'],saved['cards'],saved['condensed']),('longform','xhs-blueprint',[],False))
   self.assertEqual(saved['body'],ARTICLE)
   self.assertTrue(saved['render_pending'])
   self.assertTrue(saved['completeness']['body_matches_source'])
@@ -88,17 +88,17 @@ class LongformMcpTests(unittest.TestCase):
  def test_template_save_via_mcp_keeps_snapshot_and_full_body(self):
   listing=server.list_channel_templates()
   self.assertEqual(listing['layout_protocol'],'longform-v1')
-  custom=server.save_channel_template({**next(t for t in listing['items'] if t['id']=='xhs-brief'),'name':'我的研报','font_size':16})
+  custom=server.save_channel_template({**next(t for t in listing['items'] if t['id']=='xhs-devlog'),'name':'我的日志','font_size':16})
   self.assertRegex(custom['id'],r'^[a-f0-9]{32}$')
   self.assertIn(custom['id'],[t['id'] for t in server.list_channel_templates()['items']])
   saved=self.save(template=custom)
-  self.assertEqual((saved['template']['layout'],saved['template']['font_size']),('brief',16))
+  self.assertEqual((saved['template']['layout'],saved['template']['font_size']),('devlog',16))
   self.assertEqual((saved['body'],saved['condensed']),(CONDENSED,True))
   with self.assertRaises(ValueError):server.list_channel_templates('wechat')
   with self.assertRaises(ValueError):self.save(format='summary')
 
  def test_page_export_saved_through_mcp(self):
-  edition=self.save(template=next(t for t in server.list_channel_templates()['items'] if t['id']=='xhs-note'))
+  edition=self.save(template=next(t for t in server.list_channel_templates()['items'] if t['id']=='xhs-tweet'))
   pages=[self.ws.dispatch('/api/upload',{'name':f'page-{i}.png','data':png()})['ref'] for i in range(10)]
   b=self.brief()
   with self.assertRaises(ValueError):self.save(page_images=pages+pages[:1],page_count=11,rendered_for_revision=edition['revision'])

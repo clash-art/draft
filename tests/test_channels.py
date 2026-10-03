@@ -18,8 +18,8 @@ class ChannelsTests(unittest.TestCase):
  def test_longform_template_catalog_isolated_and_snapshot_survives_delete(self):
   listing=self.call('templates/list',format='longform')
   self.assertEqual(listing['format'],'longform')
-  self.assertEqual([t['id'] for t in listing['items']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note','xhs-combo-press-blueprint','xhs-combo-tweet-note','xhs-combo-folio-press'])
-  self.assertEqual(self.call('get')['template']['id'],'xhs-folio')
+  self.assertEqual([t['id'] for t in listing['items']],['xhs-blueprint','xhs-tweet','xhs-wireframe','xhs-photo','xhs-xstyle','xhs-canvas','xhs-doodle','xhs-devlog','xhs-plain','xhs-parts','xhs-bigtype','xhs-combo-photo-plain','xhs-combo-wireframe-tweet','xhs-combo-bigtype-devlog'])
+  self.assertEqual(self.call('get')['template']['id'],'xhs-blueprint')
   template=self.call('templates/save',format='longform',template={**listing['items'][0],'name':'我的长文'})
   self.assertNotIn(template['id'],[t['id'] for t in self.call('templates/list')['items']])
   saved=self.save(template=template)
