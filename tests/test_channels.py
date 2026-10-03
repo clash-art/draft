@@ -18,8 +18,8 @@ class ChannelsTests(unittest.TestCase):
  def test_longform_template_catalog_isolated_and_snapshot_survives_delete(self):
   listing=self.call('templates/list',format='longform')
   self.assertEqual(listing['format'],'longform')
-  self.assertEqual(len(listing['items']),7)
-  self.assertEqual(self.call('get')['template']['id'],'lieflat-editorial')
+  self.assertEqual([t['id'] for t in listing['items']],['xhs-folio','xhs-brief','xhs-note'])
+  self.assertEqual(self.call('get')['template']['id'],'xhs-folio')
   template=self.call('templates/save',format='longform',template={**listing['items'][0],'name':'我的长文'})
   self.assertNotIn(template['id'],[t['id'] for t in self.call('templates/list')['items']])
   saved=self.save(template=template)
