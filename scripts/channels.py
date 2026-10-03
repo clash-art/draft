@@ -34,14 +34,27 @@ def load(ws,e,channel):
     if builtin['id']==selected:result['template']=builtin
   return result
  return {'channel':channel,'format':'longform','title':e.get('title',''),'body':e.get('body',''),'images':[a['ref'] for a in e.get('assets',[])],'template':longform_catalog(ws.root)[0] if channel=='xiaohongshu' else BUILTINS[0],'revision':None,'source_revision':e.get('revision'),'publication':None}
+BRIEF_INSTRUCTIONS=('默认完整长文：保留原稿标题、完整正文、段落顺序、图片和全部参考资料，body 与源稿一致，images 包含全部素材，不总结、不删减、不改写事实，不生成摘要卡片。'
+ '只有用户明确要求精简（例如控制在 10 页以内）时才改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点，保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
+ '模板只决定字号、行距、颜色和装饰，不决定内容；从 templates 中选一项传给 save_channel_edition（format=longform）。不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。')
 IMAGE_REF=re.compile(r'!\[[^\]]*\]\(\s*<?([^)\s>]+)')
 def completeness(e,edition):
  """How the edition compares with the full source; longform must not drop text or images."""
  images=edition.get('images',[])
- return {'title_matches_source':edition.get('title')==e.get('title'),'body_matches_source':edition.get('body')==e.get('body'),
+ condensed=bool(edition.get('condensed'))
+ return {'condensed':condensed,'title_matches_source':edition.get('title')==e.get('title'),'body_matches_source':edition.get('body')==e.get('body'),
          'source_chars':len(e.get('body','')),'edition_chars':len(edition.get('body','')),
          'missing_images':[a['ref'] for a in e.get('assets',[]) if a.get('ref') not in images],
          'body_images_not_listed':[ref for ref in IMAGE_REF.findall(edition.get('body','')) if ref not in images]}
+def cover_page(value):
+ """Agent-chosen cover text for the longform page set; templates only style it."""
+ if not value:return None
+ if not isinstance(value,dict):raise ValueError('封面内容无效')
+ points=value.get('points') or []
+ if not isinstance(points,list) or len(points)>5 or any(not isinstance(p,str) or not p.strip() or len(p)>30 for p in points):raise ValueError('封面要点最多 5 条，每条不超过 30 字')
+ title,subtitle=str(value.get('title','')).strip(),str(value.get('subtitle','')).strip()
+ if len(title)>40 or len(subtitle)>60:raise ValueError('封面标题或副标题过长')
+ return {'title':title,'subtitle':subtitle,'points':[p.strip() for p in points]}
 def longform_template(ws,value,edition):
  if value:return validate(value)
  current=edition.get('template') if edition.get('format')=='longform' else None
@@ -73,7 +86,7 @@ def dispatch(ws,route,data):
           'source':{'title':e['title'],'markdown':e['body'],'agent_context':e.get('agent_context',''),'assets':e.get('assets',[]),'cover':e.get('cover','')},
           'template':longform_template(ws,None,edition) if xhs else edition['template'],'templates':longform_catalog(ws.root) if xhs else [],
           'current_edition':edition,'completeness':completeness(e,edition),
-          'instructions':'保留原稿标题、完整正文、段落顺序、图片和全部参考资料。只按所选模板排版，不总结、不删减、不改写事实，不生成摘要卡片。除非用户明确要求改写，否则 body 与源稿一致，images 包含全部素材（含封面）。用 save_channel_edition 写回本渠道（format=longform，template 取 templates 中的一项），不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。'}
+          'instructions':BRIEF_INSTRUCTIONS}
  if route=='/api/channels/save':
   if data.get('expected_revision')!=edition['revision']:raise ValueError('渠道版本已变化，请重新载入')
   if data.get('source_revision')!=e['revision']:raise ValueError('源内容已变化，请重新载入渠道版本')
@@ -106,7 +119,9 @@ def dispatch(ws,route,data):
    elif not pages:edition['render_pending']=False
    edition['cards']=pages
   if format=='longform':
-   changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template')
+   cover=cover_page(data['cover_page']) if 'cover_page' in data else edition.get('cover_page')
+   condensed=bool(data.get('condensed',edition.get('condensed',False)))
+   changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template') or cover!=edition.get('cover_page')
    if data.get('rendered_for_revision'):
     if data['rendered_for_revision']!=edition['revision'] or changed:raise ValueError('文章版本已变化，请重新导出')
     refs=data.get('page_images',[])
@@ -118,7 +133,7 @@ def dispatch(ws,route,data):
       if img.format!='PNG' or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
     edition['page_images']=refs
    elif changed:edition['page_images']=[]
-   edition.update(cards=[],render_pending=not bool(edition.get('page_images')))
+   edition.update(cards=[],cover_page=cover,condensed=condensed,render_pending=not bool(edition.get('page_images')))
 
   edition.update(title=title,body=body,images=images,template=template,revision=uuid.uuid4().hex,source_revision=e['revision'])
   save_json(path(ws,e['id'],channel),edition);return {**edition,'completeness':completeness(e,edition)}

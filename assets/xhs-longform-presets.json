@@ -2,14 +2,14 @@
   {
     "id": "xhs-folio",
     "name": "刊物",
-    "description": "暖白纸面 · 宋体正文 · 首字下沉与目录封面",
+    "description": "暖白纸面 · 宋体正文 · 大标题封面",
     "layout": "folio",
     "accent": "#9e3b26",
-    "font_size": 15,
-    "line_height": 1.8,
-    "paragraph_gap": 11,
-    "reference_size": 11,
-    "reference_gap": 7,
+    "font_size": 13,
+    "line_height": 1.72,
+    "paragraph_gap": 7,
+    "reference_size": 8.5,
+    "reference_gap": 2,
     "page_ratio": "3:4"
   },
   {
@@ -18,11 +18,11 @@
     "description": "深色封面 · 章节进度条 · 图号与附录式参考资料",
     "layout": "brief",
     "accent": "#2b59c3",
-    "font_size": 15,
-    "line_height": 1.75,
-    "paragraph_gap": 10,
-    "reference_size": 11,
-    "reference_gap": 6,
+    "font_size": 13,
+    "line_height": 1.68,
+    "paragraph_gap": 7,
+    "reference_size": 8.5,
+    "reference_gap": 2,
     "page_ratio": "3:4"
   },
   {
@@ -31,11 +31,11 @@
     "description": "白色卡片 · 荧光标题 · 圆角图解，贴近小红书阅读",
     "layout": "note",
     "accent": "#e0533d",
-    "font_size": 15,
-    "line_height": 1.8,
-    "paragraph_gap": 11,
-    "reference_size": 11,
-    "reference_gap": 6,
+    "font_size": 13,
+    "line_height": 1.72,
+    "paragraph_gap": 7,
+    "reference_size": 8.5,
+    "reference_gap": 2,
     "page_ratio": "3:4"
   }
 ]

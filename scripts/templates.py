@@ -32,7 +32,7 @@ article.save_draft()</code></pre><h3>参考资料</h3><p>〔1〕排版示例 · 
 def validate(value):
     out={'id':str(value.get('id','')),'name':str(value.get('name','')).strip()[:40],'description':str(value.get('description','')).strip()[:120]}
     if not out['name']:raise ValueError('请填写模板名称')
-    for key,low,high in [('font_size',14,20),('line_height',1.5,2.4),('paragraph_gap',10,32),('reference_size',11,15),('reference_gap',4,24)]:
+    for key,low,high in [('font_size',12,20),('line_height',1.5,2.4),('paragraph_gap',4,32),('reference_size',8,15),('reference_gap',1,24)]:
         try:n=float(value.get(key,BASE[key]))
         except (ValueError,TypeError):raise ValueError('模板数值无效') from None
         if not low<=n<=high:raise ValueError('模板数值超出范围：'+key)
