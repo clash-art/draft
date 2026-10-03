@@ -36,6 +36,7 @@ def main():
  parser.add_argument('--chrome',default=shutil.which('google-chrome') or shutil.which('chromium'))
  parser.add_argument('--port',type=int,default=5199)
  parser.add_argument('--full',action='store_true',help='渲染完整源稿（不使用渠道版本的精简正文与封面内容）')
+ parser.add_argument('--no-palette',action='store_true',help='忽略渠道版本的项目配色，使用模板默认配色')
  parser.add_argument('--save',action='store_true',help='同时走完整导出：上传分页 PNG 并保存到渠道版本（只写临时工作区）')
  args=parser.parse_args()
  from config_ui import make_server
@@ -57,7 +58,7 @@ def main():
    page.goto(url);page.wait_for_function('window.__xhs&&window.__xhs.ready',timeout=60000)
    ids=[t['id'] for t in page.evaluate('__xhs.templates()') if not __import__('re').fullmatch(r'[a-f0-9]{32}',t['id'])] if args.templates=='all' else args.templates.split(',')
    for identifier in ids:
-    result=page.evaluate('([id,full])=>__xhs.render(id,{full})',[identifier,args.full])
+    result=page.evaluate('([id,full,noPalette])=>__xhs.render(id,{full,noPalette})',[identifier,args.full,args.no_palette])
     folder=out/identifier
     if folder.exists():shutil.rmtree(folder)
     folder.mkdir(parents=True);files=[]

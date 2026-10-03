@@ -11,13 +11,13 @@
   "images/e462c30c54124b5aa65e58e51b87f7b8.png"
  ],
  "template": {
-  "id": "xhs-folio",
-  "name": "刊物",
-  "description": "暖白纸面 · 宋体正文 · 大标题封面",
-  "layout": "folio",
-  "accent": "#9e3b26",
+  "id": "xhs-blueprint",
+  "name": "蓝图",
+  "description": "点阵纸 · 钴蓝色块 · 虚线框图 · 技术图解",
+  "layout": "blueprint",
+  "accent": "#1a3ba8",
   "font_size": 13,
-  "line_height": 1.72,
+  "line_height": 1.7,
   "paragraph_gap": 7,
   "reference_size": 8.5,
   "reference_gap": 2,
@@ -41,5 +41,18 @@
    "改权重：Trajectory 的 SDPO++",
    "下一轮：让真实数据接着转"
   ]
+ },
+ "palette": {
+  "paper": "#fafafa",
+  "surface": "#eff4ff",
+  "ink": "#18181b",
+  "text": "#3f3f46",
+  "muted": "#71717b",
+  "primary": "#2c1fea",
+  "on_primary": "#ffffff",
+  "accent": "#5770ff",
+  "rule": "#d4d4d8",
+  "name": "Braintrust",
+  "source": "braintrust.dev 站点 CSS：.border-brand-blue #2C1FEA；--blue-50 239 244 255、--blue-500 87 112 255；--zinc-50/300/500/700/900"
  }
 }

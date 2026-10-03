@@ -95,7 +95,7 @@
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 1,
+   "fill": 0.96,
    "starts": "02上线：真实世界更复杂让订单A"
   },
   {
@@ -125,7 +125,7 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.95,
+   "fill": 0.93,
    "starts": "Braintrust与Adali"
   },
   {
@@ -140,7 +140,7 @@
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 1,
+   "fill": 0.95,
    "starts": "04改权重：Trajectory"
   },
   {

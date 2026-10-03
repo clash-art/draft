@@ -10,12 +10,15 @@ async function api(path,data){
 async function edition(){const source=await api('/api/editor/load',{});return {source,edition:await api('/api/channels/get',{id:source.id,channel:'xiaohongshu'})}}
 async function templates(){return (await api('/api/channels/templates/list',{format:'longform'})).items}
 // Paginates with the requested template and returns PNG data through the real export code path.
-// full=true lays out the complete source article instead of the edition's own content.
-async function render(templateId,{png=true,full=false}={}){
+// full=true lays out the complete source article instead of the edition's own content;
+// noPalette=true ignores the edition's project palette and shows the template's own colours.
+async function render(templateId,{png=true,full=false,noPalette=false,ratio}={}){
  const {source,edition:loaded}=await edition();
- const e=full?{...loaded,title:source.title,body:source.body,cover_page:null}:loaded;
- const template=templateId?(await templates()).find(t=>t.id===templateId):e.template;
- if(!template)throw Error('unknown template '+templateId);
+ const e=full?{...loaded,title:source.title,body:source.body,cover_page:null}:{...loaded};
+ if(noPalette)e.palette=null;
+ const found=templateId?(await templates()).find(t=>t.id===templateId):e.template;
+ if(!found)throw Error('unknown template '+templateId);
+ const template=ratio?{...found,page_ratio:ratio}:found;
  const {pages,meta}=await layoutArticle({...e,template},api);
  const grid=document.getElementById('pages');grid.innerHTML=pages.map(html=>`<div class="paged-article-page">${html}</div>`).join('');
  if(!png)return {template,count:pages.length,meta};

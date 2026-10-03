@@ -1,8 +1,8 @@
 {
  "template": {
-  "id": "xhs-folio",
-  "name": "刊物",
-  "layout": "folio",
+  "id": "xhs-marker",
+  "name": "荧光",
+  "layout": "marker",
   "page_ratio": "3:4"
  },
  "compact": 0,
@@ -52,7 +52,7 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.94,
+   "fill": 0.91,
    "starts": "Hermes、ECC会把任务经验"
   },
   {
@@ -67,7 +67,7 @@
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.9,
+   "fill": 0.88,
    "starts": "01先验证：改完有没有用Herm"
   },
   {
@@ -80,7 +80,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.9,
+   "fill": 0.94,
    "starts": "风险是Agent把一次偶然成功写"
   },
   {
@@ -125,7 +125,7 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.89,
+   "fill": 0.92,
    "starts": "Braintrust与Adali"
   },
   {
@@ -140,7 +140,7 @@
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.96,
+   "fill": 0.95,
    "starts": "04改权重：Trajectory"
   },
   {
@@ -154,7 +154,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.94,
+   "fill": 0.97,
    "starts": "05下一轮：让真实数据接着转同一"
   },
   {
@@ -166,7 +166,7 @@
    ],
    "figures": [],
    "references": 21,
-   "fill": 1,
+   "fill": 0.95,
    "starts": "参考资料〔1〕Hermesgit"
   }
  ]
