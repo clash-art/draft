@@ -2,9 +2,9 @@
  "max_pages": 10,
  "over_limit": false,
  "template": {
-  "id": "xhs-combo-press-blueprint",
-  "name": "报刊 × 蓝图",
-  "layout": "blueprint",
+  "id": "xhs-canvas",
+  "name": "画布",
+  "layout": "canvas",
   "page_ratio": "3:4"
  },
  "compact": 1,
@@ -54,7 +54,7 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.97,
+   "fill": 0.95,
    "starts": "Braintrust、Adali"
   },
   {
@@ -82,7 +82,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.95,
+   "fill": 1,
    "starts": "01先验证：改完有没有用Herm"
   },
   {
@@ -112,7 +112,7 @@
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.96,
+   "fill": 0.95,
    "starts": "03挖问题：Braintrust"
   },
   {
@@ -142,7 +142,7 @@
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.96,
+   "fill": 0.97,
    "starts": "04改权重：Trajectory"
   },
   {
@@ -168,7 +168,7 @@
    ],
    "figures": [],
    "references": 21,
-   "fill": 0.99,
+   "fill": 0.93,
    "starts": "参考资料〔1〕Hermesgit"
   }
  ]

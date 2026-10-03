@@ -4,7 +4,7 @@
 
 - `article.md` / `editor.json`：完整源稿（10 张正文配图、1 张封面图、21 条参考资料），不修改。
 - `xiaohongshu-condensed.md`：小红书精简版正文（约 3.6k 字，源稿约 7.5k 字），按插图顺序组织，`<!-- page -->` 指定分页。
-- `channels/xiaohongshu.json`：小红书渠道版本。`format: longform`、`condensed: true`，body 为上面的精简正文，images 为其中的 5 张原图加 2 张总览图放大裁切（`c1a0…`、`c2b1…`，只用于精简版），`cover_page` 为封面文字（主副标题 + 署名，不放要点），模板为「蓝图」（`xhs-blueprint`），不传 `palette`，用模板自带配色。
+- `channels/xiaohongshu.json`：小红书渠道版本。`format: longform`、`condensed: true`，body 为上面的精简正文，images 为其中的 5 张原图加 2 张总览图放大裁切（`c1a0…`、`c2b1…`，只用于精简版），`cover_page` 为封面文字（主副标题 + 署名，不放要点）和封面配图 `image`（`d0ad…`：「工具成功，不等于任务成功」图中订单与用户纠正两格的裁切，供图文封面使用，文字封面会忽略），模板为「蓝图」（`xhs-blueprint`），不传 `palette`，用模板自带配色。
 - `channels/wechat.json`：公众号渠道版本，完整正文，模板为「蓝图」（`blueprint`），同样用模板自带配色。分页图片未入库（`render_pending: true`），载入后在工作台点“导出”即可生成。
 - `layouts/<模板 id>.json`：七个内置长文模板的分页结果（总页数、各章起始页、每页的配图、参考条目和填充率），用于回归对比。
 - `images/`：正文与封面素材。
@@ -38,7 +38,7 @@ python scripts/load_example.py examples/xhs-longform-agent-self-evolution
 
 ```bash
 python scripts/render_xhs_pages.py --out work/xhs-pages
-for t in xhs-folio xhs-blueprint xhs-tweet xhs-brief xhs-press xhs-marker xhs-note xhs-combo-press-blueprint xhs-combo-tweet-note xhs-combo-folio-press; do cp work/xhs-pages/$t/layout.json examples/xhs-longform-agent-self-evolution/layouts/$t.json; done
+for t in xhs-blueprint xhs-tweet xhs-wireframe xhs-photo xhs-xstyle xhs-canvas xhs-doodle xhs-devlog xhs-plain xhs-parts xhs-bigtype xhs-combo-photo-plain xhs-combo-wireframe-tweet xhs-combo-bigtype-devlog; do cp work/xhs-pages/$t/layout.json examples/xhs-longform-agent-self-evolution/layouts/$t.json; done
 ```
 
 公众号手机宽度截图（每套文章模板一张长图 + 首屏切片 + 总览）：
