@@ -185,9 +185,11 @@ def save_article_template(template:dict)->dict:
  return route('save_article_template','/api/templates/save',{'template':template})
 
 @mcp.tool(annotations=LOCAL)
-def apply_article_template(template:dict,article_id:str,expected_revision:str)->dict:
- """Apply typography locally after user asks to format the current article. Does not sync to WeChat."""
- return route('apply_article_template','/api/templates/apply',{'template':template,'current':True,'id':article_id,'expected_revision':expected_revision})
+def apply_article_template(template:dict,article_id:str,expected_revision:str,palette:Optional[dict]=None)->dict:
+ """Apply typography locally after user asks to format the current article. Does not sync to WeChat. Templates are style only. palette (optional) holds the colours of the project the article is about (paper, surface, ink, text, muted, primary, on_primary, accent, rule as #rrggbb, plus name and source describing where the colours came from); it is stored on the WeChat edition and overrides the template colours."""
+ data={'template':template,'current':True,'id':article_id,'expected_revision':expected_revision}
+ if palette is not None:data['palette']=palette
+ return route('apply_article_template','/api/templates/apply',data)
 
 APP_HTML=Path(__file__).resolve().parent.parent/'assets/mcp-app/mcp-app.html'
 APP_URI='ui://wechat-drafts/content-workbench-'+hashlib.sha256(APP_HTML.read_bytes()).hexdigest()[:12]+'.html'
@@ -224,8 +226,8 @@ def get_channel_edition(content_id:str,channel:str)->dict:
  return route('get_channel_edition','/api/channels/get',{'id':content_id,'channel':channel})
 
 @mcp.tool(annotations=LOCAL)
-def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None,format:Optional[str]=None,page_images:Optional[list[str]]=None,page_count:Optional[int]=None,rendered_for_revision:Optional[str]=None,cover_page:Optional[dict]=None,condensed:Optional[bool]=None)->dict:
- """Save local channel copy with optimistic revision checks; never publishes. Read get_channel_brief first. Wechat template is a template object. XHS is full longform (layout_protocol longform-v1) unless cards are explicitly passed: preserve original title, full body, every image (including the cover) and all references; pick a template from list_channel_templates and change typography only. Never summarize, truncate or split into cards unless explicitly requested. When the user asks for a condensed image note (e.g. at most 10 pages), you author the content: condensed body following figure order, `<!-- page -->` lines as page breaks, cover_page {title, subtitle, points (<=5)}, and condensed=true. Templates only style; they never choose content. page_images/page_count/rendered_for_revision are set only by the workbench or MCP App after rendering pages; check completeness in the result."""
+def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None,format:Optional[str]=None,page_images:Optional[list[str]]=None,page_count:Optional[int]=None,rendered_for_revision:Optional[str]=None,cover_page:Optional[dict]=None,condensed:Optional[bool]=None,palette:Optional[dict]=None)->dict:
+ """Save local channel copy with optimistic revision checks; never publishes. Read get_channel_brief first. Wechat template is a template object. XHS is full longform (layout_protocol longform-v1) unless cards are explicitly passed: preserve original title, full body, every image (including the cover) and all references; pick a template from list_channel_templates and change typography only. Never summarize, truncate or split into cards unless explicitly requested. When the user asks for a condensed image note (e.g. at most 10 pages), you author the content: condensed body following figure order, `<!-- page -->` lines as page breaks, cover_page {title, subtitle, points (<=5)}, and condensed=true. Templates only style; they never choose content. palette (both channels) is the article's project colours, picked by you from the project's logo, website CSS, README or docs: paper, surface, ink, text, muted, primary, on_primary, accent, rule (#rrggbb), plus name and source; it overrides template colours. page_images/page_count/rendered_for_revision are set only by the workbench or MCP App after rendering pages; check completeness in the result."""
  if format not in (None,'longform','cards'):raise ValueError('format must be longform or cards')
  if format is None and channel=='xiaohongshu':format='cards' if cards is not None else 'longform'
  data={'id':content_id,'channel':channel,'title':title,'body':body,'images':images,'source_revision':source_revision,'expected_revision':expected_revision,'template':template}
@@ -233,6 +235,7 @@ def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:li
  if cards is not None:data['cards']=cards
  if cover_page is not None:data['cover_page']=cover_page
  if condensed is not None:data['condensed']=condensed
+ if palette is not None:data['palette']=palette
  if rendered_for_revision:data.update(page_images=page_images or [],page_count=page_count,rendered_for_revision=rendered_for_revision)
  return route('save_channel_edition','/api/channels/save',data)
 
