@@ -79,7 +79,7 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 
 ## 文章模板
 
-工作台的文章模板页提供石墨简报、微信清读、人文札记三套排版，支持复制、自定义保存、删除自定义模板，以及手机宽度示例/当前文章预览。参考文献按独立字号、行距和条目间距排版，完整链接保留且换行。MCP 使用 `list_article_templates`、`save_article_template`、`apply_article_template`；应用须提供当前文章 id 和 expected_revision，只修改本机内容，不自动同步微信。先说明排版选择；不修改引用内容或丢弃来源链接。
+工作台的文章模板页提供石墨简报、蓝图、微信清读、专栏、纸上专题、研究手记、人文札记、周末来信八套排版，支持复制、自定义保存、删除自定义模板，以及手机宽度示例/当前文章预览。排版全部是内联样式，装饰只用边框和色块，不插入任何文字。参考文献按独立字号、行距和条目间距排版，完整链接保留且换行。MCP 使用 `list_article_templates`、`save_article_template`、`apply_article_template`；应用须提供当前文章 id 和 expected_revision，只修改本机内容，不自动同步微信。先说明排版选择；不修改引用内容或丢弃来源链接。
 
 小红书图片卡片：Agent 通过 `save_channel_edition` 保存 `cards` 与模板，App 直接用 HTML 预览并导出 PNG。不要启动 Playwright 截图生成卡片。卡片改动后需在 App 中点击「生成图片」；后端只校验并保存图片和版本。
 
@@ -92,5 +92,8 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 2. 完整版（默认）：`body` 与源稿一致，`images` 含全部素材，`condensed` 为 false；`completeness.body_matches_source` 应为 true、`missing_images` 为空。
 3. 精简版（仅当用户要求，例如"10 页以内"）：Agent 自己写精简正文，按插图顺序组织，每张保留的图配一两句说明，信息密集的图独占一页全宽展示；用单独一行 `<!-- page -->` 指定分页；参考资料全部保留，可改成短格式（名称 + 去掉协议的链接）集中在最后一页。`images` 只列正文实际使用的图，传 `condensed: true`。
 4. 封面内容用 `cover_page` 传：`{title, subtitle, points}`，points 最多 5 条、每条不超过 30 字，大字号可读即可；封面不放小图或完整架构图，图放进正文页。不传时用标题冒号前后作主副标题、章节名作要点。
-5. 用 `list_channel_templates` 选内置或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
-6. 修改 body、cover_page 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
+5. 配色跟随文章所讲的项目（见下方「项目配色」），用 `palette` 传入；没有明确项目时不传。
+6. 用 `list_channel_templates` 选内置模板（刊物、蓝图、推文、研报、报刊、荧光、轻读）或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
+7. 修改 body、cover_page、palette 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
+
+项目配色（公众号与小红书通用）：模板自带默认配色，渠道版本的 `palette` 覆盖模板颜色。Agent 按文章确定主角项目，从其 logo、官网 CSS（如 `theme-color`、品牌色变量）、README 或文档取色，填 `paper` 纸面、`surface` 浅底块、`ink` 标题、`text` 正文、`muted` 注释、`primary` 主色块、`on_primary` 主色上的文字、`accent` 次强调、`rule` 分隔线（`#rrggbb`），并写 `name` 与 `source`（取色来源）。正文/标题与纸面对比度须 ≥ 4.5，否则保存会被拒绝。小红书用 `save_channel_edition(..., palette=...)`；公众号用 `apply_article_template(..., palette=...)` 或 `save_channel_edition(channel='wechat', palette=...)`。向用户说明用了哪些颜色、来自哪里。
