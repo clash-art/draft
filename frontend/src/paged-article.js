@@ -74,6 +74,9 @@ async function layoutOnce(edition,api,imageMap,opts){
  for(const b of blocks)if(b.role==='figure'){const r=await resolveImage(b.src,api,imageMap);images.set(b,{...r,src:await toneImage(r.src,theme)})}
  const plan=edition.cover_page||{};
  const coverImage=plan.image?await resolveImage(plan.image,api,imageMap).then(async r=>({...r,src:await toneImage(r.src,theme)})):null;
+ // Concept illustrations generated for this article; a slot without an image renders as a marked placeholder.
+ const illustrations=Object.fromEntries(await Promise.all((Array.isArray(edition.illustrations)?edition.illustrations:[]).map(async x=>[x.slot,{concept:x.concept||'',src:x.image?(await resolveImage(x.image,api,imageMap)).src:null}])));
+ if(theme.art)Object.assign(theme.art,illustrations);
  await document.fonts.ready;
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0',width:width+'px'});document.body.append(host);
  try{
@@ -170,16 +173,16 @@ async function layoutOnce(edition,api,imageMap,opts){
   const source=sourceText(edition.body);
   if(contentText(source)!==pages.map(p=>contentText(p.content)).join(''))throw Error('分页内容校验失败，未生成图片');
   const want=[...source.querySelectorAll('img')].map(img=>img.getAttribute('src'));
-  const got=pages.flatMap(p=>[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref||img.getAttribute('src')));
+  const got=pages.flatMap(p=>figuresOf(p.content).map(img=>img.dataset.ref||img.getAttribute('src')));
   if(JSON.stringify(want)!==JSON.stringify(got))throw Error('分页图片顺序或数量校验失败');
-  if(pages.some(p=>[...p.content.querySelectorAll('img')].some(img=>img.getBoundingClientRect().height<40)))throw Error('有图片未能完整显示，未生成图片');
+  if(pages.some(p=>figuresOf(p.content).some(img=>img.getBoundingClientRect().height<40)))throw Error('有图片未能完整显示，未生成图片');
   const title=edition.title||'',sections=articleSections(blocks),stats=articleStats(edition.body,blocks);
   const offsetCover=1;
   // The cover is read as a feed thumbnail: title and key points only, figures stay on inner pages.
   const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
   const total=pages.length+1;
   const content=coverContent(edition,sectionPages),parts=sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
-  const cover=legacyCover||theme.cover({...content,sections:parts,image:coverImage,stats,total,width,height});
+  const cover=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height});
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title,byline:content.byline})});
   host.append(cover);
   const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
@@ -188,10 +191,12 @@ async function layoutOnce(edition,api,imageMap,opts){
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
   const meta={max_pages:MAX_PAGES,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
-   pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
+   pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:figuresOf(p.content).map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
   return {pages:html,meta};
  }finally{host.remove()}
 }
+// Article figures only; decorative illustrations inside data-deco are not body images.
+const figuresOf=node=>[...node.querySelectorAll('img')].filter(img=>!img.closest('[data-deco]'));
 function fillOf(content){const last=content.lastElementChild;return last?Math.round(Math.min(1,(last.getBoundingClientRect().bottom-content.getBoundingClientRect().top)/content.clientHeight)*100)/100:0}
 // Cover text is edition content (cover_page, chosen by the agent); without it, fall back to
 // the title split at its colon and the section headings.

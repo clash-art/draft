@@ -12,10 +12,14 @@ async function templates(){return (await api('/api/channels/templates/list',{for
 // Paginates with the requested template and returns PNG data through the real export code path.
 // full=true lays out the complete source article instead of the edition's own content;
 // noPalette=true ignores the edition's project palette and shows the template's own colours.
-async function render(templateId,{png=true,full=false,noPalette=false,ratio}={}){
+// placeholderArt drops generated illustration images to preview the not-yet-generated state.
+// coverImage swaps the edition's cover figure, so a comparison render can give each preset its own.
+async function render(templateId,{png=true,full=false,noPalette=false,ratio,coverImage,placeholderArt=false}={}){
  const {source,edition:loaded}=await edition();
  const e=full?{...loaded,title:source.title,body:source.body,cover_page:null}:{...loaded};
  if(noPalette)e.palette=null;
+ if(coverImage&&e.cover_page)e.cover_page={...e.cover_page,image:coverImage};
+ if(placeholderArt&&e.illustrations)e.illustrations=e.illustrations.map(x=>({...x,image:null}));
  const found=templateId?(await templates()).find(t=>t.id===templateId):e.template;
  if(!found)throw Error('unknown template '+templateId);
  const template=ratio?{...found,page_ratio:ratio}:found;

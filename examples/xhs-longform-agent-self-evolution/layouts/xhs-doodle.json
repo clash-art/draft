@@ -82,7 +82,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.97,
+   "fill": 0.99,
    "starts": "01先验证：改完有没有用Herm"
   },
   {
@@ -112,7 +112,7 @@
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.94,
+   "fill": 0.96,
    "starts": "03挖问题：Braintrust"
   },
   {
@@ -142,7 +142,7 @@
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.97,
+   "fill": 0.96,
    "starts": "04改权重：Trajectory"
   },
   {

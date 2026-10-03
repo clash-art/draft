@@ -366,50 +366,39 @@ function xstyle(template,opts){
  };
 }
 
-// 开发日志 (after the user's own Managed Agents write-up): white pages and one orange accent, a terminal
-// mark in the header and a wordmark footer; headings split over two lines with the second in orange.
-const DEVLOG={id:'devlog',size:12.5,leading:1.7,gap:7,refSize:9,refGap:3,paper:'#ffffff',surface:'#fcf1ec',ink:'#151515',body:'#2a2a2a',muted:'#8e8e8e',rule:'#ececec',accent:'#ec633f',pad:{top:42,right:22,bottom:38,left:22}};
+// 开发日志 (after the user's own Managed Agents write-up): a plain post. The cover is one of the article's
+// figures filling most of the card with the title set plainly under it; inner pages are figures and
+// text on white, with a soft terracotta accent only on small numbers and links.
+const DEVLOG={id:'devlog',size:12.5,leading:1.72,gap:7,refSize:9,refGap:3,paper:'#ffffff',surface:'#f6f4f2',ink:'#151515',body:'#2a2a2a',muted:'#8e8e8e',rule:'#e8e6e3',accent:'#c46a4a',pad:{top:40,right:22,bottom:36,left:22}};
 function devlog(template,opts){
- const t=tokens(template,DEVLOG,opts);const {px}=t,tint=mix(t.accent,t.paper,0.86);
+ const t=tokens(template,DEVLOG,opts);const {px}=t;
  let who=null;
- const kicker=extra=>({fontFamily:MONO,fontSize:'8px',lineHeight:'1.4',letterSpacing:'0.12em',color:t.accent,fontWeight:'700',...extra});
- const mark=size=>deco('span',{fontFamily:MONO,fontSize:size+'px',lineHeight:'1',fontWeight:'800',color:t.accent},['>_']);
- const wordmark=(byline,size)=>{const name=nameOf(byline),i=name.includes(' ')?name.indexOf(' '):Math.max(1,name.length-2);return deco('span',{fontSize:size+'px',fontWeight:'900',color:t.ink,letterSpacing:'-0.01em'},[name.slice(0,i),el('span',{color:t.accent},[name.slice(i)])])};
- const twoLines=node=>{const m=!node.querySelector('*')&&node.textContent.match(/^(.+?[：:])(.+)$/);if(m)node.replaceChildren(el('span',{display:'block'},[m[1]]),el('span',{display:'block',color:t.accent},[m[2]]));return node};
- const lead=symbol=>deco('span',{fontFamily:MONO,fontSize:px(0.8),fontWeight:'700',color:t.accent,flexShrink:'0'},[symbol]);
+ const bold=(size,extra)=>({fontSize:px(size),lineHeight:'1.4',fontWeight:'800',color:t.ink,...extra});
  return {...t,
   shell:{background:t.paper,color:t.body,fontFamily:SANS},
-  lead:b=>html(el('p',text(t,{color:t.ink,fontWeight:'700'})),b.html,t),
+  lead:b=>html(el('p',text(t,{color:t.ink})),b.html,t),
   p:b=>html(el('p',text(t)),b.html,t),
-  section:b=>el('header',{margin:'12px 0 9px'},[el('div',kicker(),[deco('span',{},[`${cn(b.number)} · `]),el('span',{},[b.number]),deco('span',{},[' · CHAPTER'])]),twoLines(html(el('h3',{margin:'4px 0 0',fontSize:px(1.42),lineHeight:'1.26',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.01em'}),b.html,t))]),
-  heading:b=>el('div',{margin:'12px 0 6px',display:'flex',gap:'6px',alignItems:'baseline'},[lead('//'),phrased(html(el('h4',{margin:'0',fontSize:px(1.1),lineHeight:'1.45',fontWeight:'900',color:t.ink}),b.html,t))]),
-  label:b=>el('div',{margin:'10px 0 5px',display:'flex',gap:'6px',alignItems:'baseline'},[lead('→'),html(el('span',{fontSize:px(1),lineHeight:'1.45',fontWeight:'900',color:t.ink}),b.html,t)]),
-  pair:b=>keyPair(t,el('p',text(t,{textAlign:'left',fontSize:px(0.96),lineHeight:'1.6',margin:'0 0 4px',padding:'2px 8px',background:t.surface,borderRadius:'4px'})),b,{color:t.accent}),
-  figure:(b,image,n)=>figure(t,b,image,n,{frame:{border:`1px solid ${t.rule}`,borderRadius:'6px',overflow:'hidden'},caption:plainCaption(t,{textAlign:'center'}),tag:n=>deco('span',{fontFamily:MONO,color:t.accent,marginRight:'5px'},[`fig.${n}`])}),
+  section:b=>el('header',{margin:'12px 0 8px'},[el('div',{fontFamily:MONO,fontSize:px(0.72),color:t.accent,letterSpacing:'0.08em'},[b.number]),phrased(html(el('h3',bold(1.36,{margin:'3px 0 0',lineHeight:'1.34',textAlign:'left',...BALANCE})),b.html,t))]),
+  heading:b=>html(el('h4',bold(1.1,{margin:'12px 0 6px'})),b.html,t),
+  label:b=>html(el('div',bold(1,{margin:'10px 0 5px'})),b.html,t),
+  pair:b=>keyPair(t,el('p',text(t,{textAlign:'left',fontSize:px(0.96),lineHeight:'1.6',margin:'0 0 5px'})),b),
+  figure:(b,image,n)=>figure(t,b,image,n,{frame:{borderRadius:'6px',overflow:'hidden',border:`1px solid ${t.rule}`},caption:plainCaption(t,{textAlign:'center'})}),
   figureMargin:'8px 0 10px',bleed:0,
-  quote:b=>html(el('blockquote',{margin:'10px 0',padding:'7px 10px',borderLeft:`2px solid ${t.accent}`,background:t.surface,color:t.ink,fontSize:t.size+'px',lineHeight:String(t.leading)}),b.html,t),
-  refsHeading:b=>el('header',{margin:'12px 0 8px'},[deco('div',kicker(),['APPENDIX · REFERENCES']),html(el('h3',{margin:'3px 0 0',fontSize:px(1.3),lineHeight:'1.3',color:t.ink,fontWeight:'900'}),b.html,t)]),
+  quote:b=>html(el('blockquote',{margin:'10px 0',padding:'0 0 0 10px',borderLeft:`2px solid ${t.rule}`,color:t.ink,fontSize:t.size+'px',lineHeight:String(t.leading)}),b.html,t),
+  refsHeading:b=>html(el('h3',bold(1.2,{margin:'12px 0 8px'})),b.html,t),
   ref:b=>refEntry(t,b,{num:{fontFamily:MONO,color:t.accent,fontSize:'0.92em'}}),
-  end:()=>deco('div',kicker({margin:'12px 0 6px',color:t.muted}),['— EOF —']),
+  end:null,
   frame(page,{index,total,title,byline}){
-   page.append(deco('div',{position:'absolute',top:'15px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',alignItems:'center',gap:'8px'},[mark(11),el('span',oneLine({fontSize:'7.5px',lineHeight:'1.25',color:t.muted,maxWidth:'260px'}),[splitTitle(title)[0]])]));
-   page.append(deco('div',{position:'absolute',bottom:'13px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',justifyContent:'space-between',alignItems:'baseline'},[wordmark(byline||who,11),el('span',{fontFamily:MONO,fontSize:'8px',color:t.muted},[pageNo(index,total)])]));
+   page.append(deco('div',oneLine({position:'absolute',top:'15px',left:t.pad.left+'px',right:t.pad.right+'px',fontSize:'8px',lineHeight:'11px',color:t.muted}),[splitTitle(title)[0]]));
+   page.append(deco('div',{position:'absolute',bottom:'13px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:'8.5px',color:t.muted},[el('span',{fontWeight:'800',color:t.ink},[nameOf(byline||who)]),el('span',{fontFamily:MONO},[pageNo(index,total)])]));
   },
-  cover({title:main,subtitle:sub,points,sections,byline,stats,total,width,height}){
+  cover({title:main,subtitle:sub,image,byline,stats,total,width,height}){
    who=byline;
-   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'18px 22px 15px'});
-   const items=points.length?points:sections,n=items.length||stats.figures;
-   page.append(deco('div',{display:'flex',alignItems:'center',gap:'8px'},[mark(14),el('div',{fontSize:'7px',lineHeight:'1.35',color:t.muted},[el('div',{},['LONG READ']),el('div',{},[byline?.handle||'devlog'])])]));
-   page.append(deco('div',{display:'flex',alignItems:'flex-end',gap:'10px',marginTop:'18px'},[el('span',{fontSize:'96px',lineHeight:'0.8',fontWeight:'800',color:t.accent,letterSpacing:'-0.04em'},[String(n)]),el('div',{display:'flex',flexDirection:'column',gap:'4px',paddingBottom:'2px'},[el('span',kicker({fontSize:'9px'}),[items.length?'STEPS':'FIGURES']),el('span',{fontSize:'19px',fontWeight:'800',color:t.ink,lineHeight:'1'},[items.length?`${cn(n)}个环节`:`${cn(n)}张图`])])]));
-   page.append(deco('h1',{margin:'18px 0 0',fontSize:'28px',lineHeight:'1.24',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.01em'},[el('span',{display:'block'},[main]),sub?el('span',{display:'block',color:t.accent},[sub]):null]));
-   if(items.length)page.append(deco('div',{display:'flex',flexWrap:'wrap',gap:'5px',marginTop:'12px'},items.slice(0,6).map(s=>el('span',{fontFamily:MONO,fontSize:'9px',lineHeight:'1',padding:'4px 6px',background:tint,color:t.accent,borderRadius:'3px'},[headOf(s.label)]))));
-   // A contribution grid that grows denser to the right, drawn from the title so it is stable.
-   const cols=24,rows=7,levels=[mix(t.rule,t.paper,0.3),mix(t.accent,t.paper,0.78),mix(t.accent,t.paper,0.55),mix(t.accent,t.paper,0.3),t.accent];
-   let seed=[...main].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);const rnd=()=>((seed=(seed*1103515245+12345)>>>0)>>>8)/16777216;
-   const cells=Array.from({length:rows*cols},(_,i)=>{const c=i%cols,v=rnd()*2.4+c/cols*2.6-1.2;return el('span',{height:'9px',borderRadius:'2px',background:levels[Math.max(0,Math.min(4,Math.floor(v)))]})});
-   page.append(optional(deco('div',{marginTop:'14px',border:`1px solid ${t.rule}`,borderRadius:'6px',padding:'8px'},[el('div',{display:'grid',gridTemplateColumns:`repeat(${cols},1fr)`,gap:'2px'},cells)])));
-   page.append(deco('div',{fontFamily:MONO,fontSize:'8px',color:t.muted,letterSpacing:'0.04em',marginTop:'8px'},[`long read · ${stats.figures} figs · ${stats.references} refs · ${stats.minutes} min`]));
-   page.append(deco('div',{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginTop:'auto'},[wordmark(byline,13),el('span',{fontFamily:MONO,fontSize:'8px',color:t.muted},[pageNo(1,total)])]));
+   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'16px 16px 14px'});
+   if(image)page.append(coverImg(image,{height:Math.round(height*0.6)+'px',flexShrink:'0',borderRadius:'6px',border:`1px solid ${t.rule}`}));
+   page.append(deco('h1',{margin:image?'18px 4px 0':'90px 4px 0',fontSize:image?'25px':'34px',lineHeight:'1.32',fontWeight:'900',color:t.ink,textAlign:'left',...BALANCE},[main]));
+   if(sub)page.append(deco('div',{margin:'8px 4px 0',fontSize:'14px',lineHeight:'1.5',color:t.muted,fontWeight:'500'},[sub]));
+   page.append(deco('div',{display:'flex',justifyContent:'space-between',alignItems:'baseline',margin:'auto 4px 0',fontSize:'9px',color:t.muted},[el('span',{fontWeight:'800',color:t.ink,fontSize:'10.5px'},[nameOf(byline)]),el('span',{fontFamily:MONO},[`${stats.figures} figs · ${stats.minutes} min`])]));
    return page;
   },
  };
@@ -454,18 +443,25 @@ function canvas(template,opts){
  };
 }
 
-// 手绘 (after 是金三啊's minimal posts): white dot-grid paper, one of the article's own figures cleanly
-// framed, and large rounded type in soft black with plenty of air; no ornaments.
+// 手绘 (after 是金三啊's minimal posts): white dot-grid paper, one sticker-style concept illustration generated
+// for the article (edition illustrations; falls back to a cleanly framed article figure) and large rounded type
+// in soft black with plenty of air.
 const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#fafaf8',surface:'#f5f5f2',ink:'#303030',body:'#363636',muted:'#8f8f8b',rule:'#e4e4e0',accent:'#d9893a',pad:{top:50,right:24,bottom:28,left:24}};
 function doodle(template,opts){
  const t=tokens(template,DOODLE,opts);const {px}=t;
  const dots={background:t.backdrop,backgroundImage:`radial-gradient(${mix(t.backdrop,t.ink,0.16)} 0.8px,transparent 0.9px)`,backgroundSize:'13px 13px'};
  const bold=(size,extra)=>({fontSize:px(size),lineHeight:'1.55',fontWeight:'800',color:t.ink,...extra});
+ // Filled by the renderer from edition.illustrations: slot -> {src, concept}.
+ const art={};
+ const sticker=(item,size)=>item.src?deco('div',{width:size+'px',height:size+'px',flexShrink:'0'},[el('img',{display:'block',width:'100%',height:'100%',objectFit:'contain'},[],{src:item.src,alt:''})])
+  :deco('div',{width:size+'px',height:size+'px',boxSizing:'border-box',border:`1.5px dashed ${t.muted}`,borderRadius:'16px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px',padding:'8px',textAlign:'center',color:t.muted,fontSize:size>100?'11px':'7px',lineHeight:'1.35'},[el('span',{fontWeight:'800',letterSpacing:'0.08em'},['插图待生成']),size>100?el('span',{},[item.concept]):null]);
  return {...t,
+  art,
   shell:{...dots,color:t.body,fontFamily:SANS},
   lead:b=>html(el('p',text(t,{color:t.ink,textAlign:'left'})),b.html,t),
   p:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
-  section:b=>el('header',{margin:'8px 0 10px'},[el('div',{fontSize:px(0.8),fontWeight:'800',color:t.accent,marginBottom:'2px'},[b.number]),phrased(html(el('h3',bold(1.3,{margin:'0',lineHeight:'1.5',textAlign:'left'})),b.html,t))]),
+  section(b){const head=el('div',{flex:'1',minWidth:'0'},[el('div',{fontSize:px(0.8),fontWeight:'800',color:t.accent,marginBottom:'2px'},[b.number]),phrased(html(el('h3',bold(1.3,{margin:'0',lineHeight:'1.5',textAlign:'left'})),b.html,t))]);
+   const item=art[`section:${b.number}`];return el('header',{margin:'8px 0 10px',display:'flex',alignItems:'flex-end',gap:'10px'},[head,item?sticker(item,52):null])},
   heading:b=>html(el('h4',bold(1.08,{margin:'10px 0 5px'})),b.html,t),
   label:b=>html(el('div',bold(1,{margin:'10px 0 4px'})),b.html,t),
   pair:b=>keyPair(t,el('p',text(t,{textAlign:'left',margin:'0 0 6px'})),b),
@@ -478,9 +474,11 @@ function doodle(template,opts){
   frame(page,{index,total,byline}){
    page.append(deco('div',{position:'absolute',top:'18px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',alignItems:'center',gap:'9px'},[avatar(nameOf(byline),28,{border:`1.5px solid ${t.ink}`,background:t.paper,color:t.ink}),el('div',{display:'flex',flexDirection:'column',gap:'2px'},[el('span',{fontSize:'12px',fontWeight:'800',color:t.ink,lineHeight:'1.2'},[nameOf(byline)]),el('span',{fontSize:'9.5px',color:t.muted,lineHeight:'1.2'},[[byline?.handle,`${index}/${total}`].filter(Boolean).join(' · ')])])]));
   },
-  cover({title:main,subtitle:sub,image,stats,width,height}){
+  cover({title:main,subtitle:sub,image,illustrations={},stats,width,height}){
    const page=coverPage(t,width,height,{...dots,fontFamily:SANS,padding:'30px 26px 24px'});
-   if(image)page.append(deco('div',{display:'flex',justifyContent:'center',marginTop:'8px'},[el('img',{display:'block',width:'236px',height:'auto',borderRadius:'12px',border:`1px solid ${t.rule}`},[],{src:image.src,alt:''})]));
+   const item=illustrations.cover;
+   if(item)page.append(deco('div',{display:'flex',justifyContent:'flex-start',marginTop:'4px'},[sticker(item,200)]));
+   else if(image)page.append(deco('div',{display:'flex',justifyContent:'center',marginTop:'8px'},[el('img',{display:'block',width:'236px',height:'auto',borderRadius:'12px',border:`1px solid ${t.rule}`},[],{src:image.src,alt:''})]));
    page.append(el('div',{flex:'1'}));
    page.append(deco('h1',{margin:'0',fontSize:'40px',lineHeight:'1.38',fontWeight:'800',color:t.ink,letterSpacing:'0.04em',textAlign:'left',...BALANCE},[main]));
    if(sub)page.append(deco('div',{marginTop:'8px',fontSize:'19px',lineHeight:'1.45',fontWeight:'700',color:t.muted,letterSpacing:'0.04em'},[sub]));
@@ -535,9 +533,9 @@ function parts(template,opts){
 // block and a picture tucked into the bottom-right corner.
 const BIGTYPE={id:'bigtype',size:13.5,leading:1.66,gap:7,refSize:9,refGap:3,paper:'#ffffff',surface:'#f5f5f5',ink:'#111111',body:'#1d1d1d',muted:'#8a8a8a',rule:'#e8e8e8',accent:'#eea56a',pad:{top:30,right:22,bottom:30,left:22}};
 function bigtype(template,opts){
- const t=tokens(template,BIGTYPE,opts);const {px}=t,soft=mix(t.accent,t.paper,0.55);
+ const t=tokens(template,BIGTYPE,opts);const {px}=t,soft=mix(t.accent,t.paper,0.7);
  Object.assign(t,{strongStyle:{fontWeight:'700',background:soft,padding:'0 2px'}});
- const block={background:mix(t.accent,t.paper,0.25),padding:'0 4px'};
+ const block={background:mix(t.accent,t.paper,0.5),padding:'0 4px'};
  const big=(size,extra)=>({fontSize:px(size),lineHeight:'1.42',fontWeight:'500',color:t.ink,...extra});
  return {...t,
   shell:{background:t.paper,color:t.body,fontFamily:SANS},

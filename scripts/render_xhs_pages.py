@@ -37,6 +37,7 @@ def main():
  parser.add_argument('--port',type=int,default=5199)
  parser.add_argument('--full',action='store_true',help='渲染完整源稿（不使用渠道版本的精简正文与封面内容）')
  parser.add_argument('--no-palette',action='store_true',help='忽略渠道版本的项目配色，使用模板默认配色')
+ parser.add_argument('--placeholder-art',action='store_true',help='不使用已生成的手绘插图，显示「插图待生成」占位')
  parser.add_argument('--save',action='store_true',help='同时走完整导出：上传分页 PNG 并保存到渠道版本（只写临时工作区）')
  args=parser.parse_args()
  from config_ui import make_server
@@ -57,8 +58,11 @@ def main():
    page.on('pageerror',lambda e:print('pageerror:',e,file=sys.stderr))
    page.goto(url);page.wait_for_function('window.__xhs&&window.__xhs.ready',timeout=60000)
    ids=[t['id'] for t in page.evaluate('__xhs.templates()') if not __import__('re').fullmatch(r'[a-f0-9]{32}',t['id'])] if args.templates=='all' else args.templates.split(',')
+   # Optional per-preset cover figures (cover-images.json: preset id -> image ref) for side-by-side renders.
+   cover_file=Path(args.example)/'cover-images.json'
+   covers=json.loads(cover_file.read_text()) if cover_file.exists() and not args.save else {}
    for identifier in ids:
-    result=page.evaluate('([id,full,noPalette])=>__xhs.render(id,{full,noPalette})',[identifier,args.full,args.no_palette])
+    result=page.evaluate('([id,full,noPalette,coverImage,placeholderArt])=>__xhs.render(id,{full,noPalette,coverImage,placeholderArt})',[identifier,args.full,args.no_palette,covers.get(identifier),args.placeholder_art])
     folder=out/identifier
     if folder.exists():shutil.rmtree(folder)
     folder.mkdir(parents=True);files=[]
