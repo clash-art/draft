@@ -1,5 +1,6 @@
 {
  "max_pages": 10,
+ "font_fallback": "",
  "over_limit": false,
  "template": {
   "id": "xhs-parts",
@@ -8,32 +9,32 @@
   "page_ratio": "3:4"
  },
  "compact": 0,
- "page_count": 10,
+ "page_count": 9,
  "sections": [
   {
    "number": "01",
    "title": "先验证：改完有没有用",
-   "page": 4
+   "page": 3
   },
   {
    "number": "02",
    "title": "上线：真实世界更复杂",
-   "page": 5
+   "page": 4
   },
   {
    "number": "03",
    "title": "挖问题：Braintrust 与 Adaline",
-   "page": 6
+   "page": 5
   },
   {
    "number": "04",
    "title": "改权重：Trajectory 的 SDPO++",
-   "page": 8
+   "page": 7
   },
   {
    "number": "05",
    "title": "下一轮：让真实数据接着转",
-   "page": 9
+   "page": 8
   }
  ],
  "pages": [
@@ -48,31 +49,18 @@
    "section": null,
    "roles": [
     "figure",
-    "lead"
+    "lead",
+    "p"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.93,
+   "fill": 0.97,
    "starts": "Braintrust、Adali"
   },
   {
    "page": 3,
-   "section": null,
-   "roles": [
-    "figure"
-   ],
-   "figures": [
-    "images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png",
-    "images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png"
-   ],
-   "references": 0,
-   "fill": 0.9,
-   "starts": "放大：Braintrust与Ad"
-  },
-  {
-   "page": 4,
    "section": "01",
    "roles": [
     "section",
@@ -86,7 +74,7 @@
    "starts": "01先验证：改完有没有用Herm"
   },
   {
-   "page": 5,
+   "page": 4,
    "section": "02",
    "roles": [
     "section",
@@ -101,7 +89,7 @@
    "starts": "02上线：真实世界更复杂让订单A"
   },
   {
-   "page": 6,
+   "page": 5,
    "section": "03",
    "roles": [
     "section",
@@ -112,11 +100,11 @@
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.89,
+   "fill": 0.83,
    "starts": "03挖问题：Braintrust"
   },
   {
-   "page": 7,
+   "page": 6,
    "section": "03",
    "roles": [
     "figure",
@@ -131,7 +119,7 @@
    "starts": "Braintrust与Adali"
   },
   {
-   "page": 8,
+   "page": 7,
    "section": "04",
    "roles": [
     "section",
@@ -146,7 +134,7 @@
    "starts": "04改权重：Trajectory"
   },
   {
-   "page": 9,
+   "page": 8,
    "section": "05",
    "roles": [
     "section",
@@ -156,11 +144,11 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.9,
+   "fill": 0.79,
    "starts": "05下一轮：让真实数据接着转同一"
   },
   {
-   "page": 10,
+   "page": 9,
    "section": "05",
    "roles": [
     "refs-heading",

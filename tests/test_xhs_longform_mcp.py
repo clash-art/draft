@@ -43,7 +43,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertIsNone(edition['palette'])
   figures=re.findall(r'^!\[[^\]]*\]\(([^)\s]+)',CONDENSED,re.M)
   self.assertEqual(edition['images'],figures)
-  self.assertEqual(len(figures),7)
+  self.assertEqual(len(figures),5)
   self.assertTrue(all((EXAMPLE/ref).is_file() for ref in figures))
   self.assertGreaterEqual(len(set(figures)&{a['ref'] for a in EDITOR['assets']}),5)
   self.assertEqual(len(re.findall(r'^〔\d+〕',CONDENSED,re.M)),21)
@@ -53,7 +53,7 @@ class LongformMcpTests(unittest.TestCase):
    pages=layout['pages']
    self.assertEqual(layout['page_count'],len(pages),path.name)
    self.assertLessEqual(layout['page_count'],10,path.name)
-   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),7,path.name)
+   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),5,path.name)
    self.assertEqual(sum(p.get('references',0) for p in pages),21,path.name)
    self.assertEqual(pages[0].get('figures',[]),[],path.name)
    self.assertNotIn('cover_image',layout,path.name)

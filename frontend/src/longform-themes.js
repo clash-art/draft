@@ -452,7 +452,7 @@ function canvas(template,opts){
 
 // 手绘 (after 是金三啊's minimal posts): warm off-white paper with a barely visible dot texture, a small quiet
 // grey doodle generated for the article (edition illustrations) and one chunky title in a single size.
-const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#f8f7f3',surface:'#f0efea',ink:'#363636',body:'#3a3a3a',muted:'#8f8f8b',rule:'#e4e3de',accent:'#d39a52',pad:{top:50,right:24,bottom:28,left:24}};
+const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#f8f7f3',surface:'#f0efea',ink:'#363636',body:'#3a3a3a',muted:'#8f8f8b',rule:'#e4e3de',accent:'#d39a52',pad:{top:30,right:24,bottom:28,left:24}};
 function doodle(template,opts){
  const t=tokens(template,DOODLE,opts);const {px}=t;
  const dots={background:t.backdrop,backgroundImage:`radial-gradient(${mix(t.backdrop,t.ink,0.07)} 0.8px,transparent 0.9px)`,backgroundSize:'14px 14px'};
@@ -477,9 +477,7 @@ function doodle(template,opts){
   refsHeading:b=>html(el('h3',bold(1.15,{margin:'8px 0 8px'})),b.html,t),
   ref:b=>refEntry(t,b,{num:{color:t.accent}}),
   end:null,
-  frame(page,{index,total,byline}){
-   page.append(deco('div',{position:'absolute',top:'18px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',alignItems:'center',gap:'9px'},[avatar(nameOf(byline),28,{border:`1.5px solid ${t.ink}`,background:t.paper,color:t.ink}),el('div',{display:'flex',flexDirection:'column',gap:'2px'},[el('span',{fontSize:'12px',fontWeight:'800',color:t.ink,lineHeight:'1.2'},[nameOf(byline)]),el('span',{fontSize:'9.5px',color:t.muted,lineHeight:'1.2'},[[byline?.handle,`${index}/${total}`].filter(Boolean).join(' · ')])])]));
-  },
+  frame(){},
   cover({title:main,lines,illustrations={},width,height}){
    const page=coverPage(t,width,height,{...dots,fontFamily:ROUNDED,position:'relative',padding:'0'});
    const item=illustrations.cover;

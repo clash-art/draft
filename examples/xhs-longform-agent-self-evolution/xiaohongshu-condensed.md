@@ -4,15 +4,7 @@ Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改�
 
 Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。
 
-<!-- page -->
-
-![放大：Braintrust 与 Adaline 两条改进路线](images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png "full")
-
-放大：Braintrust 与 Adaline 两条改进路线
-
-![放大：Trajectory 从轨迹学习并更新权重](images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png "full")
-
-放大：Trajectory 从轨迹学习并更新权重
+下面按验证、上线、挖问题、改权重的顺序拆开讲。
 
 <!-- page -->
 
@@ -58,7 +50,7 @@ Hermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 insti
 
 Adaline 从会话中聚类行为并识别问题
 
-Braintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns〔13〕让 Loop 深挖轨迹，记下有证据的发现。
+Braintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns〔13〕让 Loop 深挖轨迹、记录证据。
 
 <!-- page -->
 
@@ -92,7 +84,7 @@ SDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，
 
 ### 下一轮：让真实数据接着转
 
-同一种失败有不同修法：工具缺参数就改接口，指令漏了规则就补 prompt，模型反复做错才考虑更新权重。路线图〔19〕主张联合优化这三层，先沿轨迹定位再动手。
+同一种失败有不同修法：工具缺参数就改接口，指令漏了规则就补 prompt，模型反复做错才考虑更新权重。路线图〔19〕主张三层联合优化。
 
 修好多订单澄清，还会冒出时区、部分退款等新失败；日志要能关联结果与纠正。
 
@@ -100,7 +92,7 @@ SDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，
 
 A/B：Adaline Labs〔20〕建议把用户分给不同 prompt 版本；有足够流量时随机分组做实验〔21〕，比较完成率、纠正率、成本和延迟。
 
-灰度：控制放量范围，会积累记忆的 Agent 还要隔离两组状态。
+灰度：逐步放量；有记忆的 Agent 要隔离状态。
 
 Demo 演示一次修改，论文测出一次提升；生产系统要靠真实任务不断提供新的失败、约束和纠正。
 
