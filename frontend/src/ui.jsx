@@ -1,0 +1,19 @@
+import React from 'react';
+import * as D from '@radix-ui/react-dialog';
+import * as M from '@radix-ui/react-dropdown-menu';
+import * as S from '@radix-ui/react-select';
+import * as T from '@radix-ui/react-tabs';
+import * as Tip from '@radix-ui/react-tooltip';
+import {ChevronDown,Check,X,LoaderCircle,FileText} from 'lucide-react';
+export function Button({children,icon:Icon,busy,variant='',className='',...props}){return <button className={`ui-button ${variant} ${className}`} {...props} disabled={props.disabled||busy}>{busy?<LoaderCircle className="spin"/>:Icon&&<Icon/>}{children}</button>}
+export function IconButton({label,icon,...p}){return <Tip.Root><Tip.Trigger asChild><Button aria-label={label} icon={icon} variant="ghost icon-only" {...p}/></Tip.Trigger><Tip.Portal><Tip.Content className="ui-tooltip" sideOffset={5}>{label}</Tip.Content></Tip.Portal></Tip.Root>}
+export function Picker({value,onChange,options,placeholder='请选择',label}){return <S.Root value={value||''} onValueChange={onChange}><S.Trigger className="ui-picker" aria-label={label||placeholder}><S.Value placeholder={placeholder}/><S.Icon><ChevronDown/></S.Icon></S.Trigger><S.Portal><S.Content className="ui-popover ui-select-popover" position="popper" sideOffset={5}><S.Viewport>{options.map(o=><S.Item key={o.value} value={o.value} className="ui-menu-item ui-select-item"><S.ItemText>{o.label}</S.ItemText><S.ItemIndicator><Check/></S.ItemIndicator></S.Item>)}</S.Viewport></S.Content></S.Portal></S.Root>}
+export function Segments({value,onChange,options}){return <T.Root value={value} onValueChange={onChange}><T.List className="segments">{options.map(o=><T.Trigger key={o.value} value={o.value}>{o.label}</T.Trigger>)}</T.List></T.Root>}
+export function Menu({label='更多操作',icon:Icon,items}){return <M.Root><M.Trigger asChild><Button aria-label={label} icon={Icon} variant="ghost">{!Icon&&label}</Button></M.Trigger><M.Portal><M.Content className="ui-popover" align="end" sideOffset={5}>{items.map((o,i)=><M.Item key={i} disabled={o.disabled} className="ui-menu-item" onSelect={o.onClick}>{o.label}</M.Item>)}</M.Content></M.Portal></M.Root>}
+export function Modal({open,onOpenChange,title,description,children,sheet=false}){return <D.Root open={open} onOpenChange={onOpenChange}><D.Portal><D.Overlay className="ui-overlay"/><D.Content className={sheet?'ui-sheet':'ui-modal'} aria-describedby={description?'dialog-description':undefined}><div className="dialog-heading"><D.Title>{title}</D.Title><D.Close asChild><Button aria-label="关闭" icon={X} variant="ghost icon-only"/></D.Close></div>{description&&<D.Description id="dialog-description" className="muted">{description}</D.Description>}{children}</D.Content></D.Portal></D.Root>}
+export function Field({label,children,hint}){return <label className="field"><span>{label}</span>{children}{hint&&<small>{hint}</small>}</label>}
+export function Notice({children,kind='error'}){return <div className={`notice ${kind}`} role={kind==='error'?'alert':'status'}>{children}</div>}
+export function Empty({children,action,loading=false}){return <div className="empty-state">{loading?<LoaderCircle className="spin"/>:<FileText/>}<p>{children}</p>{action}</div>}
+export function Table({columns,rows,keyOf=(r,i)=>r.id||i,onRow}){return <div className="table-scroll"><table className="content-table"><colgroup>{columns.map((c,i)=><col key={i} style={c.width?{width:c.width}:undefined}/>)}</colgroup><thead><tr>{columns.map((c,i)=><th key={i}>{c.label}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={keyOf(r,i)}>{columns.map((c,j)=><td key={j}>{c.render?c.render(r,i):r[c.key]}</td>)}</tr>)}</tbody></table></div>}
+export function Stage({article}){const stage=article.sync?.publication?'published':article.sync?'draft':'pending';return <span className={`stage ${stage}`}><span/>{stage==='published'?'已发布':stage==='draft'?'草稿':'待同步'}</span>}
+export const stageOf=a=>a.sync?.publication?'published':a.sync?'draft':'pending';

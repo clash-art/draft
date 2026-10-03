@@ -1,0 +1,146 @@
+"""Independent channel editions and native Xiaohongshu browser connector."""
+import json,uuid,re
+from datetime import datetime,timezone
+from urllib.parse import urlsplit
+import requests,markdown
+from bs4 import BeautifulSoup
+from wechat import save_json
+from templates import render,BUILTINS,validate
+from xhs_longform_templates import catalog as longform_catalog
+
+from xhs_cards import BUILTINS as XHS_TEMPLATES
+from xhs_cards import catalog as xhs_catalog,validate as validate_xhs
+
+def xhs_template(value,root=None):
+ identifier=(value or {}).get('id','xhs-guide')
+ for template in (xhs_catalog(root) if root else XHS_TEMPLATES):
+  if template['id']==identifier:return template
+ # Preserve a saved template snapshot after its catalog entry is deleted.
+ if value and all(k in value for k in ('name','accent','background','instructions')):return validate_xhs(value)
+ raise ValueError('未知小红书模板')
+
+def path(ws,identifier,channel):
+ ws.pending_path(identifier)
+ if channel not in ('wechat','xiaohongshu'):raise ValueError('未知发布渠道')
+ folder=ws.root/'channels'/identifier;folder.mkdir(parents=True,exist_ok=True,mode=0o700)
+ return folder/(channel+'.json')
+def load(ws,e,channel):
+ p=path(ws,e['id'],channel)
+ if p.exists():
+  result=json.loads(p.read_text())
+  if channel=='xiaohongshu' and result.get('format')!='longform':
+   selected=(result.get('template') or {}).get('id','xhs-guide')
+   for builtin in XHS_TEMPLATES:
+    if builtin['id']==selected:result['template']=builtin
+  return result
+ return {'channel':channel,'format':'longform','title':e.get('title',''),'body':e.get('body',''),'images':[a['ref'] for a in e.get('assets',[])],'template':longform_catalog(ws.root)[0] if channel=='xiaohongshu' else BUILTINS[0],'revision':None,'source_revision':e.get('revision'),'publication':None}
+def dispatch(ws,route,data):
+ if route.startswith('/api/channels/templates/') and data.get('format')=='longform':
+  from xhs_longform_templates import dispatch as templates_dispatch
+  return templates_dispatch(ws.root,route,data)
+ if route.startswith('/api/channels/templates/'):
+  from xhs_cards import save,catalog
+  if route.endswith('/list'):return {'items':catalog(ws.root)}
+  if route.endswith('/save'):return save(ws.root,data.get('template'))
+  if route.endswith('/delete'):
+   identifier=str(data.get('id',''))
+   if not re.fullmatch(r'[a-f0-9]{32}',identifier):raise ValueError('内置模板不可删除')
+   p=ws.root/'xhs-templates'/(identifier+'.json')
+   if not p.exists():raise ValueError('模板不存在')
+   p.replace(p.with_suffix('.archived'));return {'removed':True}
+  raise ValueError('未知模板操作')
+ if route in ('/api/channels/status','/api/channels/login'):
+  from xiaohongshu import connect
+  return connect(ws.root).call('login' if route.endswith('/login') else 'status')
+ e=json.loads(ws.pending_path(data.get('id')).read_text())
+ channel=data.get('channel','xiaohongshu');edition=load(ws,e,channel)
+ if route=='/api/channels/get':return {**edition,'layout_protocol':'longform-v1','source_changed':edition['source_revision']!=e['revision'],'templates':(longform_catalog(ws.root) if edition.get('format')=='longform' else xhs_catalog(ws.root)) if channel=='xiaohongshu' else []}
+ if route=='/api/channels/brief':
+  return {'layout_protocol':'longform-v1','content_id':e['id'],'channel':channel,'source_revision':e['revision'],'expected_revision':edition['revision'],'source':{'title':e['title'],'markdown':e['body'],'agent_context':e.get('agent_context',''),'assets':e.get('assets',[])},'template':edition['template'],'current_edition':edition,'instructions':'保留原稿标题、完整正文、段落顺序、图片和全部参考资料。只按所选模板排版，不总结、不删减、不改写事实，不生成摘要卡片。除非用户明确要求改写，否则 body 与源稿一致。用 save_channel_edition 写回本渠道，不修改源稿，不同步或发布。'}
+ if route=='/api/channels/save':
+  if data.get('expected_revision')!=edition['revision']:raise ValueError('渠道版本已变化，请重新载入')
+  if data.get('source_revision')!=e['revision']:raise ValueError('源内容已变化，请重新载入渠道版本')
+  title=str(data.get('title',''));body=str(data.get('body',''))
+  if len(title)>64 or len(body)>100000:raise ValueError('标题或正文过长')
+  images=data.get('images',[])
+  if not isinstance(images,list) or len(images)>50 or any(not isinstance(ref,str) for ref in images) or len(set(images))!=len(images):raise ValueError('图片列表无效')
+  for ref in images:ws.image_path(ref)
+  format=data.get('format',edition.get('format','cards'))
+  if data.get('cards'):format='cards'
+  if channel=='wechat':format='longform'
+  template=validate(data.get('template') or BUILTINS[0]) if format=='longform' else xhs_template(data.get('template'),ws.root)
+  edition['format']=format
+  if channel=='xiaohongshu' and format=='cards':
+   from xhs_cards import cards
+   pages=cards(data.get('cards',edition.get('cards',[])),ws)
+   changed=pages!=edition.get('cards',[]) or template!=edition.get('template')
+   exported=data.get('rendered_for_revision')
+   if exported:
+    if exported!=edition['revision'] or changed or not pages:raise ValueError('卡片版本已变化，请重新生成图片')
+    if len(images)!=len(pages):raise ValueError('导出图片数量与卡片不一致')
+    from PIL import Image
+    for ref in images:
+     with Image.open(ws.image_path(ref)) as image:
+      if image.format!='PNG' or image.size!=(1080,1440):raise ValueError('卡片图片必须为 1080×1440 PNG')
+    edition['render_pending']=False
+   elif pages and (changed or edition.get('render_pending') or len(images)!=len(pages)):
+    images=[];edition['render_pending']=True
+   elif not pages:edition['render_pending']=False
+   edition['cards']=pages
+  if format=='longform':
+   changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template')
+   if data.get('rendered_for_revision'):
+    if data['rendered_for_revision']!=edition['revision'] or changed:raise ValueError('文章版本已变化，请重新导出')
+    refs=data.get('page_images',[])
+    if not isinstance(refs,list) or not refs or len(refs)!=data.get('page_count') or len(refs)>200:raise ValueError('分页图片数量无效')
+    from PIL import Image
+    for ref in refs:
+     with Image.open(ws.image_path(ref)) as img:
+      expected_size={'3:4':(1080,1440),'3:5':(1080,1800),'1:1':(1080,1080),'9:16':(1080,1920)}.get(template.get('page_ratio','3:4'))
+      if img.format!='PNG' or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
+    edition['page_images']=refs
+   elif changed:edition['page_images']=[]
+   edition.update(cards=[],render_pending=not bool(edition.get('page_images')))
+
+  edition.update(title=title,body=body,images=images,template=template,revision=uuid.uuid4().hex,source_revision=e['revision'])
+  save_json(path(ws,e['id'],channel),edition);return edition
+ if route=='/api/channels/preview':
+  html=render(edition['body'],edition['template']) if channel=='wechat' or edition.get('format')=='longform' else '<p>'+__import__('html').escape(edition['body']).replace('\n','<br/>')+'</p>'
+  from wechat import image_bytes
+  import base64
+  soup=BeautifulSoup(html,'html.parser')
+  for image in soup.find_all('img'):
+   raw,mime,_=image_bytes(ws.image_path(image.get('src','')));image['src']='data:'+mime+';base64,'+base64.b64encode(raw).decode()
+  return {'html':str(soup)}
+ if channel!='xiaohongshu':raise ValueError('该操作仅适用于小红书渠道')
+ if route=='/api/channels/prepare':
+  if edition.get('format')=='longform':raise ValueError('这是完整长文，请使用小红书创作中心的长文入口；不会转为短图文提交')
+  if edition.get('render_pending'):raise ValueError('请先在 App 中生成最新卡片图片')
+  if edition.get('publication'):raise ValueError('该渠道已关联发布记录，请先创建新内容，避免重复发布')
+  if not edition['revision'] or data.get('expected_revision')!=edition['revision']:raise ValueError('请先保存当前渠道版本')
+  if not edition['title'].strip() or len(edition['title'])>20:raise ValueError('小红书标题请控制在 1–20 字')
+  if not edition['body'].strip() or len(edition['body'])>1000:raise ValueError('小红书正文请控制在 1–1000 字；长文请改编后发布')
+  if not 1<=len(edition['images'])<=18:raise ValueError('请选择 1–18 张笔记图片')
+  receipt=edition.get('delivery') or {}
+  if receipt.get('status') in ('submitting','filled','needs_check'):
+   raise ValueError('已有待确认的发布任务，请先在浏览器核对，再清除任务状态')
+  from xiaohongshu import connect
+  edition['delivery']={'status':'submitting','revision':edition['revision']}
+  save_json(path(ws,e['id'],channel),edition)
+  try:
+   result=connect(ws.root).call('prepare',title=edition['title'],body=edition['body'],images=[str(ws.image_path(ref)) for ref in edition['images']])
+  except ValueError:
+   edition['delivery']['status']='needs_check';save_json(path(ws,e['id'],channel),edition);raise
+  edition['delivery'].update(result);save_json(path(ws,e['id'],channel),edition)
+  return edition
+ if route=='/api/channels/reset-delivery':
+  if data.get('expected_revision')!=edition['revision']:raise ValueError('渠道版本已变化，请重新载入')
+  edition['delivery']=None;save_json(path(ws,e['id'],channel),edition);return edition
+ if route=='/api/channels/published':
+  if not edition.get('revision'):raise ValueError('请先保存渠道版本')
+  u=urlsplit(str(data.get('url','')))
+  if u.scheme!='https' or u.hostname not in ('www.xiaohongshu.com','xiaohongshu.com','xhslink.com') or u.username or u.password or u.path in ('','/'):raise ValueError('请输入小红书正式笔记链接')
+  if data.get('expected_revision')!=edition['revision']:raise ValueError('渠道版本已变化，请重新载入')
+  edition['publication']={'url':u.geturl(),'confirmed_at':datetime.now(timezone.utc).isoformat(),'revision':edition['revision']}
+  save_json(path(ws,e['id'],channel),edition);return edition
+ raise ValueError('未知渠道操作')

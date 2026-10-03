@@ -1,0 +1,19 @@
+{
+  "name": "wechat-drafts",
+  "version": "0.1.0+codex.20260920181122",
+  "description": "\u5fae\u4fe1\u516c\u4f17\u53f7\u8349\u7a3f\u3001\u56fe\u7247\u6392\u7248\u5ba1\u6838\u4e0e\u56fe\u6587\u6570\u636e\u5206\u6790",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "\u5fae\u4fe1\u8349\u7a3f\u52a9\u624b",
+    "shortDescription": "\u81ea\u52a8\u4f20\u56fe\u5b58\u8349\u7a3f\uff0c\u5ba1\u6838\u56fe\u6587\u6392\u7248\uff0c\u5206\u6790\u8fd0\u8425\u6570\u636e\u3002",
+    "longDescription": "\u652f\u6301 Markdown/HTML \u6b63\u6587\u3001\u5fae\u4fe1\u56fe\u7247\u4e0a\u4f20\u3001\u8349\u7a3f\u65b0\u5efa\u66f4\u65b0\u3001\u5185\u5bb9\u4e0e\u6392\u7248\u5ba1\u6838\uff0c\u4ee5\u53ca\u5b98\u65b9\u56fe\u6587\u7edf\u8ba1\u548c CSV \u6570\u636e\u5206\u6790\u3002",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "\u5e2e\u6211\u51c6\u5907\u516c\u4f17\u53f7\u8349\u7a3f\uff0c\u68c0\u67e5\u6b63\u6587\u548c\u914d\u56fe\uff0c\u5e76\u5206\u6790\u6587\u7ae0\u6570\u636e\u3002"
+  },
+  "mcpServers": "./.mcp.json"
+}

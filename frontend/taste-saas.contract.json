@@ -1,0 +1,567 @@
+{
+  "contract": "taste-saas/v1",
+  "version": 1,
+  "preset": "linear-like",
+  "taskModel": {
+    "primaryTask": "Create, annotate and sync an article to WeChat; inspect linked publication metrics",
+    "entity": "article",
+    "contentPriority": [
+      "title",
+      "stage",
+      "syncStatus",
+      "updatedAt"
+    ],
+    "operationFrequency": "high",
+    "operationRisk": "mixed",
+    "preserveContext": true
+  },
+  "shell": {
+    "slots": [
+      "brand",
+      "navigation",
+      "breadcrumb",
+      "route-outlet",
+      "sidebar-restore",
+      "global-surfaces"
+    ],
+    "states": [
+      "desktop-full",
+      "desktop-hidden",
+      "desktop-preview",
+      "mobile-hidden",
+      "mobile-drawer"
+    ],
+    "scrollOwner": "route-outlet"
+  },
+  "layouts": [
+    {
+      "id": "content-list",
+      "route": "/?view=content",
+      "kind": "list",
+      "slots": [
+        "list-toolbar",
+        "content-grid"
+      ],
+      "states": [
+        "loading",
+        "ready",
+        "empty",
+        "filtered-empty",
+        "error",
+        "mutation-pending"
+      ],
+      "scrollOwner": "content-grid"
+    },
+    {
+      "id": "article-detail",
+      "route": "/?article=:id",
+      "kind": "detail-rail",
+      "slots": [
+        "article-toolbar",
+        "article-body",
+        "inspector"
+      ],
+      "states": [
+        "loading",
+        "ready",
+        "editing",
+        "error",
+        "mutation-pending",
+        "stale",
+        "read-only"
+      ],
+      "scrollOwner": "article-body+inspector"
+    },
+    {
+      "id": "cloud-drafts",
+      "route": "/?view=drafts",
+      "kind": "list",
+      "slots": [
+        "list-toolbar",
+        "content-grid"
+      ],
+      "states": [
+        "loading",
+        "ready",
+        "empty",
+        "filtered-empty",
+        "error",
+        "mutation-pending"
+      ],
+      "scrollOwner": "content-grid"
+    },
+    {
+      "id": "analytics",
+      "route": "/?view=analytics",
+      "kind": "dashboard",
+      "slots": [
+        "page-body"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "permission-denied"
+      ],
+      "scrollOwner": "page-body"
+    },
+    {
+      "id": "settings",
+      "route": "/?view=settings",
+      "kind": "settings",
+      "slots": [
+        "page-body"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "error",
+        "mutation-pending"
+      ],
+      "scrollOwner": "page-body"
+    },
+    {
+      "id": "bridge",
+      "route": "/?view=bridge",
+      "kind": "settings",
+      "slots": [
+        "page-body"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "error"
+      ],
+      "scrollOwner": "page-body"
+    }
+  ],
+  "slotStates": [
+    {
+      "slot": "list-toolbar",
+      "states": {
+        "loading": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        },
+        "ready": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        },
+        "empty": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        },
+        "filtered-empty": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        },
+        "error": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        },
+        "mutation-pending": {
+          "component": "Segments/Search/Actions",
+          "geometry": "list-toolbar"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    },
+    {
+      "slot": "content-grid",
+      "states": {
+        "loading": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        },
+        "ready": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        },
+        "empty": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        },
+        "filtered-empty": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        },
+        "error": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        },
+        "mutation-pending": {
+          "component": "Table/Empty",
+          "geometry": "content-grid"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    },
+    {
+      "slot": "article-toolbar",
+      "states": {
+        "loading": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "ready": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "editing": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "error": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "mutation-pending": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "stale": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        },
+        "read-only": {
+          "component": "ArticleActions",
+          "geometry": "article-toolbar"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    },
+    {
+      "slot": "article-body",
+      "states": {
+        "loading": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "ready": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "editing": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "error": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "mutation-pending": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "stale": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        },
+        "read-only": {
+          "component": "RichEditor/Preview",
+          "geometry": "article-body"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    },
+    {
+      "slot": "inspector",
+      "states": {
+        "loading": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "ready": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "editing": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "error": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "mutation-pending": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "stale": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        },
+        "read-only": {
+          "component": "Comments/Review/Images/Properties",
+          "geometry": "inspector"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    },
+    {
+      "slot": "page-body",
+      "states": {
+        "ready": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        },
+        "loading": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        },
+        "empty": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        },
+        "error": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        },
+        "permission-denied": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        },
+        "mutation-pending": {
+          "component": "Settings/Analytics/Bridge",
+          "geometry": "page-body"
+        }
+      },
+      "stableAnchors": [
+        "left",
+        "top"
+      ]
+    }
+  ],
+  "globalSurfaces": [
+    {
+      "intent": "mutation.reversible",
+      "surface": "toast",
+      "semantic": "success",
+      "action": "undo"
+    },
+    {
+      "intent": "decision.destructive",
+      "surface": "alert-dialog",
+      "semantic": "danger",
+      "action": "confirm"
+    },
+    {
+      "intent": "context.preview",
+      "surface": "sheet",
+      "semantic": "neutral",
+      "action": "return-focus"
+    },
+    {
+      "intent": "task.commit",
+      "surface": "modal",
+      "semantic": "neutral",
+      "action": "submit"
+    },
+    {
+      "intent": "field.validation",
+      "surface": "inline",
+      "semantic": "danger",
+      "action": "focus-field"
+    },
+    {
+      "intent": "system.outage",
+      "surface": "system-alert",
+      "semantic": "danger",
+      "action": "retry-or-sign-in"
+    }
+  ],
+  "tokens": {
+    "--density-unit": {
+      "kind": "basis",
+      "value": "1px",
+      "rationale": "Linear compact-with-breathing measurement unit",
+      "consumers": [
+        "--type-line",
+        "--row-h",
+        "--top-row-h",
+        "--toolbar-h"
+      ]
+    },
+    "--type-line": {
+      "kind": "derived",
+      "value": "calc(var(--density-unit) * 18)",
+      "consumers": [
+        "body",
+        ".sidebar-row",
+        ".content-table"
+      ]
+    },
+    "--row-h": {
+      "kind": "derived",
+      "value": "calc(var(--type-line) + var(--density-unit) * 14)",
+      "consumers": [
+        ".content-table td",
+        ".status-symbol row"
+      ]
+    },
+    "--top-row-h": {
+      "kind": "derived",
+      "value": "calc(var(--density-unit) * 39)",
+      "consumers": [
+        ".sidebar-brand-row",
+        ".linear-topbar"
+      ]
+    },
+    "--toolbar-h": {
+      "kind": "derived",
+      "value": "calc(var(--density-unit) * 42)",
+      "consumers": [
+        ".linear-list-toolbar",
+        ".article-toolbar"
+      ]
+    },
+    "--slot-size": {
+      "kind": "basis",
+      "value": "19px",
+      "rationale": "shared shell mark slot measured from the footer avatar",
+      "consumers": [
+        ".sidebar-brand-row .sidebar-slot",
+        ".sidebar-row .sidebar-slot",
+        ".sidebar-footer .sidebar-slot"
+      ]
+    },
+    "--stage-gap": {
+      "kind": "basis",
+      "value": "8px",
+      "rationale": "single outer frame gap for route surface and hidden-sidebar preview",
+      "consumers": [
+        ".linear-main",
+        ".ui-sheet"
+      ]
+    },
+    "--surface-overlay": {
+      "kind": "semantic",
+      "value": "#ffffff",
+      "rationale": "shared opaque surface for all global overlays",
+      "consumers": [
+        ".ui-modal",
+        ".ui-sheet",
+        ".ui-popover"
+      ]
+    },
+    "--semantic-danger": {
+      "kind": "semantic",
+      "value": "oklch(0.58 0.16 25)",
+      "rationale": "destructive and blocking error meaning",
+      "consumers": [
+        ".notice.error",
+        ".system-notice"
+      ]
+    },
+    "--pad-xl": {
+      "kind": "basis",
+      "value": "18px",
+      "rationale": "shared product track or spacing",
+      "consumers": [
+        ".inspector-body",
+        ".list-group-heading"
+      ]
+    },
+    "--status-col": {
+      "kind": "basis",
+      "value": "110px",
+      "rationale": "shared product track or spacing",
+      "consumers": [
+        "Pending.Table.status",
+        "Analytics.Table.metric"
+      ]
+    },
+    "--date-col": {
+      "kind": "basis",
+      "value": "120px",
+      "rationale": "shared product track or spacing",
+      "consumers": [
+        "Pending.Table.updated",
+        "Drafts.Table.updated"
+      ]
+    },
+    "--reading-w": {
+      "kind": "basis",
+      "value": "720px",
+      "rationale": "shared product track or spacing",
+      "consumers": [
+        ".article-canvas",
+        ".settings-page"
+      ]
+    },
+    "--inspector-w": {
+      "kind": "basis",
+      "value": "300px",
+      "rationale": "shared product track or spacing",
+      "consumers": [
+        ".article-layout",
+        ".ui-sheet",
+        ".native-layout"
+      ]
+    }
+  },
+  "alignmentGroups": [
+    {
+      "id": "shell-band",
+      "mode": "centerY",
+      "token": "--top-row-h",
+      "members": [
+        "shell.brand",
+        "shell.breadcrumb"
+      ]
+    },
+    {
+      "id": "sidebar-marks",
+      "mode": "centerX",
+      "token": "--slot-size",
+      "members": [
+        "brand.mark",
+        "nav.mark",
+        "footer.mark"
+      ]
+    },
+    {
+      "id": "table-track",
+      "mode": "right",
+      "token": "--date-col",
+      "members": [
+        "list.header.updated",
+        "list.row.updated"
+      ]
+    },
+    {
+      "id": "inspector-track",
+      "mode": "right",
+      "token": "--inspector-w",
+      "members": [
+        "detail.inspector",
+        "sheet.inspector"
+      ]
+    },
+    {
+      "id": "overlay-anchor",
+      "mode": "top",
+      "token": "--stage-gap",
+      "members": [
+        "modal.empty",
+        "modal.results"
+      ]
+    }
+  ]
+}
