@@ -4,9 +4,9 @@ import DOMPurify from 'dompurify';
 // data-deco carry no article text and are excluded from content verification.
 // Sizes are CSS px on a 360px-wide page (exported at 3x, 1080px); every text size is
 // derived from the body size so a template scales as a whole.
-// Colour is soft and low-saturation: each theme has its own paper and one muted (Morandi)
-// accent, used only for numbers, small labels, thin rules and links. An edition palette may
-// override these tokens; emphasis otherwise comes from weight, size, rules and underlines.
+// Each theme has its own colour mood (white, dark, cool, warm paper; only a couple are Morandi)
+// and one tasteful accent used for numbers, small labels, rules and links, never large fills
+// or gradients. An edition palette may override these tokens.
 export const SANS='"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",sans-serif';
 export const SERIF='"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong","SimSun",serif';
 export const MONO='"SF Mono","JetBrains Mono",Menlo,Consolas,"Noto Sans Mono CJK SC",monospace';
@@ -92,8 +92,8 @@ const coverPage=(t,width,height,style)=>el('article',{boxSizing:'border-box',wid
 const smallCaps=(t,extra={})=>({fontFamily:MONO,fontSize:'7.5px',lineHeight:'1.3',letterSpacing:'0.2em',textTransform:'uppercase',color:t.muted,...extra});
 const pageNo=(index,total)=>`${String(index).padStart(2,'0')} / ${String(total).padStart(2,'0')}`;
 
-// 刊物: magazine feature. Serif throughout, warm off-white, drop cap, big centred numerals.
-const FOLIO={id:'folio',size:13,leading:1.72,gap:7,refSize:9,refGap:3,paper:'#f3efe9',surface:'#e9e3da',ink:'#24201c',body:'#2e2924',muted:'#7d7268',rule:'#d3c9bc',accent:'#8b7765',pad:{top:40,right:28,bottom:34,left:28}};
+// 刊物: magazine feature. Cream paper, serif throughout, vertical cover title, drop cap.
+const FOLIO={id:'folio',size:13,leading:1.72,gap:7,refSize:9,refGap:3,paper:'#f5f0e6',surface:'#ebe3d4',ink:'#1b1712',body:'#2a241d',muted:'#7a6f62',rule:'#d6cab6',accent:'#8c2f1f',pad:{top:40,right:28,bottom:34,left:28}};
 function folio(template,opts){
  const t=tokens(template,FOLIO,opts);const {px}=t,line=t.size*t.leading;
  return {...t,
@@ -121,21 +121,24 @@ function folio(template,opts){
    page.append(deco('div',{position:'absolute',bottom:'13px',left:'0',right:'0',textAlign:'center',fontFamily:SERIF,fontSize:'8.5px',lineHeight:'11px',color:t.ink},[String(index)]));
   },
   cover({title:main,subtitle:sub,points:items,image,stats,width,height}){
-   const page=coverPage(t,width,height,{fontFamily:SERIF,padding:'26px 28px 26px'});
-   page.append(deco('div',{display:'flex',justifyContent:'space-between',fontSize:'9px',letterSpacing:'0.3em',color:t.accent,paddingBottom:'6px',borderBottom:`1px solid ${t.ink}`},[el('span',{},['LONG READ']),el('span',{letterSpacing:'0.1em'},[`${stats.minutes} 分钟`])]));
-   if(image)page.append(deco('div',{margin:'16px -28px 0',height:Math.round(height*0.4)+'px',overflow:'hidden'},[el('img',{display:'block',width:'100%',height:'100%',objectFit:'cover'},[],{src:image.src,alt:''})]));
-   page.append(el('div',{flex:'1',minHeight:'16px'}));
-   page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:image?'42px':'50px',lineHeight:'1.14',fontWeight:'900',letterSpacing:'-0.02em',color:t.ink,textAlign:'left',...BALANCE},[main]));
-   if(sub)page.append(deco('div',{marginTop:'16px',fontFamily:SERIF,fontSize:'20px',lineHeight:'1.4',color:t.body,fontWeight:'400',...BALANCE},[sub]));
-   if(items.length)page.append(optional(deco('div',{marginTop:'18px'},pointList(items,(s,i,label)=>el('div',{fontSize:'14px',lineHeight:'1.5',color:t.ink,padding:'2px 0'},[`${s.number}　${label}`])))));
-   page.append(deco('div',{marginTop:'22px',height:'3px',borderTop:`1px solid ${t.ink}`,borderBottom:`1px solid ${t.ink}`}));
+   // Vertical (top-to-bottom) serif title, as on a book spine or magazine feature opener.
+   const page=coverPage(t,width,height,{fontFamily:SERIF,padding:'28px 26px 24px'});
+   page.append(deco('div',{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:'9px',letterSpacing:'0.3em',color:t.accent},[el('span',{},['LONG READ']),el('span',{letterSpacing:'0.12em',color:t.muted},[`${stats.minutes} 分钟`])]));
+   const column=extra=>({writingMode:'vertical-rl',textOrientation:'mixed',margin:'0',...extra});
+   const spine=el('div',{display:'flex',flexDirection:'row-reverse',alignItems:'flex-start',gap:'14px',marginTop:'22px',flex:'1',minHeight:'0'},[
+    deco('h1',column({fontFamily:SERIF,fontSize:'46px',lineHeight:'1.22',fontWeight:'900',letterSpacing:'0.06em',color:t.ink,maxHeight:'318px'}),[main]),
+    sub?deco('div',column({fontFamily:SERIF,fontSize:'17px',lineHeight:'1.5',letterSpacing:'0.12em',color:t.accent,marginTop:'4px',paddingRight:'12px',borderRight:`1px solid ${t.rule}`,maxHeight:'318px'}),[sub]):null]);
+   page.append(spine);
+   if(image)page.append(deco('div',{margin:'10px -26px 0',height:Math.round(height*0.26)+'px',overflow:'hidden'},[el('img',{display:'block',width:'100%',height:'100%',objectFit:'cover'},[],{src:image.src,alt:''})]));
+   if(items.length)page.append(optional(deco('div',{marginTop:'10px'},pointList(items,(s,i,label)=>el('div',{fontSize:'12.5px',lineHeight:'1.5',color:t.ink},[`${s.number}　${label}`])))));
+   page.append(deco('div',{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:'12px',paddingTop:'8px',borderTop:`1px solid ${t.ink}`,fontSize:'10px',color:t.ink},[el('span',{fontSize:'28px',lineHeight:'1',fontWeight:'400',color:t.accent},['¶']),el('span',{letterSpacing:'0.1em'},[`图 ${stats.figures} · 参考 ${stats.references}`])]));
    return page;
   },
  };
 }
 
 // 蓝图: technical spec sheet. Dot-grid paper, mono small caps, dashed frames, black tabs.
-const BLUEPRINT={id:'blueprint',size:13,leading:1.7,gap:7,refSize:9,refGap:3,paper:'#fbfbfa',surface:'#eef1f4',ink:'#16191d',body:'#2a2e33',muted:'#7a828c',rule:'#bfc7d0',accent:'#6e8098',pad:{top:40,right:26,bottom:34,left:26}};
+const BLUEPRINT={id:'blueprint',size:13,leading:1.7,gap:7,refSize:9,refGap:3,paper:'#ffffff',surface:'#f2f5fd',ink:'#0b0c0e',body:'#24262b',muted:'#6d7380',rule:'#c9d3ea',accent:'#2f5bea',pad:{top:40,right:26,bottom:34,left:26}};
 function blueprint(template,opts){
  const t=tokens(template,BLUEPRINT,opts);const {px}=t,dash=`1px dashed ${t.rule}`;
  const paper={background:t.paper,backgroundImage:`radial-gradient(${t.rule} 0.6px,transparent 0.7px)`,backgroundSize:'12px 12px',backgroundPosition:'6px 6px'};
@@ -162,12 +165,12 @@ function blueprint(template,opts){
   },
   cover({title:main,subtitle:sub,points:items,stats,width,height}){
    const page=coverPage(t,width,height,{...paper,fontFamily:SANS,padding:'24px 24px 22px'});
-   const mark=pos=>deco('span',{position:'absolute',width:'10px',height:'10px',...pos});
+   const mark=pos=>deco('span',{position:'absolute',width:'10px',height:'10px',...Object.fromEntries(Object.entries(pos).map(([k,v])=>[k,String(v).replace(t.ink,t.accent)]))});
    page.append(mark({top:'12px',left:'12px',borderTop:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({top:'12px',right:'12px',borderTop:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}),mark({bottom:'12px',left:'12px',borderBottom:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({bottom:'12px',right:'12px',borderBottom:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}));
    page.append(deco('div',{display:'flex',justifyContent:'space-between'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent}),['Long read']),el('span',smallCaps(t,{fontSize:'9px'}),[`${stats.figures} figures · ${stats.references} refs`])]));
    page.append(el('div',{flex:'1'}));
    page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:'46px',lineHeight:'1.18',fontWeight:'900',color:t.ink,textAlign:'left',...BALANCE},[main]));
-   if(sub)page.append(deco('div',{marginTop:'16px',alignSelf:'flex-start',border:`1px solid ${t.ink}`,background:'#ffffff',fontSize:'16px',lineHeight:'1.4',fontWeight:'700',padding:'6px 10px',color:t.ink,...BALANCE},[sub]));
+   if(sub)page.append(deco('div',{marginTop:'16px',alignSelf:'flex-start',border:`1px solid ${t.accent}`,background:'#ffffff',fontSize:'16px',lineHeight:'1.4',fontWeight:'700',padding:'6px 10px',color:t.ink,...BALANCE},[sub]));
    if(items.length)page.append(optional(deco('div',{marginTop:'14px'},pointList(items,(s,i,label)=>el('div',{display:'flex',gap:'8px',padding:'4px 0',borderTop:dash,fontSize:'13.5px',lineHeight:'1.35',fontWeight:'700'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent,width:'16px'}),[s.number]),label])))));
    page.append(el('div',{flex:'1.3'}));
    page.append(deco('div',{display:'flex',justifyContent:'space-between',borderTop:dash,paddingTop:'6px'},[el('span',smallCaps(t,{fontSize:'8.5px'}),['Spec sheet']),el('span',smallCaps(t,{fontSize:'8.5px'}),[`${stats.minutes} min read`])]));
@@ -178,7 +181,7 @@ function blueprint(template,opts){
 
 // 推文: X post screenshots. Cover is a headline over an embedded post; every inner page reads as
 // one post in a thread, with the account header and the action row.
-const TWEET={id:'tweet',size:13.5,leading:1.6,gap:8,refSize:9,refGap:3,paper:'#ffffff',ink:'#0f1419',body:'#0f1419',muted:'#5f6b76',rule:'#e3e7ea',surface:'#f5f7f8',accent:'#7b8a99',pad:{top:52,right:22,bottom:40,left:22}};
+const TWEET={id:'tweet',size:13.5,leading:1.6,gap:8,refSize:9,refGap:3,paper:'#15202b',ink:'#f7f9f9',body:'#e7e9ea',muted:'#8b98a5',rule:'#38444d',surface:'#1e2732',accent:'#2f8fd6',pad:{top:52,right:22,bottom:40,left:22}};
 const ICON={
  reply:'M4 12a8 8 0 0 1 8-8h0a8 8 0 0 1 0 16H8l-4 3v-5',
  repost:'M7 7h10v6 M4 10l3-3 3 3 M17 17H7v-6 M20 14l-3 3-3-3',
@@ -207,7 +210,7 @@ function tweet(template,opts){
   heading:b=>html(el('h4',{margin:'10px 0 4px',fontSize:px(1.05),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   label:b=>html(el('div',{margin:'10px 0 4px',fontSize:px(1),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   pair(b){const p=el('p',text(t,{textAlign:'left',fontSize:px(0.96),lineHeight:'1.55',margin:'0 0 4px'}));p.append(html(el('strong',{fontWeight:'800',color:t.ink}),b.key,t));p.append(...html(el('span'),b.html,t).childNodes);return p},
-  figure:(b,image,n)=>figure(t,b,image,n,{frame:{border:`1px solid ${t.rule}`,borderRadius:'12px',overflow:'hidden',background:'#fff'},caption:plainCaption(t,{padding:'0 4px'})}),
+  figure:(b,image,n)=>figure(t,b,image,n,{frame:{border:`1px solid ${t.rule}`,borderRadius:'12px',overflow:'hidden',background:t.paper},caption:plainCaption(t,{padding:'0 4px'})}),
   figureMargin:'6px 0 10px',bleed:0,
   quote:b=>html(el('blockquote',{margin:'10px 0',padding:'8px 11px',border:`1px solid ${t.rule}`,borderRadius:'12px',color:t.ink,fontSize:t.size+'px',lineHeight:String(t.leading)}),b.html,t),
   refsHeading:b=>el('header',{margin:'10px 0 7px'},[html(el('h3',{margin:'0',fontSize:px(1.1),lineHeight:'1.35',color:t.ink,fontWeight:'800'}),b.html,t)]),
@@ -228,7 +231,7 @@ function tweet(template,opts){
    if(items.length)body.push(optional(el('div',{},pointList(items,(s,i,label)=>el('div',{fontSize:'14px',lineHeight:'1.5',color:t.ink},[`${i+1}/ ${label}`])))));
    body.push(el('div',{fontSize:'11.5px',color:t.muted},[`长文 · ${stats.figures} 张图 · ${stats.minutes} 分钟读完`]));
    body.push(el('div',{borderTop:`1px solid ${t.rule}`,paddingTop:'9px'},[actions(15)]));
-   page.append(deco('div',{border:`1px solid ${t.rule}`,borderRadius:'16px',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:'10px',background:'#fff'},body));
+   page.append(deco('div',{border:`1px solid ${t.rule}`,borderRadius:'16px',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:'10px',background:t.surface},body));
    page.append(el('div',{flex:'1',minHeight:'14px'}));
    page.append(deco('div',{fontSize:'11px',color:t.muted,display:'flex',justifyContent:'space-between'},[el('span',{},['长文串 · 往下翻']),el('span',{color:t.accent,fontWeight:'700'},[`1 / ${total}`])]));
    return page;
@@ -237,7 +240,7 @@ function tweet(template,opts){
 }
 
 // 研报: research report. Sans, strict left column, segmented progress, mono data labels.
-const BRIEF={id:'brief',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#eef0ef',surface:'#e3e7e4',ink:'#1b1f1d',body:'#2b302d',muted:'#6f7872',rule:'#cfd5d1',accent:'#7c8b78',pad:{top:42,right:26,bottom:32,left:26}};
+const BRIEF={id:'brief',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#eceff3',surface:'#e1e6ec',ink:'#0f1720',body:'#26303b',muted:'#667180',rule:'#cbd3dc',accent:'#0e7c7b',pad:{top:42,right:26,bottom:32,left:26}};
 function brief(template,opts){
  const t=tokens(template,BRIEF,opts);const {px}=t;
  return {...t,
@@ -277,7 +280,7 @@ function brief(template,opts){
 }
 
 // 报刊: newspaper. Masthead, heavy double rules, serif headline at poster scale, dense columns of type.
-const PRESS={id:'press',size:12.5,leading:1.66,gap:6,refSize:8.5,refGap:2,paper:'#fcfbf9',ink:'#121212',body:'#1c1c1c',muted:'#6e6a66',rule:'#d2cfcb',accent:'#a0624f',pad:{top:44,right:24,bottom:32,left:24}};
+const PRESS={id:'press',size:12.5,leading:1.66,gap:6,refSize:8.5,refGap:2,paper:'#ffffff',ink:'#000000',body:'#111111',muted:'#5c5c5c',rule:'#cfcfcf',accent:'#000000',pad:{top:44,right:24,bottom:32,left:24}};
 function press(template,opts){
  const t=tokens(template,PRESS,opts);const {px}=t,line=t.size*t.leading;
  return {...t,
@@ -322,7 +325,7 @@ function press(template,opts){
  };
 }
 
-// 标记: poster explainer. Huge black sans, thick underlines, black reverse blocks for emphasis.
+// 标记: poster explainer on clay paper. Huge sans, highlighter strokes, thick underlines.
 const MARKER={id:'marker',size:13,leading:1.7,gap:7,refSize:9,refGap:3,paper:'#f3eeea',surface:'#e9dfd8',ink:'#1e1a18',body:'#2d2826',muted:'#7e736d',rule:'#d9cdc5',accent:'#b07f6b',pad:{top:40,right:26,bottom:34,left:26}};
 function marker(template,opts){
  const t=tokens(template,MARKER,opts);const {px}=t;
@@ -351,25 +354,26 @@ function marker(template,opts){
    page.append(deco('div',{position:'absolute',bottom:'14px',left:t.pad.left+'px',right:t.pad.right+'px',height:'2px',background:t.accent}));
   },
   cover({title:main,subtitle:sub,points:items,stats,width,height}){
-   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'30px 24px 24px'});
-   page.append(deco('div',{fontSize:'11px',fontWeight:'900',letterSpacing:'0.06em',color:t.ink},[`长文 / ${stats.minutes} 分钟`]));
-   page.append(el('div',{flex:'0.6'}));
-   page.append(deco('h1',{margin:'0',fontSize:'56px',lineHeight:'1.12',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.03em',...BALANCE},[main]));
-   page.append(deco('div',{height:'6px',background:t.accent,width:'72px',margin:'20px 0 16px'}));
-   if(sub)page.append(deco('div',{alignSelf:'flex-start',fontSize:'20px',lineHeight:'1.4',fontWeight:'800',color:t.ink,...underline,...BALANCE},[sub]));
-   if(items.length)page.append(optional(deco('div',{marginTop:'14px'},pointList(items,(s,i,label)=>el('div',{fontSize:'15px',lineHeight:'1.5',fontWeight:'800',color:t.ink},[`${i+1}. ${label}`])))));
+   // Poster: giant title from the top edge, each line laid over a highlighter stroke.
+   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'26px 22px 22px'});
+   const stroke={textDecoration:'underline',textDecorationColor:mix(t.accent,t.paper,0.45),textDecorationThickness:'16px',textUnderlineOffset:'-10px',textDecorationSkipInk:'none'};
+   page.append(deco('h1',{margin:'0',fontSize:'62px',lineHeight:'1.16',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.04em',...stroke},[main]));
    page.append(el('div',{flex:'1'}));
+   if(items.length)page.append(optional(deco('div',{marginBottom:'14px'},pointList(items,(s,i,label)=>el('div',{fontSize:'15px',lineHeight:'1.5',fontWeight:'800',color:t.ink},[`${i+1}. ${label}`])))));
+   if(sub)page.append(deco('div',{fontSize:'22px',lineHeight:'1.35',fontWeight:'800',color:t.ink,textAlign:'right',...BALANCE},[sub]));
+   page.append(deco('div',{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'14px',paddingTop:'8px',borderTop:`3px solid ${t.ink}`,fontSize:'11px',fontWeight:'900',color:t.ink},[el('span',{},['长文 / 划重点']),el('span',{color:t.accent},[`${stats.minutes} MIN`])]));
    return page;
   },
  };
 }
 
-// 轻读: plain notebook post. White page, consistent header and footer bars, sans text, underlined headings.
-const NOTE={id:'note',size:13,leading:1.72,gap:8,refSize:9,refGap:3,paper:'#ffffff',surface:'#f3eff2',ink:'#221f22',body:'#2d2a2d',muted:'#7b7379',rule:'#e3dde1',accent:'#8f7a8c',pad:{top:44,right:26,bottom:38,left:26}};
+// 轻读: reading note. A white sheet with rounded corners on a sage page, sans text.
+const NOTE={id:'note',size:13,leading:1.72,gap:8,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#e4e9e2',surface:'#f1f4ef',ink:'#1f2420',body:'#2c322d',muted:'#748074',rule:'#dfe5dd',accent:'#6f8a6e',pad:{top:44,right:26,bottom:38,left:26}};
 function note(template,opts){
  const t=tokens(template,NOTE,opts);const {px}=t;
  return {...t,
-  shell:{background:t.paper,color:t.body,fontFamily:SANS},
+  shell:{background:t.backdrop,color:t.body,fontFamily:SANS},
+  sheet:{position:'absolute',inset:'10px',background:t.paper,borderRadius:'14px'},
   lead:b=>html(el('p',text(t,{color:t.ink})),b.html,t),
   p:b=>html(el('p',text(t)),b.html,t),
   section(b){return el('header',{margin:'12px 0 8px',display:'flex',flexDirection:'column-reverse'},[
@@ -389,14 +393,17 @@ function note(template,opts){
    page.append(deco('div',{position:'absolute',bottom:'14px',left:t.pad.left+'px',right:t.pad.right+'px',borderTop:`1px solid ${t.rule}`}));
   },
   cover({title:main,subtitle:sub,points:items,stats,width,height}){
-   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'34px 26px 26px'});
-   page.append(deco('div',{fontSize:'11px',color:t.muted,fontWeight:'600'},[`长文 · ${stats.figures} 张图解 · ${stats.minutes} 分钟`]));
-   page.append(el('div',{flex:'0.7'}));
-   page.append(deco('h1',{margin:'0',fontSize:'46px',lineHeight:'1.2',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE},[main]));
-   if(sub)page.append(deco('div',{marginTop:'16px',fontSize:'19px',lineHeight:'1.45',color:t.accent,fontWeight:'600',...BALANCE},[sub]));
-   if(items.length)page.append(optional(deco('div',{marginTop:'18px',borderTop:`1px solid ${t.ink}`},pointList(items,(s,i,label)=>el('div',{fontSize:'14px',lineHeight:'1.4',padding:'6px 0',borderBottom:`1px solid ${t.rule}`,fontWeight:'700'},[label])))));
-   page.append(el('div',{flex:'1'}));
-   page.append(deco('div',{borderTop:`1px solid ${t.ink}`,paddingTop:'7px',fontSize:'10px',color:t.muted},['长按收藏，慢慢读']));
+   // Sage page with the note on a white card below the title.
+   const page=coverPage(t,width,height,{fontFamily:SANS,padding:'30px 22px 22px',background:t.backdrop});
+   page.append(deco('div',{display:'flex',alignItems:'center',gap:'6px',fontSize:'11px',fontWeight:'700',color:t.accent},[el('span',{width:'7px',height:'7px',borderRadius:'50%',background:t.accent}),el('span',{},['读书笔记'])]));
+   page.append(deco('h1',{margin:'18px 0 0',fontSize:'40px',lineHeight:'1.25',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE},[main]));
+   page.append(el('div',{flex:'1',minHeight:'16px'}));
+   const card=[];
+   if(sub)card.push(el('div',{fontSize:'18px',lineHeight:'1.45',fontWeight:'700',color:t.ink,...BALANCE},[sub]));
+   if(items.length)card.push(optional(el('div',{},pointList(items,(s,i,label)=>el('div',{fontSize:'13.5px',lineHeight:'1.4',padding:'5px 0',borderTop:`1px solid ${t.rule}`},[`□ ${label}`])))));
+   card.push(el('div',{display:'flex',justifyContent:'space-between',fontSize:'10.5px',color:t.muted,paddingTop:'8px',borderTop:`1px dashed ${t.rule}`},[el('span',{},[`${stats.figures} 张图解`]),el('span',{},[`约 ${stats.minutes} 分钟`])]));
+   page.append(deco('div',{background:t.paper,borderRadius:'14px',padding:'16px 16px 12px',display:'flex',flexDirection:'column',gap:'10px'},card));
+   page.append(deco('div',{marginTop:'12px',fontSize:'10px',color:t.muted,textAlign:'center'},['收藏，慢慢读']));
    return page;
   },
  };

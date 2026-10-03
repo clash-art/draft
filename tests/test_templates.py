@@ -71,7 +71,7 @@ class TemplateTests(unittest.TestCase):
     self.assertEqual(soup.get_text(),BeautifulSoup(render(html,BUILTINS[0]),'html.parser').get_text())
     self.assertEqual(soup.figure.figcaption.get_text(),'图')
     self.assertNotIn('<style',html);self.assertNotIn('class=',html)
- def test_builtin_palettes_are_soft(self):
+ def test_builtin_palettes_are_valid(self):
   from article_styles import PALETTES
   import json
   from palette import saturation
@@ -80,7 +80,7 @@ class TemplateTests(unittest.TestCase):
   presets=json.loads((Path(__file__).resolve().parents[1]/'assets/xhs-longform-presets.json').read_text())
   self.assertEqual(len({t['accent'] for t in presets}),len(presets))
   for t in presets+BUILTINS:
-   with self.subTest(template=t['id']):self.assertLessEqual(saturation(t['accent']),0.45)
+   with self.subTest(template=t['id']):self.assertLessEqual(saturation(t['accent']),0.85)
  def test_figures_are_toned_to_layout_without_touching_originals(self):
   from PIL import Image
   with tempfile.TemporaryDirectory() as tmp:
@@ -101,5 +101,5 @@ class TemplateTests(unittest.TestCase):
   self.assertEqual(validate_palette({'paper':'#f3efe9'}),{'paper':'#f3efe9'})
   self.assertIsNone(validate_palette(None))
   self.assertGreater(contrast('#000000','#ffffff'),20)
-  for bad in ({'primary':'#12345'},{'ink':'#f0f0f0','paper':'#ffffff'},{'on_primary':'#ffffff','primary':'#ffd100'},{'primary':'#2c1fea'},{'accent':'#e60023'},{'paper':'#ffe066'},{'background':'#ffffff'},{'name':'only'}):
+  for bad in ({'primary':'#12345'},{'ink':'#f0f0f0','paper':'#ffffff'},{'on_primary':'#ffffff','primary':'#ffd100'},{'primary':'#ff00ff'},{'accent':'#e60023'},{'paper':'#ffe066'},{'background':'#ffffff'},{'name':'only'}):
    with self.assertRaises(ValueError):validate_palette(bad)

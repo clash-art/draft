@@ -14,16 +14,16 @@
  "template": {
   "id": "xhs-blueprint",
   "name": "蓝图",
-  "description": "白底点阵 · 宋体大标题 · 虚线图框 · 雾霾蓝点缀",
+  "description": "纯白点阵 · 宋体大标题 · 蓝色线框与蓝墨插图",
   "layout": "blueprint",
-  "accent": "#6e8098",
+  "accent": "#2f5bea",
   "font_size": 13,
   "line_height": 1.7,
   "paragraph_gap": 7,
   "reference_size": 8.5,
   "reference_gap": 2,
   "page_ratio": "3:4",
-  "figure_tone": "muted"
+  "figure_tone": "duotone"
  },
  "revision": "3a6014f6d7f84c59a6f070e6cb7438e0",
  "source_revision": "40859d54d33d4746af54efe7ddbfbb0a",

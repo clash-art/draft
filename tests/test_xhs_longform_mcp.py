@@ -53,7 +53,7 @@ class LongformMcpTests(unittest.TestCase):
    pages=layout['pages']
    self.assertEqual(layout['page_count'],len(pages),path.name)
    self.assertLessEqual(layout['page_count'],10,path.name)
-   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),6,path.name)
+   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),7,path.name)
    self.assertEqual(sum(p.get('references',0) for p in pages),21,path.name)
    self.assertEqual(pages[0].get('figures',[]),[],path.name)
    self.assertNotIn('cover_image',layout,path.name)
@@ -143,7 +143,7 @@ class LongformMcpTests(unittest.TestCase):
   exported=self.save(page_images=pages,page_count=10,rendered_for_revision=saved['revision'])
   changed=self.save(palette={**brand,'primary':'#4a6d47'})
   self.assertEqual((changed['page_images'],changed['render_pending']),([],True))
-  for bad in ({'primary':'blue'},{'text':'#eeeeee','paper':'#ffffff'},{'logo':'#000000'},{'primary':'#2c1fea'},{'paper':'#ffe066'}):
+  for bad in ({'primary':'blue'},{'text':'#eeeeee','paper':'#ffffff'},{'logo':'#000000'},{'primary':'#ff00ff'},{'paper':'#ffe066'}):
    with self.assertRaises(ValueError):self.save(palette=bad)
   wechat=server.get_channel_brief(self.id,'wechat')
   self.assertEqual((wechat['template']['id'],wechat['palette']),('blueprint',None))

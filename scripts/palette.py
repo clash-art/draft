@@ -1,7 +1,6 @@
-"""Colour tokens. Every template ships its own soft palette: a light paper (white, cool grey or a
-pale muted tint), dark ink and one low-saturation Morandi accent. An edition may override any
-token, but colours must stay soft: paper and text tokens are near-neutral, and primary/accent
-are muted (low saturation), never vivid brand hues."""
+"""Colour tokens. Every template ships its own palette (white, dark, cool or warm paper; a couple
+are Morandi) with one tasteful accent. An edition may override any token: paper and text tokens
+stay near-neutral, and primary/accent may be crisp but not neon (saturation is capped)."""
 import re
 
 KEYS=('paper','surface','ink','text','muted','primary','on_primary','accent','rule')
@@ -20,7 +19,7 @@ def contrast(a,b):
 
 NEUTRAL=('paper','surface','ink','text','muted','rule')
 MAX_CHROMA=28
-MAX_SATURATION=0.45
+MAX_SATURATION=0.85
 def chroma(color):
  c=[int(color[i:i+2],16) for i in (1,3,5)]
  return max(c)-min(c)
@@ -47,9 +46,7 @@ def validate_palette(value):
  for key in NEUTRAL:
   if key in out and chroma(out[key])>MAX_CHROMA:raise ValueError(f'配色 {key} 应接近中性（{out[key]} 颜色太重）；纸面可用白、浅灰或很淡的莫兰迪色')
  for key in ('primary','accent'):
-  if key in out and saturation(out[key])>MAX_SATURATION:raise ValueError(f'配色 {key} 太鲜艳（{out[key]}）；请用低饱和的莫兰迪色，如灰蓝、灰绿、陶土、灰紫、暖灰')
- for key in ('paper','surface'):
-  if key in out and _luminance(out[key])<0.75:raise ValueError(f'配色 {key} 应为白色或浅灰纸面')
+  if key in out and saturation(out[key])>MAX_SATURATION:raise ValueError(f'配色 {key} 太刺眼（{out[key]}）；请用克制的点缀色')
  for fg,bg,minimum in READABLE:
   if fg in out and bg in out and contrast(out[fg],out[bg])<minimum:raise ValueError(f'配色 {fg} 与 {bg} 对比度不足（{contrast(out[fg],out[bg]):.1f}，需要 ≥ {minimum}）')
  for key,limit in (('name',40),('source',300)):
