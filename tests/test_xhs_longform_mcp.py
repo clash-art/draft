@@ -133,6 +133,10 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual((again['page_images'],again['render_pending']),([],True))
   for bad in ({'points':['x']*6},{'points':['长'*31]},{'title':'长'*41},'封面'):
    with self.assertRaises(ValueError):self.save(cover_page=bad)
+  short=self.save(cover_page={**plan,'lines':['一个正在','升温的','大模型新方向']})
+  self.assertEqual(short['cover_page']['lines'],['一个正在','升温的','大模型新方向'])
+  for bad in (['一行'],['长'*11,'短'],['a']*5,['好',' ']):
+   with self.assertRaises(ValueError):self.save(cover_page={**plan,'lines':bad})
 
  def test_illustrations_are_planned_then_filled(self):
   edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))

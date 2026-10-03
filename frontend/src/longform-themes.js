@@ -443,13 +443,13 @@ function canvas(template,opts){
  };
 }
 
-// 手绘 (after 是金三啊's minimal posts): white dot-grid paper, one sticker-style concept illustration generated
-// for the article (edition illustrations; falls back to a cleanly framed article figure) and large rounded type
-// in soft black with plenty of air.
-const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#fafaf8',surface:'#f5f5f2',ink:'#303030',body:'#363636',muted:'#8f8f8b',rule:'#e4e4e0',accent:'#d9893a',pad:{top:50,right:24,bottom:28,left:24}};
+// 手绘 (after 是金三啊's minimal posts): warm off-white paper with a barely visible dot texture, a small quiet
+// grey doodle generated for the article (edition illustrations) and one chunky title in a single size.
+const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#f8f7f3',surface:'#f0efea',ink:'#363636',body:'#3a3a3a',muted:'#8f8f8b',rule:'#e4e3de',accent:'#d39a52',pad:{top:50,right:24,bottom:28,left:24}};
+const ROUNDED='"Yuanti SC","HarmonyOS Sans SC",'+SANS;
 function doodle(template,opts){
  const t=tokens(template,DOODLE,opts);const {px}=t;
- const dots={background:t.backdrop,backgroundImage:`radial-gradient(${mix(t.backdrop,t.ink,0.16)} 0.8px,transparent 0.9px)`,backgroundSize:'13px 13px'};
+ const dots={background:t.backdrop,backgroundImage:`radial-gradient(${mix(t.backdrop,t.ink,0.07)} 0.8px,transparent 0.9px)`,backgroundSize:'14px 14px'};
  const bold=(size,extra)=>({fontSize:px(size),lineHeight:'1.55',fontWeight:'800',color:t.ink,...extra});
  // Filled by the renderer from edition.illustrations: slot -> {src, concept}.
  const art={};
@@ -461,7 +461,7 @@ function doodle(template,opts){
   lead:b=>html(el('p',text(t,{color:t.ink,textAlign:'left'})),b.html,t),
   p:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
   section(b){const head=el('div',{flex:'1',minWidth:'0'},[el('div',{fontSize:px(0.8),fontWeight:'800',color:t.accent,marginBottom:'2px'},[b.number]),phrased(html(el('h3',bold(1.3,{margin:'0',lineHeight:'1.5',textAlign:'left'})),b.html,t))]);
-   const item=art[`section:${b.number}`];return el('header',{margin:'8px 0 10px',display:'flex',alignItems:'flex-end',gap:'10px'},[head,item?sticker(item,52):null])},
+   const item=art[`section:${b.number}`];return el('header',{margin:'8px 0 10px',display:'flex',alignItems:'flex-end',gap:'10px'},[head,item?sticker(item,46):null])},
   heading:b=>html(el('h4',bold(1.08,{margin:'10px 0 5px'})),b.html,t),
   label:b=>html(el('div',bold(1,{margin:'10px 0 4px'})),b.html,t),
   pair:b=>keyPair(t,el('p',text(t,{textAlign:'left',margin:'0 0 6px'})),b),
@@ -474,15 +474,12 @@ function doodle(template,opts){
   frame(page,{index,total,byline}){
    page.append(deco('div',{position:'absolute',top:'18px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',alignItems:'center',gap:'9px'},[avatar(nameOf(byline),28,{border:`1.5px solid ${t.ink}`,background:t.paper,color:t.ink}),el('div',{display:'flex',flexDirection:'column',gap:'2px'},[el('span',{fontSize:'12px',fontWeight:'800',color:t.ink,lineHeight:'1.2'},[nameOf(byline)]),el('span',{fontSize:'9.5px',color:t.muted,lineHeight:'1.2'},[[byline?.handle,`${index}/${total}`].filter(Boolean).join(' · ')])])]));
   },
-  cover({title:main,subtitle:sub,image,illustrations={},stats,width,height}){
-   const page=coverPage(t,width,height,{...dots,fontFamily:SANS,padding:'30px 26px 24px'});
+  cover({title:main,lines,illustrations={},width,height}){
+   const page=coverPage(t,width,height,{...dots,fontFamily:ROUNDED,position:'relative',padding:'0'});
    const item=illustrations.cover;
-   if(item)page.append(deco('div',{display:'flex',justifyContent:'flex-start',marginTop:'4px'},[sticker(item,200)]));
-   else if(image)page.append(deco('div',{display:'flex',justifyContent:'center',marginTop:'8px'},[el('img',{display:'block',width:'236px',height:'auto',borderRadius:'12px',border:`1px solid ${t.rule}`},[],{src:image.src,alt:''})]));
-   page.append(el('div',{flex:'1'}));
-   page.append(deco('h1',{margin:'0',fontSize:'40px',lineHeight:'1.38',fontWeight:'800',color:t.ink,letterSpacing:'0.04em',textAlign:'left',...BALANCE},[main]));
-   if(sub)page.append(deco('div',{marginTop:'8px',fontSize:'19px',lineHeight:'1.45',fontWeight:'700',color:t.muted,letterSpacing:'0.04em'},[sub]));
-   page.append(deco('div',{marginTop:'14px',fontSize:'10.5px',color:t.muted},[`${stats.figures} 张图 · 约 ${stats.minutes} 分钟`]));
+   if(item)page.append(deco('div',{position:'absolute',left:'36px',top:Math.round(height*0.19)+'px'},[sticker(item,132)]));
+   const type={margin:'0',fontSize:'45px',lineHeight:'54px',fontWeight:'800',color:t.ink,letterSpacing:'0.02em',textAlign:'left'};
+   page.append(deco('h1',{position:'absolute',left:'36px',right:'30px',top:Math.round(height*0.545)+'px',...type,...(lines?{}:BALANCE)},lines?lines.map(line=>el('div',{whiteSpace:'nowrap'},[line])):[main]));
    return page;
   },
  };

@@ -203,7 +203,7 @@ function fillOf(content){const last=content.lastElementChild;return last?Math.ro
 function coverContent(edition,sectionPages){
  const plan=edition.cover_page||{},[main,sub]=splitTitle(edition.title||'');
  const points=Array.isArray(plan.points)&&(plan.points.length||edition.cover_page)?plan.points.map((label,i)=>({number:String(i+1).padStart(2,'0'),label:String(label)})):sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
- return {title:plan.title||main,subtitle:plan.subtitle??sub,points,byline:plan.byline||null};
+ return {title:plan.title||main,subtitle:plan.subtitle??sub,lines:Array.isArray(plan.lines)?plan.lines.map(String):null,points,byline:plan.byline||null};
 }
 // Width of a block's last line relative to its text column (0–1).
 function lastLineFill(node){

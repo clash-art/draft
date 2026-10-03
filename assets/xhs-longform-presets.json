@@ -86,9 +86,9 @@
   {
     "id": "xhs-doodle",
     "name": "手绘",
-    "description": "白色点阵 · 正文配图干净装框 · 大号圆润标题 · 大量留白",
+    "description": "暖白纸面 · 一张灰线小涂鸦 · 只有大号圆润标题 · 大量留白",
     "layout": "doodle",
-    "accent": "#d9893a",
+    "accent": "#d39a52",
     "font_size": 13,
     "line_height": 1.68,
     "paragraph_gap": 7,

@@ -60,6 +60,10 @@ def cover_page(value):
  title,subtitle=str(value.get('title','')).strip(),str(value.get('subtitle','')).strip()
  if len(title)>40 or len(subtitle)>60:raise ValueError('封面标题或副标题过长')
  out={'title':title,'subtitle':subtitle,'points':[p.strip() for p in points]}
+ lines=value.get('lines')
+ if lines:
+  if not isinstance(lines,list) or not 2<=len(lines)<=4 or any(not isinstance(x,str) or not x.strip() or len(x.strip())>10 for x in lines):raise ValueError('封面短标题分 2–4 行，每行不超过 10 字')
+  out['lines']=[x.strip() for x in lines]
  image=value.get('image')
  if image:
   if not isinstance(image,str) or not re.fullmatch(r'images/[a-f0-9]{32}\.png',image):raise ValueError('封面图片请使用已上传的图片')
