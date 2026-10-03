@@ -5,6 +5,8 @@ import markdown
 from bs4 import BeautifulSoup
 from wechat import save_json
 
+# Article layouts plus the Xiaohongshu longform page themes (folio/brief/note).
+LAYOUTS=('graphite','wechat','essay','journal','lab','letter','folio','brief','note')
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
 BUILTINS=[dict(BASE,id='graphite',name='石墨简报',description='细线章节 · 悬挂文献 · 技术长文',layout='graphite'),dict(BASE,id='wechat',name='微信清读',description='轻盈标题 · 浅底引文 · 知识分享',layout='wechat',accent='#07883f'),dict(BASE,id='essay',name='人文札记',description='宋体标题 · 留白段落 · 观点随笔',layout='essay',accent='#795548',line_height=2,paragraph_gap=22)]
 BUILTINS += [
@@ -38,7 +40,7 @@ def validate(value):
     accent=str(value.get('accent',BASE['accent']))
     if not re.fullmatch(r'#[0-9a-fA-F]{6}',accent):raise ValueError('主题色应为六位十六进制颜色')
     layout=value.get('layout',value.get('id','graphite'))
-    out['layout']=layout if layout in ('graphite','wechat','essay','journal','lab','letter') else 'graphite'
+    out['layout']=layout if layout in LAYOUTS else 'graphite'
     out['accent']=accent
     if value.get('cover_style') in ('editorial','geek-report','consulting-report','clean-review'):out['cover_style']=value['cover_style']
     if value.get('page_ratio') in ('3:4','3:5','1:1','9:16'):out['page_ratio']=value['page_ratio']
