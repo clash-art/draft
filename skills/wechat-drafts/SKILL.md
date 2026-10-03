@@ -91,11 +91,18 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 1. `get_channel_brief`，确认 `format` 为 longform，阅读 `instructions` 和 `source.markdown`。源稿始终不改。
 2. 完整版（默认）：`body` 与源稿一致，`images` 含全部素材，`condensed` 为 false；`completeness.body_matches_source` 应为 true、`missing_images` 为空。
 3. 精简版（仅当用户要求，例如"10 页以内"）：Agent 自己写精简正文，按插图顺序组织，每张保留的图配一两句说明，信息密集的图独占一页全宽展示；用单独一行 `<!-- page -->` 指定分页；参考资料全部保留，可改成短格式（名称 + 去掉协议的链接）集中在最后一页。`images` 只列正文实际使用的图，传 `condensed: true`。
-4. 封面内容用 `cover_page` 传：`{title, subtitle, points, image?}`（image 可选：从正文配图裁出一块清晰、醒目的局部，如人物和对话气泡；线稿、图文、转述、画布、手绘、大字等图文封面会显示，文字封面忽略），points 最多 5 条、每条不超过 30 字，大字号可读即可；封面不放小图或完整架构图，图放进正文页。不传时用标题冒号前后作主副标题、章节名作要点。
+4. 封面内容用 `cover_page` 传：`{title, subtitle, points, image?}`（image 可选：只用正文里的配图，可裁出一块清晰、醒目的局部，如人物和对话气泡，不用图库照片或生成图；线稿、图文、转述、画布、手绘、开发日志、大字等图文封面会显示，文字封面忽略），points 最多 5 条、每条不超过 30 字，大字号可读即可；封面不放小图或完整架构图，图放进正文页。不传时用标题冒号前后作主副标题、章节名作要点。
 5. 配色用模板自带的柔和配色，默认不传 `palette`（见下方「配色」）。小红书最多 10 张图（含封面），超过会被拒绝。
 6. 用 `list_channel_templates` 选内置模板（蓝图、推文，以及按参考帖复刻的线稿、图文、转述、画布、手绘、开发日志、随笔、分册、大字，另有三套组合）或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
-7. 修改 body、cover_page、palette 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
+7. 只有选「手绘」模板时可以加概念插图（原地出素材，见下方「手绘插图」）：先在 `illustrations` 里规划，再生成、导入、回填。
+8. 修改 body、cover_page、illustrations、palette 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
 
 配色（公众号与小红书通用）：不取项目品牌色。每套模板自带自己的配色气质（纯白、深色、冷灰、暖纸，只有一两套是莫兰迪），点缀色克制但不必是粉灰，只用于编号、小标签、细线和链接；不用霓虹色、大面积色块或渐变。插图按模板处理（`figure_tone`：muted / duotone / original）。`palette` 只是可选覆盖，默认不传；纸面与文字接近中性、点缀色饱和度有上限，正文与纸面对比度须 ≥ 4.5。
+
+手绘插图（仅「手绘」模板；其他模板只用正文配图）：
+- 规划：`save_channel_edition` 传 `illustrations`，最多 4 条 `{slot, concept, prompt, image}`。`slot` 为 `cover` 或 `section:01` 这样的章节编号（与正文章节编号一致）；`concept` 是这张图要抽象表达的一个想法（不超过 40 字，例如"反馈让 Agent 一圈圈变好"）；`prompt` 是完整的生成提示词（不超过 800 字）；`image` 先留空。封面一张最重要，章节插图可选，宁少勿多。
+- 生成：对每条没有 `image` 的插图，用当前环境可用的图像生成工具按 `prompt` 生成方图（1:1，PNG，透明或纯白底），用 `import_image` 导入得到 `images/<id>.png`，再保存一次渠道版本并把 `image` 填上。生成图只放在 `illustrations`，不写进正文、不列入 `images`。
+- 未生成时：渲染器在对应位置显示「插图待生成」虚线占位框（带 concept），可以先预览排版，但发布前应补齐或删掉该条。
+- 提示词风格（写进每条 prompt）：一个简单、可爱的物件或小场景，抽象地表达这个想法（例如火箭升空表示"升温"、回旋箭头加小植物表示"持续改进"），不画人物肖像、不画机器人脸、不画图表或界面；粗黑色手绘描边（线宽均匀、略带手感），贴纸风格，2–3 种柔和的平涂色（米黄、浅灰、淡橙或淡绿），无渐变、无阴影、无文字；物件居中，四周大量留白，白色或透明背景，适合放在白色点阵纸上。
 
 小红书模板可组合：`layout` 决定内页，`cover_layout` 换用另一套模板的封面，`palette_from` 换用另一套的配色，`figure_tone` 决定插图处理。内置三套组合（图文 × 随笔、线稿 × 推文、大字 × 开发日志）；也可以按文章用 `save_channel_template` 自行组合，仍须控制在 10 张图以内。

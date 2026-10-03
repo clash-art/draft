@@ -134,6 +134,25 @@ class LongformMcpTests(unittest.TestCase):
   for bad in ({'points':['x']*6},{'points':['长'*31]},{'title':'长'*41},'封面'):
    with self.assertRaises(ValueError):self.save(cover_page=bad)
 
+ def test_illustrations_are_planned_then_filled(self):
+  edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))
+  shipped=edition['illustrations']
+  self.assertEqual([x['slot'] for x in shipped],['cover','section:01','section:03','section:04'])
+  self.assertTrue(all((EXAMPLE/x['image']).is_file() and x['prompt'] for x in shipped))
+  self.assertFalse({x['image'] for x in shipped}&set(edition['images']))
+  self.assertEqual(self.brief()['current_edition']['illustrations'],shipped)
+  plan=[{'slot':'cover','concept':'反馈让 Agent 变好','prompt':'sticker of a sprout in a loop','image':None}]
+  saved=self.save(illustrations=plan)
+  self.assertEqual(saved['illustrations'],plan)
+  self.assertTrue(saved['render_pending'])
+  art=self.ws.dispatch('/api/upload',{'name':'art.png','data':png((600,600))})['ref']
+  filled=self.save(illustrations=[{**plan[0],'image':art}])
+  self.assertEqual(filled['illustrations'][0]['image'],art)
+  self.assertNotEqual(filled['revision'],saved['revision'])
+  self.assertEqual(self.save(title=filled['title'])['illustrations'][0]['image'],art)
+  for bad in ([{**plan[0],'slot':'page:2'}],plan+plan,[{**plan[0],'prompt':''}],[{**plan[0],'concept':'长'*41}],[{**plan[0],'image':'images/'+'0'*32+'.png'}],[{**plan[0],'image':'https://x/a.png'}]):
+   with self.assertRaises(ValueError):self.save(illustrations=bad)
+
  def test_palette_is_edition_data_for_both_channels(self):
   brand={'name':'Example','primary':'#7c8b78','paper':'#f3efe9','ink':'#24201c','text':'#2e2924'}
   saved=self.save(palette=brand)

@@ -39,7 +39,7 @@ PALETTE_HINT=('配色默认用所选模板自带的配色（各模板气质不�
  '只有用户明确要求时才传 palette 覆盖：纸面与文字接近中性，primary/accent 克制、不用霓虹色，不取项目品牌色，不做大面积色块或渐变；正文与纸面对比度需 ≥ 4.5。'
  '小红书模板可组合：cover_layout 换封面、palette_from 换配色、figure_tone 换插图处理（muted/duotone/original）。')
 BRIEF_INSTRUCTIONS=('小红书笔记最多 10 张图（含封面），渲染器超过 10 页会拒绝导出。全文能排进 10 页时保留原稿标题、完整正文、段落顺序、图片和全部参考资料，body 与源稿一致，不总结、不删减、不改写事实，不生成摘要卡片。'
- '排不进 10 页或用户要求精简时改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点（可选 image 指定一张封面大图，只有部分模板显示），保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
+ '排不进 10 页或用户要求精简时改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点（可选 image 指定一张封面大图，从正文配图裁切，只有部分模板显示）；「手绘」模板另可用 illustrations 规划概念插图（每张写 slot、concept、prompt，生成后导入并回填 image），保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
  '模板只决定字号、行距、颜色和装饰，不决定内容；从 templates 中选一项传给 save_channel_edition（format=longform）。不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。'+PALETTE_HINT)
 MAX_PAGES=10
 IMAGE_REF=re.compile(r'!\[[^\]]*\]\(\s*<?([^)\s>]+)')
@@ -70,6 +70,22 @@ def cover_page(value):
   name,handle=str(byline.get('name','')).strip(),str(byline.get('handle','')).strip()
   if not name or len(name)>20 or (handle and not re.fullmatch(r'@?[\w.\u4e00-\u9fff]{1,20}',handle)):raise ValueError('署名名称不超过 20 字，账号只含字母、数字、下划线或中文')
   out['byline']={'name':name,'handle':handle if not handle or handle.startswith('@') else '@'+handle}
+ return out
+ILLUSTRATION_SLOT=re.compile(r'cover|section:\d{2}')
+def illustrations(value):
+ """Concept illustrations planned by the agent for templates that show them (手绘). One idea per slot with
+ its generation prompt; the image is generated afterwards, imported, and saved back as `image`."""
+ if not value:return []
+ if not isinstance(value,list) or len(value)>4:raise ValueError('插图最多 4 张')
+ out=[]
+ for item in value:
+  if not isinstance(item,dict):raise ValueError('插图无效')
+  slot,concept,prompt=(str(item.get(k,'')).strip() for k in ('slot','concept','prompt'))
+  if not ILLUSTRATION_SLOT.fullmatch(slot) or slot in [x['slot'] for x in out]:raise ValueError('插图位置只能是 cover 或 section:01 这样的章节编号，且不能重复')
+  if not concept or len(concept)>40 or not prompt or len(prompt)>800:raise ValueError('插图需要概念（不超过 40 字）和生成提示词（不超过 800 字）')
+  image=item.get('image') or None
+  if image is not None and (not isinstance(image,str) or not re.fullmatch(r'images/[a-f0-9]{32}\.png',image)):raise ValueError('插图请使用已导入的图片')
+  out.append({'slot':slot,'concept':concept,'prompt':prompt,'image':image})
  return out
 def longform_template(ws,value,edition):
  if value:return validate(value)
@@ -138,8 +154,11 @@ def dispatch(ws,route,data):
   if format=='longform':
    cover=cover_page(data['cover_page']) if 'cover_page' in data else edition.get('cover_page')
    if cover and cover.get('image'):ws.image_path(cover['image'])
+   art=illustrations(data['illustrations']) if 'illustrations' in data else edition.get('illustrations',[])
+   for item in art:
+    if item['image']:ws.image_path(item['image'])
    condensed=bool(data.get('condensed',edition.get('condensed',False)))
-   changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template') or cover!=edition.get('cover_page') or palette!=edition.get('palette')
+   changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template') or cover!=edition.get('cover_page') or palette!=edition.get('palette') or art!=edition.get('illustrations',[])
    if data.get('rendered_for_revision'):
     if data['rendered_for_revision']!=edition['revision'] or changed:raise ValueError('文章版本已变化，请重新导出')
     refs=data.get('page_images',[])
@@ -152,7 +171,7 @@ def dispatch(ws,route,data):
       if img.format!='PNG' or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
     edition['page_images']=refs
    elif changed:edition['page_images']=[]
-   edition.update(cards=[],cover_page=cover,condensed=condensed,render_pending=not bool(edition.get('page_images')))
+   edition.update(cards=[],cover_page=cover,illustrations=art,condensed=condensed,render_pending=not bool(edition.get('page_images')))
 
   edition.update(title=title,body=body,images=images,template=template,palette=palette,revision=uuid.uuid4().hex,source_revision=e['revision'])
   save_json(path(ws,e['id'],channel),edition);return {**edition,'completeness':completeness(e,edition)}

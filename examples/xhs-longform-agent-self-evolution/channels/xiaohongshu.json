@@ -43,5 +43,31 @@
   },
   "image": "images/d0adaf9f590111be32022d0a3dcb9646.png"
  },
- "palette": null
+ "palette": null,
+ "illustrations": [
+  {
+   "slot": "cover",
+   "concept": "真实反馈让 Agent 一圈圈变好",
+   "prompt": "A small cute sticker-style illustration expressing the idea 'real feedback makes an agent improve loop after loop': a young green sprout in a small round terracotta-beige pot, encircled by one thick hand-drawn looping arrow that goes around it once. Thick even black hand-drawn outlines with a slightly wobbly hand feel, flat fills in 2-3 soft colours (cream beige, pale orange, soft green), no gradients, no shadows, no text, no people, no robot faces, no charts or UI. Object centred with generous empty space around it on a plain pure white background.",
+   "image": "images/e6e38723b846536cb84d3e2026207835.png"
+  },
+  {
+   "slot": "section:01",
+   "concept": "改完先称一称：有没有真的变好",
+   "prompt": "A small cute sticker-style illustration expressing the idea 'measure before you believe it got better': a simple old-fashioned balance scale with two pans, one pan slightly lower holding a tiny star. Thick even black hand-drawn outlines with a slightly wobbly hand feel, flat fills in 2-3 soft colours (cream beige, light grey, pale orange), no gradients, no shadows, no text, no people, no robot faces, no charts or UI. Object centred with generous empty space around it on a plain pure white background.",
+   "image": "images/74a0b732cb185ea29d04697fb9b9a6cc.png"
+  },
+  {
+   "slot": "section:03",
+   "concept": "从生产记录里挖出真问题",
+   "prompt": "A small cute sticker-style illustration expressing the idea 'dig real problems out of production records': a small garden shovel stuck in a little mound of soil, with a tiny shiny gem peeking out of the soil. Thick even black hand-drawn outlines with a slightly wobbly hand feel, flat fills in 2-3 soft colours (cream beige, soft brown, pale orange), no gradients, no shadows, no text, no people, no robot faces, no charts or UI. Object centred with generous empty space around it on a plain pure white background.",
+   "image": "images/cce8bc12390bd75fdd39d588f7fc6bed.png"
+  },
+  {
+   "slot": "section:04",
+   "concept": "把反馈变成权重更新",
+   "prompt": "A small cute sticker-style illustration expressing the idea 'turn feedback into weight updates': a single round kettlebell weight with a small upward arrow beside it. Thick even black hand-drawn outlines with a slightly wobbly hand feel, flat fills in 2-3 soft colours (light grey, pale orange, soft green), no gradients, no shadows, no text, no people, no robot faces, no charts or UI. Object centred with generous empty space around it on a plain pure white background.",
+   "image": "images/391b6afcac84dffd07c8a39f95121e0f.png"
+  }
+ ]
 }
