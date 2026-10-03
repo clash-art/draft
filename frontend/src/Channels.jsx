@@ -4,7 +4,6 @@ import {XHS_ARTICLE_TEMPLATES} from './xhs-article-templates';
 import {ChannelAutosave} from './channel-autosave';
 import PagedArticle from './PagedArticle';
 import {paginateArticle,exportArticlePages} from './paged-article';
-import {longformPreview} from './longform-preview';
 import {exportCards} from './xhs-render';
 import XhsPreview from './XhsPreview';
 import RichEditor from './RichEditor';

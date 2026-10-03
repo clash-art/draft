@@ -14,6 +14,8 @@ export function el(tag,style={},children=[],attrs={}){
  return node;
 }
 const deco=(tag,style,children)=>el(tag,style,children,{'data-deco':'true','aria-hidden':'true'});
+// Cover extras that are dropped (last first) when a short page ratio cannot fit them.
+const optional=node=>{node.dataset.coverOptional='true';return node};
 function html(node,value,t){node.innerHTML=DOMPurify.sanitize(value||'');styleInline(node,t);return node}
 // Resets properties that the workbench's global CSS sets on bare elements.
 function styleInline(node,t){
@@ -91,6 +93,7 @@ function folio(template,opts){
    if(image)page.append(el('div',{flex:'1 1 auto',minHeight:'80px',marginTop:'16px',display:'flex',alignItems:'center',justifyContent:'center'},[el('div',{background:'#fff',padding:'5px',border:`1px solid ${t.rule}`,maxHeight:'100%',display:'flex'},[el('img',{display:'block',maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain'},[],{src:image.src,alt:'','data-ref':image.ref,'data-cover-image':'true'})])]));
    else page.append(el('div',{flex:'1'}));
    if(sections.length)page.append(deco('div',{marginTop:'14px'},[el('div',{fontFamily:SANS,fontSize:'8.5px',letterSpacing:'0.3em',color:t.accent,marginBottom:'5px'},['CONTENTS']),...sections.map(s=>el('div',{display:'flex',alignItems:'baseline',gap:'8px',padding:'3px 0',borderTop:`1px solid ${t.rule}`,fontSize:'11.5px',lineHeight:'1.45'},[el('span',{color:t.accent,fontWeight:'700',width:'18px',flexShrink:'0'},[s.number]),el('span',oneLine({flex:'1',color:t.ink}),[headingText(s.html)]),el('span',{color:t.muted,fontSize:'10px',fontFamily:SANS},[String(s.page)])]))]));
+   if(sections.length)optional(page.lastElementChild);
    return page;
   },
  };
@@ -130,7 +133,9 @@ function brief(template,opts){
    if(image)page.append(el('div',{flex:'1 1 auto',minHeight:'80px',marginTop:'16px',display:'flex',alignItems:'center'},[el('div',{background:'#fff',padding:'5px',borderRadius:'6px',maxHeight:'100%',display:'flex'},[el('img',{display:'block',maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain',borderRadius:'3px'},[],{src:image.src,alt:'','data-ref':image.ref,'data-cover-image':'true'})])]));
    else page.append(el('div',{flex:'1'}));
    if(sections.length)page.append(deco('div',{marginTop:'12px'},sections.map(s=>el('div',{display:'flex',alignItems:'baseline',gap:'9px',padding:'4px 0',borderBottom:'1px solid rgba(255,255,255,0.12)',fontSize:'11px',lineHeight:'1.45'},[el('span',{fontFamily:MONO,color:light,fontWeight:'700',fontSize:'10px'},[s.number]),el('span',oneLine({flex:'1',color:'rgba(255,255,255,0.88)'}),[headingText(s.html)]),el('span',{fontFamily:MONO,color:'rgba(255,255,255,0.5)',fontSize:'9.5px'},[`P.${String(s.page).padStart(2,'0')}`])]))));
+   if(sections.length)optional(page.lastElementChild);
    page.append(deco('div',{display:'flex',marginTop:'12px',gap:'8px'},[[stats.figures,'幅配图'],[stats.references,'条参考资料'],[stats.minutes,'分钟阅读']].map(([n,l])=>el('div',{flex:'1',borderTop:`2px solid ${t.accent}`,paddingTop:'5px'},[el('div',{fontFamily:MONO,fontSize:'17px',lineHeight:'1.2',fontWeight:'700',color:'#fff'},[String(n)]),el('div',{fontSize:'8.5px',color:'rgba(255,255,255,0.6)',marginTop:'1px'},[l])]))));
+   optional(page.lastElementChild);
    return page;
   },
  };
@@ -169,6 +174,7 @@ function note(template,opts){
    if(image)page.append(el('div',{flex:'1 1 auto',minHeight:'80px',marginTop:'16px',display:'flex',alignItems:'center',justifyContent:'center'},[el('div',{background:'#fff',padding:'7px',borderRadius:'14px',boxShadow:'0 6px 18px rgba(80,50,20,0.10)',maxHeight:'100%',display:'flex'},[el('img',{display:'block',maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain',borderRadius:'8px'},[],{src:image.src,alt:'','data-ref':image.ref,'data-cover-image':'true'})])]));
    else page.append(el('div',{flex:'1'}));
    if(sections.length)page.append(deco('div',{marginTop:'14px',background:'#fff',borderRadius:'14px',padding:'9px 14px'},sections.map((s,i)=>el('div',{display:'flex',alignItems:'center',gap:'9px',padding:'3px 0',borderTop:i?`1px dashed ${t.rule}`:'none',fontSize:'11px',lineHeight:'1.5'},[el('span',{width:'17px',height:'17px',borderRadius:'50%',background:i?t.soft:t.accent,color:i?t.accent:'#fff',fontSize:'9px',fontWeight:'800',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:'0'},[String(Number(s.number)||i+1)]),el('span',oneLine({flex:'1',color:t.ink,fontWeight:'600'}),[headingText(s.html)]),el('span',{color:t.muted,fontSize:'9.5px'},[`P${s.page}`])]))));
+   if(sections.length)optional(page.lastElementChild);
    return page;
   },
  };

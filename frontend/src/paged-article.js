@@ -159,9 +159,12 @@ async function layoutOnce(edition,api,imageMap,opts){
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
   host.append(cover);
   const hero=cover.querySelector('[data-cover-image]');
-  if(hero){await hero.decode().catch(()=>{});const slot=hero.parentElement.parentElement,frame=hero.parentElement,s=getComputedStyle(frame);hero.style.maxHeight=Math.max(60,slot.clientHeight-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom)-2)+'px'}
-  const coverBottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);
-  if(!legacyCover&&[...cover.querySelectorAll('*')].some(c=>c.getBoundingClientRect().bottom>coverBottom+0.5))throw Error('封面内容超出页面，请缩短标题');
+  if(hero)await hero.decode().catch(()=>{});
+  const fitHero=()=>{if(!hero)return;hero.style.maxHeight='100%';const slot=hero.parentElement.parentElement,frame=hero.parentElement,s=getComputedStyle(frame);hero.style.maxHeight=Math.max(60,slot.clientHeight-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom)-2)+'px'};
+  const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>c.getBoundingClientRect().bottom>bottom+0.5)};
+  fitHero();
+  for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove();fitHero()}
+  if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
   if(coverRef&&!cover.querySelector(`img[data-ref="${coverRef}"]`))throw Error('封面图片未显示');
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
   const meta={template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,cover_image:coverRef||null,
