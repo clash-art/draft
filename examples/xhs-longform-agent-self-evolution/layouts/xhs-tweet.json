@@ -1,4 +1,6 @@
 {
+ "max_pages": 10,
+ "over_limit": false,
  "template": {
   "id": "xhs-tweet",
   "name": "推文",
@@ -11,7 +13,7 @@
   {
    "number": "01",
    "title": "先验证：改完有没有用",
-   "page": 3
+   "page": 4
   },
   {
    "number": "02",
@@ -45,43 +47,43 @@
    "page": 2,
    "section": null,
    "roles": [
-    "lead",
-    "figure"
+    "figure",
+    "lead"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.9,
-   "starts": "Hermes、ECC会把任务经验"
+   "fill": 0.92,
+   "starts": "Braintrust、Adali"
   },
   {
    "page": 3,
-   "section": "01",
+   "section": null,
    "roles": [
-    "section",
-    "p",
     "figure"
    ],
    "figures": [
-    "images/b88e98237d11484fa8ccffa36b05b23f.png"
+    "images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png",
+    "images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png"
    ],
    "references": 0,
-   "fill": 0.85,
-   "starts": "01先验证：改完有没有用Herm"
+   "fill": 0.96,
+   "starts": "放大：Braintrust与Ad"
   },
   {
    "page": 4,
    "section": "01",
    "roles": [
+    "section",
     "p",
     "label",
     "pair"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.96,
-   "starts": "风险是Agent把一次偶然成功写"
+   "fill": 0.9,
+   "starts": "01先验证：改完有没有用Herm"
   },
   {
    "page": 5,
@@ -95,7 +97,7 @@
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 0.95,
+   "fill": 0.96,
    "starts": "02上线：真实世界更复杂让订单A"
   },
   {
@@ -110,7 +112,7 @@
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.96,
+   "fill": 0.95,
    "starts": "03挖问题：Braintrust"
   },
   {
@@ -125,7 +127,7 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.92,
+   "fill": 0.95,
    "starts": "Braintrust与Adali"
   },
   {
@@ -154,7 +156,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 1,
+   "fill": 0.94,
    "starts": "05下一轮：让真实数据接着转同一"
   },
   {
@@ -166,7 +168,7 @@
    ],
    "figures": [],
    "references": 21,
-   "fill": 0.97,
+   "fill": 0.98,
    "starts": "参考资料〔1〕Hermesgit"
   }
  ]

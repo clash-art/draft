@@ -2,7 +2,7 @@
 import '../src/linear.css';
 import '../src/style.css';
 import '../src/channels.css';
-import {paginateArticle,layoutArticle,exportArticlePages} from '../src/paged-article';
+import {paginateArticle,layoutArticle,exportArticlePages,MAX_PAGES} from '../src/paged-article';
 async function api(path,data){
  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
  const value=await response.json();if(!response.ok)throw Error(value.error||response.statusText);return value;
@@ -23,7 +23,7 @@ async function render(templateId,{png=true,full=false,noPalette=false,ratio}={})
  const grid=document.getElementById('pages');grid.innerHTML=pages.map(html=>`<div class="paged-article-page">${html}</div>`).join('');
  if(!png)return {template,count:pages.length,meta};
  const captured=[];
- await exportArticlePages(pages,async(path,data)=>{if(path!=='/api/upload')return api(path,data);captured.push(data.data);return {ref:'captured'}});
+ await exportArticlePages(pages,async(path,data)=>{if(path!=='/api/upload')return api(path,data);captured.push(data.data);return {ref:'captured'}},()=>{},{maxPages:Infinity});
  return {template,count:pages.length,meta,pngs:captured};
 }
 // Full export: upload page PNGs and save them onto the channel edition, exactly as the workbench does.

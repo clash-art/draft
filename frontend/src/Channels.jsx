@@ -3,7 +3,7 @@ import {layoutSignature,assertCurrentPages} from './edition-layout';
 import {XHS_ARTICLE_TEMPLATES} from './xhs-article-templates';
 import {ChannelAutosave} from './channel-autosave';
 import PagedArticle from './PagedArticle';
-import {paginateArticle,exportArticlePages} from './paged-article';
+import {paginateArticle,exportArticlePages,MAX_PAGES} from './paged-article';
 import {exportCards} from './xhs-render';
 import XhsPreview from './XhsPreview';
 import RichEditor from './RichEditor';
@@ -40,7 +40,7 @@ export default function Channels({article,imageMap,onClose,onSync,initialChannel
  async function switchChannel(c){if(c===channel)return;await action(async()=>{if(dirty)autosaveQueue.flush(key).catch(()=>{});setError('');setStatus('');if(c==='source'){onClose();return}setChannel(c);setEditing(false);setFunctionsOpen(false)})}
  async function agentFill(){const capability=await call('brief');if(channel==='xiaohongshu'&&capability.layout_protocol!=='longform-v1')throw Error('当前 MCP 服务仍返回短卡片指令，请重新加载插件服务后再让 Agent 微调长文。');await save();const brief=await call('brief');const request=`请使用 wechat-drafts MCP 的 get_channel_brief 读取内容 ${article.id} 的 ${channel} 渠道。保留原稿标题、完整正文、图片和全部参考资料，只按照已选模板「${brief.template.name}」排版，仅微调模板字号、行距、段距、主题色等排版参数；回写的标题和 body 必须保持原样，不缩写、不总结、不拆成摘要卡片，再用 save_channel_edition 回写。先核对 source_revision=${brief.source_revision} 与 expected_revision=${brief.expected_revision}；不要修改源稿或发布。`;if(!sendToAgent)throw Error('请在当前 Codex 会话中提出改编要求');await sendToAgent(request);setStatus('已交给 Agent，等待回写')}
  useEffect(()=>{if(dirty||busy)return;let active=true,inFlight=false;const timer=setInterval(async()=>{if(inFlight)return;inFlight=true;try{const next=await call('get');const queued=autosaveQueue.entry(key);if(!active||(queued&&queued.saved<queued.version))return;if(next.revision!==edition?.revision){setEdition(next);if(channel==='wechat'){const preview=await call('preview');if(active)setHtml(preview.html)}}}catch{}finally{inFlight=false}},4000);return()=>{active=false;clearInterval(timer)}},[channel,article.id,edition?.revision,dirty,busy]);
- useEffect(()=>{if(!edition||!longform||channel==='wechat')return;let active=true;renderedLayout.current='';setPaging(true);const timer=setTimeout(()=>{const input=previewInputs.current;paginateArticle(input.edition,input.api,input.imageMap).then(result=>{if(active){renderedLayout.current=layoutKey;setPages(result)}}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setPaging(false)})},150);return()=>{active=false;clearTimeout(timer)}},[layoutKey,longform,channel,article.id]);
+ useEffect(()=>{if(!edition||!longform||channel==='wechat')return;let active=true;renderedLayout.current='';setPaging(true);const timer=setTimeout(()=>{const input=previewInputs.current;paginateArticle(input.edition,input.api,input.imageMap).then(result=>{if(active){renderedLayout.current=layoutKey;setPages(result);if(result.length>MAX_PAGES)setError(`当前 ${result.length} 页，超过小红书 ${MAX_PAGES} 张上限（含封面）；请精简正文或调整分页`)}}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setPaging(false)})},150);return()=>{active=false;clearTimeout(timer)}},[layoutKey,longform,channel,article.id]);
 
 
  async function preview(){if(channel==='wechat'){if(dirty||!edition.revision)await save();setHtml((await call('preview')).html)}else setPages(await paginateArticle(edition,api,imageMap))}

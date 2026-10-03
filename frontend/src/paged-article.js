@@ -51,7 +51,7 @@ function buildBlock(theme,block,images,figures){
  else if(make)node=make(block);
  else{node=document.createElement('div');node.innerHTML=DOMPurify.sanitize(block.html||'');Object.assign(node.style,{margin:`0 0 ${theme.gap}px`,fontSize:theme.size+'px',lineHeight:String(theme.leading),color:theme.body});
   for(const el of node.querySelectorAll('pre,table'))Object.assign(el.style,{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:'100%',fontSize:'12px',lineHeight:'1.6'});
-  for(const a of node.querySelectorAll('a'))Object.assign(a.style,{display:'inline',color:theme.link,wordBreak:'break-all'})}
+  for(const a of node.querySelectorAll('a'))Object.assign(a.style,{display:'inline',color:theme.ink,wordBreak:'break-all'})}
  node.dataset.role=block.role;return node;
 }
 export async function paginateArticle(edition,api,imageMap={}){return (await layoutArticle(edition,api,imageMap)).pages}
@@ -87,7 +87,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
   const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
   const bottom=()=>current.content.getBoundingClientRect().bottom;
-  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+Math.max(theme.bleed||0,last.dataset.full?theme.pad.right:0))};
+  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+Math.max(theme.bleed||0,current.content.querySelector('[data-full]')?theme.pad.right:0))};
   const empty=()=>!current.content.childElementCount;
   const place=node=>{if(empty())node.style.marginTop='0';current.content.append(node);if(fits())return true;node.remove();return false};
   const used=()=>{const last=current.content.lastElementChild;if(!last)return 0;return last.getBoundingClientRect().bottom+parseFloat(getComputedStyle(last).marginBottom||0)-current.content.getBoundingClientRect().top};
@@ -124,7 +124,7 @@ async function layoutOnce(edition,api,imageMap,opts){
    if(b.role==='figure'){
     capFigure(node);
     const rest=segmentRest(i);
-    if(rest!==null){const room=free()-rest;if(room>0&&heightOf(node)>room)shrinkFigure(node,room,0.8)}
+    if(rest!==null){const room=free()-rest;if(room>0&&heightOf(node)>room)shrinkFigure(node,room,node.dataset.full?0.72:0.8)}
     if(place(node)){current.roles.push('figure');continue}
     if(!empty()&&shrinkFigure(node,free())&&place(node)){current.roles.push('figure');continue}
     if(!empty())newPage();
@@ -177,15 +177,15 @@ async function layoutOnce(edition,api,imageMap,opts){
   const offsetCover=1;
   // The cover is read as a feed thumbnail: title and key points only, figures stay on inner pages.
   const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
-  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),image:coverImage,stats,width,height});
   const total=pages.length+1;
+  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),image:coverImage,stats,total,width,height});
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
   host.append(cover);
-  const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>c.getBoundingClientRect().bottom>bottom+0.5)};
+  const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
   for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
   if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
-  const meta={template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
+  const meta={max_pages:MAX_PAGES,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
    pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
   return {pages:html,meta};
@@ -209,8 +209,11 @@ function lastLineFill(node){
  return width>0?(Math.max(...line.map(r=>r.right))-Math.min(...line.map(r=>r.left)))/width:1;
 }
 function sourceTextOf(value){const d=document.createElement('div');d.innerHTML=DOMPurify.sanitize(value||'');return d.textContent}
-export async function exportArticlePages(pages,api,onProgress=()=>{}){
+// Xiaohongshu notes take at most 10 images, cover included.
+export const MAX_PAGES=10;
+export async function exportArticlePages(pages,api,onProgress=()=>{},{maxPages=MAX_PAGES}={}){
  if(!pages.length)throw Error('请等待分页预览完成');
+ if(pages.length>maxPages)throw Error(`小红书笔记最多 ${MAX_PAGES} 张图（含封面），当前 ${pages.length} 页；请精简正文或调整分页后再导出`);
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0'});document.body.append(host);const refs=[];
  try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const png=await toPng(host.firstElementChild,{width:parseFloat(host.firstElementChild.style.width),height:parseFloat(host.firstElementChild.style.height),pixelRatio:3,skipFonts:true});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.png`,data:png.split(',')[1]})).ref)}return refs}finally{host.remove()}
 }

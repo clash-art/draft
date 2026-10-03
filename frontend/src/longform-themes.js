@@ -103,9 +103,9 @@ function folio(template,opts){
     p.prepend(el('span',{float:'left',fontSize:Math.round(line*1.8)+'px',lineHeight:Math.round(line*2)+'px',height:Math.round(line*2)+'px',margin:'1px 6px 0 0',color:t.ink,fontWeight:'900',fontFamily:SERIF},[ch]))}
    return p},
   p:b=>html(el('p',text(t)),b.html,t),
-  section(b){return el('header',{margin:'16px 0 10px',textAlign:'center'},[
-   el('div',{fontFamily:SERIF,fontSize:px(2.3),lineHeight:'1',fontWeight:'400',color:t.accent},[b.number]),
-   deco('div',{width:'24px',height:'1px',background:t.accent,margin:'7px auto 7px'}),
+  section(b){return el('header',{margin:'12px 0 8px',textAlign:'center'},[
+   el('div',{fontFamily:SERIF,fontSize:px(1.9),lineHeight:'1',fontWeight:'400',color:t.accent},[b.number]),
+   deco('div',{width:'24px',height:'1px',background:t.accent,margin:'5px auto 5px'}),
    phrased(html(el('h3',{margin:'0',fontFamily:SERIF,fontSize:px(1.3),lineHeight:'1.4',fontWeight:'900',color:t.ink,...BALANCE}),b.html,t))])},
   heading:b=>html(el('h4',{margin:'12px 0 6px',fontFamily:SERIF,fontSize:px(1.1),lineHeight:'1.45',fontWeight:'900',color:t.ink}),b.html,t),
   label:b=>html(el('div',{margin:'11px 0 5px',fontFamily:SERIF,fontSize:px(1),lineHeight:'1.4',fontWeight:'900',color:t.ink,fontStyle:'normal'}),b.html,t),
@@ -201,9 +201,9 @@ function tweet(template,opts){
   shell:{background:t.paper,color:t.body,fontFamily:SANS},
   lead:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
   p:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
-  section(b){return el('header',{margin:'12px 0 6px'},[
-   phrased(html(el('h3',{margin:'0',fontSize:px(1.2),lineHeight:'1.38',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE}),b.html,t),{}),
-   el('div',{marginTop:'2px',fontSize:px(0.82),lineHeight:'1.4',color:t.muted},[el('span',{},[b.number]),deco('span',{},['/'])])])},
+  section(b){return el('header',{margin:'12px 0 6px',display:'flex',flexDirection:'column-reverse'},[
+   el('div',{marginTop:'2px',fontSize:px(0.82),lineHeight:'1.4',color:t.muted},[el('span',{},[b.number]),deco('span',{},['/'])]),
+   phrased(html(el('h3',{margin:'0',fontSize:px(1.2),lineHeight:'1.38',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE}),b.html,t),{})])},
   heading:b=>html(el('h4',{margin:'10px 0 4px',fontSize:px(1.05),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   label:b=>html(el('div',{margin:'10px 0 4px',fontSize:px(1),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   pair(b){const p=el('p',text(t,{textAlign:'left',fontSize:px(0.96),lineHeight:'1.55',margin:'0 0 4px'}));p.append(html(el('strong',{fontWeight:'800',color:t.ink}),b.key,t));p.append(...html(el('span'),b.html,t).childNodes);return p},
@@ -217,10 +217,10 @@ function tweet(template,opts){
    page.append(deco('div',{position:'absolute',top:'14px',left:t.pad.left+'px',right:t.pad.right+'px'},[header(who,28,`${index}/${total}`)]));
    page.append(deco('div',{position:'absolute',bottom:'10px',left:t.pad.left+'px',right:t.pad.right+'px',paddingTop:'7px',borderTop:`1px solid ${t.rule}`},[actions(13)]));
   },
-  cover({title:main,subtitle:sub,points:items,byline,stats,width,height}){
+  cover({title:main,subtitle:sub,points:items,byline,stats,total,width,height}){
    who=account(byline);
    const page=coverPage(t,width,height,{fontFamily:SANS,padding:'34px 22px 24px'});
-   page.append(deco('h1',{margin:'0',fontSize:'40px',lineHeight:'1.2',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.01em',...BALANCE},[main]));
+   page.append(deco('h1',{margin:'0',fontSize:'44px',lineHeight:'1.2',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.01em',...BALANCE},[main]));
    page.append(deco('div',{height:'1px',background:t.rule,margin:'18px 0 0'}));
    page.append(el('div',{flex:'1',minHeight:'14px'}));
    const body=[header(who,34)];
@@ -229,8 +229,8 @@ function tweet(template,opts){
    body.push(el('div',{fontSize:'11.5px',color:t.muted},[`长文 · ${stats.figures} 张图 · ${stats.minutes} 分钟读完`]));
    body.push(el('div',{borderTop:`1px solid ${t.rule}`,paddingTop:'9px'},[actions(15)]));
    page.append(deco('div',{border:`1px solid ${t.rule}`,borderRadius:'16px',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:'10px',background:'#fff'},body));
-   page.append(el('div',{flex:'1.5',minHeight:'14px'}));
-   page.append(deco('div',{height:'1px',background:t.rule}));
+   page.append(el('div',{flex:'1',minHeight:'14px'}));
+   page.append(deco('div',{fontSize:'11px',color:t.muted,display:'flex',justifyContent:'space-between'},[el('span',{},['长文串 · 往下翻']),el('span',{color:t.accent,fontWeight:'700'},[`1 / ${total}`])]));
    return page;
   },
  };
@@ -372,9 +372,9 @@ function note(template,opts){
   shell:{background:t.paper,color:t.body,fontFamily:SANS},
   lead:b=>html(el('p',text(t,{color:t.ink})),b.html,t),
   p:b=>html(el('p',text(t)),b.html,t),
-  section(b){return el('header',{margin:'12px 0 8px'},[
-   phrased(html(el('h3',{margin:'0',fontSize:px(1.25),lineHeight:'1.42',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE}),b.html,t),{}),
-   el('div',{display:'flex',alignItems:'center',gap:'6px',marginTop:'5px'},[el('span',{fontSize:px(0.78),fontWeight:'800',color:t.accent,letterSpacing:'0.08em'},[b.number]),deco('span',{flex:'1',height:'1px',background:t.accent})])])},
+  section(b){return el('header',{margin:'12px 0 8px',display:'flex',flexDirection:'column-reverse'},[
+   el('div',{display:'flex',alignItems:'center',gap:'6px',marginTop:'5px'},[el('span',{fontSize:px(0.78),fontWeight:'800',color:t.accent,letterSpacing:'0.08em'},[b.number]),deco('span',{flex:'1',height:'1px',background:t.accent})]),
+   phrased(html(el('h3',{margin:'0',fontSize:px(1.25),lineHeight:'1.42',fontWeight:'800',color:t.ink,textAlign:'left',...BALANCE}),b.html,t),{})])},
   heading:b=>html(el('h4',{margin:'12px 0 6px',fontSize:px(1.08),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   label:b=>html(el('div',{margin:'10px 0 5px',fontSize:px(0.98),lineHeight:'1.45',fontWeight:'800',color:t.ink}),b.html,t),
   pair(b){const p=el('p',text(t,{textAlign:'left',fontSize:px(0.94),lineHeight:'1.6',margin:'0 0 4px'}));p.append(html(el('strong',{fontWeight:'800',color:t.ink}),b.key,t));p.append(...html(el('span'),b.html,t).childNodes);return p},
