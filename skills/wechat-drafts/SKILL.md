@@ -83,8 +83,14 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 
 小红书图片卡片：Agent 通过 `save_channel_edition` 保存 `cards` 与模板，App 直接用 HTML 预览并导出 PNG。不要启动 Playwright 截图生成卡片。卡片改动后需在 App 中点击「生成图片」；后端只校验并保存图片和版本。
 
-小红书默认使用完整长文：标题、正文、段落顺序、配图及参考资料全部保留。模板切换只改变排版。不得主动压缩到1000字、改成摘要或生成卡片；只有用户明确要求短图文/卡片才走该流程。长文不得调用短图文上传入口。
+小红书默认使用完整长文：标题、正文、段落顺序、配图及参考资料全部保留。不得主动压缩到1000字、改成摘要或生成卡片；只有用户明确要求短图文/卡片才走该流程。长文不得调用短图文上传入口。
 
-小红书与公众号使用相同完整原稿。小红书自动填充后先生成分页 HTML 预览，最终逐页转为图片。Agent 微调只调整模板参数，不修改标题和正文；手动排版与富文本编辑保留。分页图片保存在 page_images，原始素材 images 不被替换。
+模板是静态样式：只决定字号、行距、段距、配色、标题/图注/参考资料的样式和页面比例，不决定写什么。内容决策（是否精简、保留哪些图、分页位置、封面文字）由 Agent 按文章写入渠道版本，渲染器只按模板机械分页，不删减、不改写。
 
-小红书长文流程（`layout_protocol: longform-v1`）：先 `get_channel_brief`，确认 `format` 为 longform；用 `list_channel_templates` 选择内置「刊物」「研报」「轻读」或已保存模板，需要自定义时用 `save_channel_template`（只改字号、行距、段距、参考资料字号/间距、强调色、版式、比例）。`save_channel_edition` 传完整 body 和全部 images（含封面），保存后检查返回的 `completeness`：`body_matches_source` 为 true、`missing_images` 为空。分页图片由工作台或 App 生成后写入 page_images；Agent 不自行截图，也不传 page_images。
+小红书长文流程（`layout_protocol: longform-v1`）：
+1. `get_channel_brief`，确认 `format` 为 longform，阅读 `instructions` 和 `source.markdown`。源稿始终不改。
+2. 完整版（默认）：`body` 与源稿一致，`images` 含全部素材，`condensed` 为 false；`completeness.body_matches_source` 应为 true、`missing_images` 为空。
+3. 精简版（仅当用户要求，例如"10 页以内"）：Agent 自己写精简正文，按插图顺序组织，每张保留的图配一两句说明，信息密集的图独占一页全宽展示；用单独一行 `<!-- page -->` 指定分页；参考资料全部保留，可改成短格式（名称 + 去掉协议的链接）集中在最后一页。`images` 只列正文实际使用的图，传 `condensed: true`。
+4. 封面内容用 `cover_page` 传：`{title, subtitle, points}`，points 最多 5 条、每条不超过 30 字，大字号可读即可；封面不放小图或完整架构图，图放进正文页。不传时用标题冒号前后作主副标题、章节名作要点。
+5. 用 `list_channel_templates` 选内置或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
+6. 修改 body、cover_page 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
