@@ -10,8 +10,10 @@ async function api(path,data){
 async function edition(){const source=await api('/api/editor/load',{});return {source,edition:await api('/api/channels/get',{id:source.id,channel:'xiaohongshu'})}}
 async function templates(){return (await api('/api/channels/templates/list',{format:'longform'})).items}
 // Paginates with the requested template and returns PNG data through the real export code path.
-async function render(templateId,{png=true}={}){
- const {edition:e}=await edition();
+// full=true lays out the complete source article instead of the edition's own content.
+async function render(templateId,{png=true,full=false}={}){
+ const {source,edition:loaded}=await edition();
+ const e=full?{...loaded,title:source.title,body:source.body,cover_page:null}:loaded;
  const template=templateId?(await templates()).find(t=>t.id===templateId):e.template;
  if(!template)throw Error('unknown template '+templateId);
  const {pages,meta}=await layoutArticle({...e,template},api);

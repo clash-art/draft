@@ -35,6 +35,7 @@ def main():
  parser.add_argument('--out',default=str(ROOT/'work/xhs-pages'))
  parser.add_argument('--chrome',default=shutil.which('google-chrome') or shutil.which('chromium'))
  parser.add_argument('--port',type=int,default=5199)
+ parser.add_argument('--full',action='store_true',help='渲染完整源稿（不使用渠道版本的精简正文与封面内容）')
  parser.add_argument('--save',action='store_true',help='同时走完整导出：上传分页 PNG 并保存到渠道版本（只写临时工作区）')
  args=parser.parse_args()
  from config_ui import make_server
@@ -56,7 +57,7 @@ def main():
    page.goto(url);page.wait_for_function('window.__xhs&&window.__xhs.ready',timeout=60000)
    ids=[t['id'] for t in page.evaluate('__xhs.templates()') if not __import__('re').fullmatch(r'[a-f0-9]{32}',t['id'])] if args.templates=='all' else args.templates.split(',')
    for identifier in ids:
-    result=page.evaluate('id=>__xhs.render(id)',identifier)
+    result=page.evaluate('([id,full])=>__xhs.render(id,{full})',[identifier,args.full])
     folder=out/identifier
     if folder.exists():shutil.rmtree(folder)
     folder.mkdir(parents=True);files=[]
@@ -69,7 +70,7 @@ def main():
     print(identifier,json.dumps(summary[identifier],ensure_ascii=False),flush=True)
    if args.save:
     saved=page.evaluate('id=>__xhs.exportAndSave(id)',ids[0])
-    summary['saved']={'template':saved['template']['id'],'page_images':len(saved['page_images']),'render_pending':saved['render_pending'],'body_equals_source':saved['body']==json.loads((Path(args.example)/'editor.json').read_text())['body']}
+    summary['saved']={'template':saved['template']['id'],'page_images':len(saved['page_images']),'render_pending':saved['render_pending'],'body_equals_source':saved['body']==json.loads((Path(args.example)/'editor.json').read_text())['body'],'condensed':saved.get('condensed',False),'page_count':len(saved['page_images'])}
     print('saved',json.dumps(summary['saved'],ensure_ascii=False))
    browser.close()
   (out/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2))

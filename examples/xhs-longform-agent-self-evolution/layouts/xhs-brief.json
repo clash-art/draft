@@ -5,34 +5,33 @@
   "layout": "brief",
   "page_ratio": "3:4"
  },
- "compact": 1,
- "page_count": 32,
- "cover_image": "images/51ce49f98f01416f9b8718eed3b764c9.png",
+ "compact": 2,
+ "page_count": 10,
  "sections": [
   {
    "number": "01",
-   "title": "先验证改完有没有用",
-   "page": 4
+   "title": "先验证：改完有没有用",
+   "page": 3
   },
   {
    "number": "02",
-   "title": "离线验证之后，还有真实世界",
-   "page": 8
+   "title": "上线：真实世界更复杂",
+   "page": 5
   },
   {
    "number": "03",
-   "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
-   "page": 11
+   "title": "挖问题：Braintrust 与 Adaline",
+   "page": 6
   },
   {
    "number": "04",
-   "title": "Trajectory：用轨迹和反馈更新权重",
-   "page": 21
+   "title": "改权重：Trajectory 的 SDPO++",
+   "page": 8
   },
   {
    "number": "05",
-   "title": "真实数据怎样支持下一轮改进",
-   "page": 27
+   "title": "下一轮：让真实数据接着转",
+   "page": 9
   }
  ],
  "pages": [
@@ -47,127 +46,63 @@
    "section": null,
    "roles": [
     "lead",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.84,
-   "starts": "Hermes、ECC会把任务经验"
-  },
-  {
-   "page": 3,
-   "section": null,
-   "roles": [
     "figure"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.67,
-   "starts": "Braintrust、Adali"
+   "fill": 0.92,
+   "starts": "Hermes、ECC会把任务经验"
   },
   {
-   "page": 4,
+   "page": 3,
    "section": "01",
    "roles": [
     "section",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.51,
-   "starts": "01先验证改完有没有用Herme"
-  },
-  {
-   "page": 5,
-   "section": "01",
-   "roles": [
-    "figure",
-    "p"
+    "p",
+    "figure"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.87,
-   "starts": "Hermes与ECC将经验转成技"
+   "fill": 0.86,
+   "starts": "01先验证：改完有没有用Herm"
   },
   {
-   "page": 6,
+   "page": 4,
    "section": "01",
    "roles": [
-    "p"
+    "p",
+    "label",
+    "pair"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.98,
-   "starts": "学术界在这点上稍微靠谱些，至少要"
+   "fill": 0.94,
+   "starts": "风险是Agent把一次偶然成功写"
   },
   {
-   "page": 7,
-   "section": "01",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.85,
-   "starts": "事后知情的教师，再将其输出分布蒸"
-  },
-  {
-   "page": 8,
+   "page": 5,
    "section": "02",
    "roles": [
     "section",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.96,
-   "starts": "02离线验证之后，还有真实世界从"
-  },
-  {
-   "page": 9,
-   "section": "02",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.72,
-   "starts": "功。用户随后说：“不是这一单，是"
-  },
-  {
-   "page": 10,
-   "section": "02",
-   "roles": [
-    "figure",
-    "p"
+    "p",
+    "figure"
    ],
    "figures": [
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 0.87,
-   "starts": "关联执行轨迹与事后反馈，定位订单"
+   "fill": 1,
+   "starts": "02上线：真实世界更复杂让订单A"
   },
   {
-   "page": 11,
-   "section": "02",
-   "roles": [
-    "p",
-    "section"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.92,
-   "starts": "选：用户没投诉不代表做对了，服务"
-  },
-  {
-   "page": 12,
+   "page": 6,
    "section": "03",
    "roles": [
+    "section",
     "p",
     "figure"
    ],
@@ -175,254 +110,64 @@
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.91,
-   "starts": "Adaline的RunningC"
-  },
-  {
-   "page": 13,
-   "section": "03",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
    "fill": 0.96,
-   "starts": "但“退款请求很多”离“该改哪里”"
+   "starts": "03挖问题：Braintrust"
   },
   {
-   "page": 14,
-   "section": "03",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.76,
-   "starts": "沿用订单例子，“取消请求”“负面"
-  },
-  {
-   "page": 15,
+   "page": 7,
    "section": "03",
    "roles": [
     "figure",
-    "p"
+    "label",
+    "pair"
    ],
    "figures": [
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.85,
+   "fill": 0.95,
    "starts": "Braintrust与Adali"
   },
   {
-   "page": 16,
-   "section": "03",
-   "roles": [
-    "label",
-    "pair"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.79,
-   "starts": "找线索Braintrust：To"
-  },
-  {
-   "page": 17,
-   "section": "03",
-   "roles": [
-    "label",
-    "pair",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.99,
-   "starts": "留下检查Braintrust：将"
-  },
-  {
-   "page": 18,
-   "section": "03",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.98,
-   "starts": "工具。Adaline则把其中能通"
-  },
-  {
-   "page": 19,
-   "section": "03",
-   "roles": [
-    "p",
-    "figure"
-   ],
-   "figures": [
-    "images/1bff88b6f5eb4050adc96437792e1c19.png"
-   ],
-   "references": 0,
-   "fill": 0.95,
-   "starts": "延迟决定发布。公司报告完成了30"
-  },
-  {
-   "page": 20,
-   "section": "03",
-   "roles": [
-    "p",
-    "figure"
-   ],
-   "figures": [
-    "images/a62d300f0c864992a5e1933586fbffb5.png"
-   ],
-   "references": 0,
-   "fill": 0.78,
-   "starts": "问拿高分。团队可以围绕真实失败生"
-  },
-  {
-   "page": 21,
+   "page": 8,
    "section": "04",
    "roles": [
     "section",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.51,
-   "starts": "04Trajectory：用轨迹"
-  },
-  {
-   "page": 22,
-   "section": "04",
-   "roles": [
-    "figure",
-    "p"
-   ],
-   "figures": [
-    "images/8fb33a7754994ef6a05ce1965c6b041e.png"
-   ],
-   "references": 0,
-   "fill": 0.94,
-   "starts": "通过trace_id关联执行记录"
-  },
-  {
-   "page": 23,
-   "section": "04",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.72,
-   "starts": "正等事后提示。训练程序逐toke"
-  },
-  {
-   "page": 24,
-   "section": "04",
-   "roles": [
-    "figure",
-    "p"
+    "p",
+    "figure"
    ],
    "figures": [
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.89,
-   "starts": "SDPO++沿用自蒸馏：教师读取"
+   "fill": 1,
+   "starts": "04改权重：Trajectory"
   },
   {
-   "page": 25,
-   "section": "04",
+   "page": 9,
+   "section": "05",
    "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.78,
-   "starts": "用逐token优势裁剪限制个别位"
-  },
-  {
-   "page": 26,
-   "section": "04",
-   "roles": [
-    "figure",
-    "p"
-   ],
-   "figures": [
-    "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
-   ],
-   "references": 0,
-   "fill": 0.89,
-   "starts": "SDPO++对旧策略轨迹进行概率"
-  },
-  {
-   "page": 27,
-   "section": "04",
-   "roles": [
+    "section",
     "p",
-    "section"
+    "label",
+    "pair"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.98,
-   "starts": "有信息足以判断的决策，再考虑权重"
+   "fill": 0.95,
+   "starts": "05下一轮：让真实数据接着转同一"
   },
   {
-   "page": 28,
+   "page": 10,
    "section": "05",
    "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.85,
-   "starts": "不同约束下的请求，能学到的东西并"
-  },
-  {
-   "page": 29,
-   "section": "05",
-   "roles": [
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.89,
-   "starts": "灰度发布控制放量范围，A/B用来"
-  },
-  {
-   "page": 30,
-   "section": "05",
-   "roles": [
-    "p",
-    "end",
     "refs-heading",
     "ref"
    ],
    "figures": [],
-   "references": 5,
-   "fill": 0.99,
-   "starts": "需要真实任务不断提供新的失败、约"
-  },
-  {
-   "page": 31,
-   "section": "05",
-   "roles": [
-    "ref"
-   ],
-   "figures": [],
-   "references": 8,
-   "fill": 0.93,
-   "starts": "〔6〕SDPOhttps://a"
-  },
-  {
-   "page": 32,
-   "section": "05",
-   "roles": [
-    "ref"
-   ],
-   "figures": [],
-   "references": 8,
-   "fill": 0.97,
-   "starts": "〔14〕编程Agent行为分析h"
+   "references": 21,
+   "fill": 1,
+   "starts": "参考资料〔1〕Hermesgit"
   }
  ]
 }
