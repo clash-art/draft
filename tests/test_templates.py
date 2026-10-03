@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from bs4 import BeautifulSoup
 from templates import render,BUILTINS,save_template,list_templates
+from palette import validate_palette,contrast
 from workspace import Workspace
 class TemplateTests(unittest.TestCase):
  def test_references_preserve_text_urls_images(self):
@@ -57,3 +58,22 @@ class TemplateTests(unittest.TestCase):
    self.assertEqual(len(soup.find_all('img')),2)
    self.assertEqual(len(soup.find_all('figcaption')),2)
    self.assertTrue(all(i['src'].startswith('data:image/svg+xml;base64,') for i in soup.find_all('img')))
+ def test_layouts_are_distinct_and_palette_overrides_colours(self):
+  body='01\n\n### 章节\n\n导语 **重点** 与 `code`。\n\n![图](images/a.png)\n\n图\n\n> 引用\n\n### 参考资料\n\n〔1〕来源  \nhttps://example.org/a'
+  outputs={t['id']:render(body,t) for t in BUILTINS}
+  self.assertEqual(len(set(outputs.values())),len(BUILTINS))
+  self.assertGreaterEqual(len(BUILTINS),8)
+  brand={'primary':'#4a6d47','paper':'#fdfefb','ink':'#2a332a'}
+  for t in BUILTINS:
+   with self.subTest(template=t['id']):
+    html=render(body,t,brand);soup=BeautifulSoup(html,'html.parser')
+    self.assertIn('#4a6d47',html);self.assertNotIn(t['accent'],html.replace('#4a6d47',''))
+    self.assertEqual(soup.get_text(),BeautifulSoup(render(html,BUILTINS[0]),'html.parser').get_text())
+    self.assertEqual(soup.figure.figcaption.get_text(),'图')
+    self.assertNotIn('<style',html);self.assertNotIn('class=',html)
+ def test_palette_validation(self):
+  self.assertEqual(validate_palette({'primary':'#2C1FEA','name':'Braintrust'}),{'primary':'#2c1fea','name':'Braintrust'})
+  self.assertIsNone(validate_palette(None))
+  self.assertGreater(contrast('#000000','#ffffff'),20)
+  for bad in ({'primary':'#12345'},{'ink':'#f0f0f0','paper':'#ffffff'},{'on_primary':'#ffffff','primary':'#ffd100'},{'background':'#ffffff'},{'name':'only'}):
+   with self.assertRaises(ValueError):validate_palette(bad)

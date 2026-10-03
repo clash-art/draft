@@ -39,7 +39,8 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual(len(re.findall(r'^〔\d+〕',ARTICLE,re.M)),21)
   self.assertIn(EDITOR['cover'],[a['ref'] for a in EDITOR['assets']])
   edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))
-  self.assertEqual((edition['format'],edition['template']['id'],edition['body'],edition['condensed']),('longform','xhs-folio',CONDENSED,True))
+  self.assertEqual((edition['format'],edition['template']['id'],edition['body'],edition['condensed']),('longform','xhs-blueprint',CONDENSED,True))
+  self.assertEqual((edition['palette']['name'],edition['palette']['primary']),('Braintrust','#2c1fea'))
   figures=re.findall(r'^!\[[^\]]*\]\(([^)]+)\)',CONDENSED,re.M)
   self.assertEqual(edition['images'],figures)
   self.assertEqual(len(figures),6)
@@ -61,8 +62,10 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual((b['layout_protocol'],b['format'],b['channel']),('longform-v1','longform','xiaohongshu'))
   self.assertEqual(b['source']['markdown'],ARTICLE)
   self.assertEqual(b['source']['cover'],EDITOR['cover'])
-  self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-brief','xhs-note'])
-  self.assertEqual(b['template']['id'],'xhs-folio')
+  self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note'])
+  self.assertEqual(b['template']['id'],'xhs-blueprint')
+  self.assertIn('palette',b['instructions'])
+  self.assertEqual(b['palette']['name'],'Braintrust')
   self.assertEqual(b['current_edition']['body'],CONDENSED)
   self.assertTrue(b['completeness']['condensed'])
   self.assertFalse(b['completeness']['body_matches_source'])
@@ -84,7 +87,7 @@ class LongformMcpTests(unittest.TestCase):
  def test_template_save_via_mcp_keeps_snapshot_and_full_body(self):
   listing=server.list_channel_templates()
   self.assertEqual(listing['layout_protocol'],'longform-v1')
-  custom=server.save_channel_template({**listing['items'][1],'name':'我的研报','font_size':16})
+  custom=server.save_channel_template({**next(t for t in listing['items'] if t['id']=='xhs-brief'),'name':'我的研报','font_size':16})
   self.assertRegex(custom['id'],r'^[a-f0-9]{32}$')
   self.assertIn(custom['id'],[t['id'] for t in server.list_channel_templates()['items']])
   saved=self.save(template=custom)
@@ -94,7 +97,7 @@ class LongformMcpTests(unittest.TestCase):
   with self.assertRaises(ValueError):self.save(format='summary')
 
  def test_page_export_saved_through_mcp(self):
-  edition=self.save(template=server.list_channel_templates()['items'][2])
+  edition=self.save(template=next(t for t in server.list_channel_templates()['items'] if t['id']=='xhs-note'))
   pages=[self.ws.dispatch('/api/upload',{'name':f'page-{i}.png','data':png()})['ref'] for i in range(32)]
   b=self.brief()
   exported=self.save(page_images=pages,page_count=32,rendered_for_revision=edition['revision'])
@@ -128,6 +131,25 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual((again['page_images'],again['render_pending']),([],True))
   for bad in ({'points':['x']*6},{'points':['长'*31]},{'title':'长'*41},'封面'):
    with self.assertRaises(ValueError):self.save(cover_page=bad)
+
+ def test_palette_is_edition_data_for_both_channels(self):
+  brand={'name':'Example','source':'example.org CSS','primary':'#2c1fea','paper':'#fafafa','ink':'#18181b','text':'#3f3f46'}
+  saved=self.save(palette=brand)
+  self.assertEqual(saved['palette']['primary'],'#2c1fea')
+  self.assertEqual(saved['template']['id'],'xhs-blueprint')
+  pages=[self.ws.dispatch('/api/upload',{'name':f'q{i}.png','data':png()})['ref'] for i in range(10)]
+  exported=self.save(page_images=pages,page_count=10,rendered_for_revision=saved['revision'])
+  changed=self.save(palette={**brand,'primary':'#4a6d47'})
+  self.assertEqual((changed['page_images'],changed['render_pending']),([],True))
+  for bad in ({'primary':'blue'},{'text':'#eeeeee','paper':'#ffffff'},{'logo':'#000000'}):
+   with self.assertRaises(ValueError):self.save(palette=bad)
+  wechat=server.get_channel_brief(self.id,'wechat')
+  self.assertEqual((wechat['template']['id'],wechat['palette']['name']),('blueprint','Braintrust'))
+  self.assertIn('palette',wechat['instructions'])
+  html=server.save_channel_edition(self.id,'wechat',wechat['current_edition']['title'],wechat['current_edition']['body'],wechat['current_edition']['images'],wechat['source_revision'],wechat['expected_revision'],wechat['template'],palette={'primary':'#4a6d47'})
+  self.assertEqual(html['palette'],{'primary':'#4a6d47'})
+  preview=self.ws.dispatch('/api/channels/preview',{'id':self.id,'channel':'wechat'})['html']
+  self.assertIn('#4a6d47',preview);self.assertNotIn('#2c1fea',preview)
 
  def test_longform_prepare_is_refused(self):
   edition=self.save()
