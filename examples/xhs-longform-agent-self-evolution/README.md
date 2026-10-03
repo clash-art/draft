@@ -26,7 +26,7 @@
 
 精简时省略了源稿图 2、6、7、8、10 及其说明，它们仍在源稿中。
 
-配色：不取文中项目的品牌色。每套模板自带淡雅、低饱和的莫兰迪配色（白、冷浅灰或很淡的莫兰迪纸面，深色文字，一种点缀色），插图按模板色调降低饱和度。示例渠道版本不传 `palette`；`palette` 只是可选覆盖，同样要求低饱和。
+配色：不取文中项目的品牌色。每套模板自带各自的配色气质（纯白、深色、冷灰、暖纸，两套莫兰迪），插图按模板处理（降饱和、双色调或原色）。示例渠道版本不传 `palette`；`palette` 只是可选覆盖，同样要求低饱和。
 
 载入（默认写入本机工作台目录，已有同 id 内容时需加 `--force`；不会读取或写入任何凭据）：
 
@@ -38,7 +38,7 @@ python scripts/load_example.py examples/xhs-longform-agent-self-evolution
 
 ```bash
 python scripts/render_xhs_pages.py --out work/xhs-pages
-for t in xhs-folio xhs-blueprint xhs-tweet xhs-brief xhs-press xhs-marker xhs-note; do cp work/xhs-pages/$t/layout.json examples/xhs-longform-agent-self-evolution/layouts/$t.json; done
+for t in xhs-folio xhs-blueprint xhs-tweet xhs-brief xhs-press xhs-marker xhs-note xhs-combo-press-blueprint xhs-combo-tweet-note xhs-combo-folio-press; do cp work/xhs-pages/$t/layout.json examples/xhs-longform-agent-self-evolution/layouts/$t.json; done
 ```
 
 公众号手机宽度截图（每套文章模板一张长图 + 首屏切片 + 总览）：

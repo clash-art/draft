@@ -59,8 +59,11 @@ export function themeColors(base,template,palette){
  return out;
 }
 // compact>0 tightens only the reference list, used to avoid a near-empty final page.
+const COLOR_KEYS=['paper','surface','ink','body','muted','rule','accent','backdrop'];
 function tokens(template,base,{compact=0,palette}={}){
- const colors=themeColors(base,template,palette);base={...base,...colors};
+ const from=BASES[template?.palette_from];
+ if(from&&from!==base){base={...base,backdrop:undefined};for(const k of COLOR_KEYS)if(from[k])base[k]=from[k]}
+ const colors=themeColors(base,template,palette);base={...base,...colors,backdrop:base.backdrop||colors.paper};
  const size=Number(template?.font_size)||base.size,leading=Number(template?.line_height)||base.leading;
  const refGap=Number(template?.reference_gap)||base.refGap;
  const px=k=>(Math.round(size*k*4)/4)+'px';
@@ -410,7 +413,18 @@ function note(template,opts){
 }
 
 const THEMES={folio,brief,note,blueprint,tweet,press,marker};
+const BASES={folio:FOLIO,brief:BRIEF,note:NOTE,blueprint:BLUEPRINT,tweet:TWEET,press:PRESS,marker:MARKER};
 // Older templates (journal/lab/wechat/...) map onto the closest current theme.
 const LEGACY={journal:'folio',essay:'folio',letter:'folio',lab:'brief',graphite:'brief',wechat:'note',column:'marker'};
-export function themeFor(template,opts={}){const key=THEMES[template?.layout]?template.layout:LEGACY[template?.layout]||'folio';return THEMES[key](template||{},opts)}
+const themeKey=layout=>THEMES[layout]?layout:LEGACY[layout]||'folio';
+// A template is composed of parts: inner pages (layout), cover (cover_layout), colours
+// (palette_from) and figure treatment (figure_tone). Unset parts follow the layout.
+export function themeFor(template,opts={}){
+ template=template||{};const theme=THEMES[themeKey(template.layout)](template,opts);
+ if(template.cover_layout&&THEMES[template.cover_layout]&&template.cover_layout!==themeKey(template.layout)){
+  const coverTheme=THEMES[template.cover_layout]({...template,palette_from:template.palette_from||themeKey(template.layout)},opts);
+  theme.cover=coverTheme.cover;
+ }
+ return theme;
+}
 export const THEME_LAYOUTS=Object.keys(THEMES);

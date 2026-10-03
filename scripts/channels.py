@@ -35,8 +35,9 @@ def load(ws,e,channel):
     if builtin['id']==selected:result['template']=builtin
   return result
  return {'channel':channel,'format':'longform','title':e.get('title',''),'body':e.get('body',''),'images':[a['ref'] for a in e.get('assets',[])],'template':longform_catalog(ws.root)[0] if channel=='xiaohongshu' else BUILTINS[0],'revision':None,'source_revision':e.get('revision'),'publication':None}
-PALETTE_HINT=('配色默认用所选模板自带的柔和配色（白、冷浅灰或很淡的莫兰迪纸面，深色文字，一种低饱和点缀色），一般不传 palette。'
- '只有用户明确要求时才传 palette 覆盖：paper/surface/ink/text/muted/rule 接近中性，primary/accent 用低饱和莫兰迪色（灰蓝、灰绿、陶土、灰紫、暖灰），不取项目品牌色，不用鲜艳色、大面积色块或渐变；正文与纸面对比度需 ≥ 4.5。')
+PALETTE_HINT=('配色默认用所选模板自带的配色（各模板气质不同：纯白、深色、冷灰、暖纸或莫兰迪），一般不传 palette。'
+ '只有用户明确要求时才传 palette 覆盖：纸面与文字接近中性，primary/accent 克制、不用霓虹色，不取项目品牌色，不做大面积色块或渐变；正文与纸面对比度需 ≥ 4.5。'
+ '小红书模板可组合：cover_layout 换封面、palette_from 换配色、figure_tone 换插图处理（muted/duotone/original）。')
 BRIEF_INSTRUCTIONS=('小红书笔记最多 10 张图（含封面），渲染器超过 10 页会拒绝导出。全文能排进 10 页时保留原稿标题、完整正文、段落顺序、图片和全部参考资料，body 与源稿一致，不总结、不删减、不改写事实，不生成摘要卡片。'
  '排不进 10 页或用户要求精简时改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点（可选 image 指定一张封面大图，只有部分模板显示），保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
  '模板只决定字号、行距、颜色和装饰，不决定内容；从 templates 中选一项传给 save_channel_edition（format=longform）。不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。'+PALETTE_HINT)

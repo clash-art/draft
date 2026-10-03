@@ -93,7 +93,9 @@ App 中选中的文字通过 model context 提供文章 id、revision 和 select
 3. 精简版（仅当用户要求，例如"10 页以内"）：Agent 自己写精简正文，按插图顺序组织，每张保留的图配一两句说明，信息密集的图独占一页全宽展示；用单独一行 `<!-- page -->` 指定分页；参考资料全部保留，可改成短格式（名称 + 去掉协议的链接）集中在最后一页。`images` 只列正文实际使用的图，传 `condensed: true`。
 4. 封面内容用 `cover_page` 传：`{title, subtitle, points, image?}`（image 可选，一张已上传的大图，只有刊物等模板显示），points 最多 5 条、每条不超过 30 字，大字号可读即可；封面不放小图或完整架构图，图放进正文页。不传时用标题冒号前后作主副标题、章节名作要点。
 5. 配色用模板自带的柔和配色，默认不传 `palette`（见下方「配色」）。小红书最多 10 张图（含封面），超过会被拒绝。
-6. 用 `list_channel_templates` 选内置模板（刊物、蓝图、推文、研报、报刊、标记、轻读）或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
+6. 用 `list_channel_templates` 选内置模板（刊物、蓝图、推文、研报、报刊、标记、轻读，以及三套组合）或已保存模板，需要自定义时用 `save_channel_template`（只改样式参数），`save_channel_edition` 传入 template。
 7. 修改 body、cover_page、palette 或模板都会清空旧的 page_images（`render_pending: true`）。分页图片由工作台或 App 生成（1080×1440）后写入 page_images；Agent 不自行截图，也不传 page_images。生成后检查页数与每页填充，过空或溢出时改正文/分页，而不是改模板。
 
-配色（公众号与小红书通用）：不取项目品牌色，也不用鲜艳的颜色。每套模板自带一套淡雅、低饱和的莫兰迪配色：白、冷浅灰或很淡的莫兰迪纸面，深色文字，再加一种点缀色（灰蓝、灰绿、陶土、灰紫、暖灰等），只用于编号、小标签、细线和链接；不做大面积色块、渐变或阴影。插图会按模板色调降低饱和度（`figure_tone`：muted 默认 / duotone / original）。`palette` 只是可选覆盖，默认不传；用户明确要求时才传，纸面与文字接近中性、`primary`/`accent` 必须低饱和，正文与纸面对比度须 ≥ 4.5，否则保存会被拒绝。
+配色（公众号与小红书通用）：不取项目品牌色。每套模板自带自己的配色气质（纯白、深色、冷灰、暖纸，只有一两套是莫兰迪），点缀色克制但不必是粉灰，只用于编号、小标签、细线和链接；不用霓虹色、大面积色块或渐变。插图按模板处理（`figure_tone`：muted / duotone / original）。`palette` 只是可选覆盖，默认不传；纸面与文字接近中性、点缀色饱和度有上限，正文与纸面对比度须 ≥ 4.5。
+
+小红书模板可组合：`layout` 决定内页，`cover_layout` 换用另一套模板的封面，`palette_from` 换用另一套的配色，`figure_tone` 决定插图处理。内置三套组合（报刊 × 蓝图、推文 × 轻读、刊物 × 报刊）；也可以按文章用 `save_channel_template` 自行组合，仍须控制在 10 张图以内。

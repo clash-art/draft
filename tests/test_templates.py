@@ -78,7 +78,7 @@ class TemplateTests(unittest.TestCase):
   for name,colors in PALETTES.items():
    with self.subTest(layout=name):self.assertEqual(validate_palette(colors),colors)
   presets=json.loads((Path(__file__).resolve().parents[1]/'assets/xhs-longform-presets.json').read_text())
-  self.assertEqual(len({t['accent'] for t in presets}),len(presets))
+  bases=[t for t in presets if not t.get('cover_layout')];self.assertEqual(len({t['accent'] for t in bases}),len(bases))
   for t in presets+BUILTINS:
    with self.subTest(template=t['id']):self.assertLessEqual(saturation(t['accent']),0.85)
  def test_figures_are_toned_to_layout_without_touching_originals(self):
@@ -96,6 +96,12 @@ class TemplateTests(unittest.TestCase):
    self.assertEqual((again['src'],again['data-template-src']),(first['src'],ref))
    plain=BeautifulSoup(render(body,dict(BUILTINS[0],figure_tone='original'),ws=ws),'html.parser').img
    self.assertEqual(plain['src'],ref)
+ def test_template_parts_are_composable(self):
+  from templates import validate
+  t=validate({'name':'x','layout':'press','cover_layout':'tweet','palette_from':'note','figure_tone':'duotone'})
+  self.assertEqual((t['layout'],t['cover_layout'],t['palette_from'],t['figure_tone']),('press','tweet','note','duotone'))
+  t=validate({'name':'x','layout':'marker','cover_layout':'nope','palette_from':'graphite'})
+  self.assertEqual(t['layout'],'marker');self.assertNotIn('cover_layout',t);self.assertNotIn('palette_from',t)
  def test_palette_validation(self):
   self.assertEqual(validate_palette({'primary':'#7C8B78','name':'sage'}),{'primary':'#7c8b78','name':'sage'})
   self.assertEqual(validate_palette({'paper':'#f3efe9'}),{'paper':'#f3efe9'})

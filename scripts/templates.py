@@ -10,7 +10,8 @@ from article_styles import PALETTES,spec
 
 # WeChat article layouts plus the Xiaohongshu longform page themes.
 ARTICLE_LAYOUTS=tuple(PALETTES)
-LAYOUTS=ARTICLE_LAYOUTS+('folio','brief','note','tweet','poster','swiss')
+XHS_THEMES=('folio','blueprint','tweet','brief','press','marker','note')
+LAYOUTS=ARTICLE_LAYOUTS+('folio','brief','note','tweet','poster','swiss','press','marker')
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
 def builtin(id,name,description,**values):return dict(BASE,id=id,name=name,description=description,layout=id,accent=PALETTES[id]['primary'],**values)
 BUILTINS=[
@@ -55,6 +56,8 @@ def validate(value):
     if value.get('cover_style') in ('editorial','geek-report','consulting-report','clean-review'):out['cover_style']=value['cover_style']
     if value.get('page_ratio') in ('3:4','3:5','1:1','9:16'):out['page_ratio']=value['page_ratio']
     if value.get('figure_tone') in ('muted','duotone','original'):out['figure_tone']=value['figure_tone']
+    for key in ('cover_layout','palette_from'):
+        if value.get(key) in XHS_THEMES:out[key]=value[key]
     return out
 
 def list_templates(root):

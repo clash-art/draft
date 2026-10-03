@@ -96,5 +96,53 @@
     "reference_gap": 2,
     "page_ratio": "3:4",
     "figure_tone": "muted"
+  },
+  {
+    "id": "xhs-combo-press-blueprint",
+    "name": "报刊 × 蓝图",
+    "description": "报纸头版封面 + 蓝图点阵内页，蓝色线框",
+    "layout": "blueprint",
+    "accent": "#2f5bea",
+    "font_size": 13,
+    "line_height": 1.7,
+    "paragraph_gap": 7,
+    "reference_size": 8.5,
+    "reference_gap": 2,
+    "page_ratio": "3:4",
+    "figure_tone": "duotone",
+    "cover_layout": "press",
+    "palette_from": "blueprint"
+  },
+  {
+    "id": "xhs-combo-tweet-note",
+    "name": "推文 × 轻读",
+    "description": "X 推文卡片封面 + 白色纸片笔记内页，灰绿底",
+    "layout": "note",
+    "accent": "#6f8a6e",
+    "font_size": 13,
+    "line_height": 1.72,
+    "paragraph_gap": 7,
+    "reference_size": 8.5,
+    "reference_gap": 2,
+    "page_ratio": "3:4",
+    "figure_tone": "muted",
+    "cover_layout": "tweet",
+    "palette_from": "note"
+  },
+  {
+    "id": "xhs-combo-folio-press",
+    "name": "刊物 × 报刊",
+    "description": "竖排宋体封面 + 报纸内页，奶油纸酒红点缀",
+    "layout": "press",
+    "accent": "#8c2f1f",
+    "font_size": 12.5,
+    "line_height": 1.66,
+    "paragraph_gap": 6,
+    "reference_size": 8.5,
+    "reference_gap": 2,
+    "page_ratio": "3:4",
+    "figure_tone": "muted",
+    "cover_layout": "folio",
+    "palette_from": "folio"
   }
 ]

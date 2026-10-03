@@ -2,10 +2,12 @@ import test from 'node:test';import assert from 'node:assert/strict';import {rea
 import {themeColors,THEME_LAYOUTS} from '../src/longform-themes.js';
 const presets=JSON.parse(readFileSync(new URL('../../assets/xhs-longform-presets.json',import.meta.url),'utf8'));
 
-test('every preset maps to its own page theme',()=>{
- assert.deepEqual(presets.map(p=>p.layout),['folio','blueprint','tweet','brief','press','marker','note']);
+test('every base preset maps to its own page theme; combos compose existing parts',()=>{
+ const bases=presets.filter(p=>!p.cover_layout),combos=presets.filter(p=>p.cover_layout);
+ assert.deepEqual(bases.map(p=>p.layout),['folio','blueprint','tweet','brief','press','marker','note']);
  assert.ok(presets.every(p=>THEME_LAYOUTS.includes(p.layout)));
- assert.equal(new Set(presets.map(p=>p.layout)).size,presets.length);
+ assert.ok(combos.length>=3);
+ for(const c of combos){assert.ok(THEME_LAYOUTS.includes(c.cover_layout)&&THEME_LAYOUTS.includes(c.palette_from));assert.notEqual(c.cover_layout,c.layout)}
 });
 
 test('edition palette overrides template colours, which override theme defaults',()=>{

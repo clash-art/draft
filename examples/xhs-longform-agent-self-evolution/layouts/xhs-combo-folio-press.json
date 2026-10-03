@@ -1,0 +1,175 @@
+{
+ "max_pages": 10,
+ "over_limit": false,
+ "template": {
+  "id": "xhs-combo-folio-press",
+  "name": "刊物 × 报刊",
+  "layout": "press",
+  "page_ratio": "3:4"
+ },
+ "compact": 0,
+ "page_count": 10,
+ "sections": [
+  {
+   "number": "01",
+   "title": "先验证：改完有没有用",
+   "page": 4
+  },
+  {
+   "number": "02",
+   "title": "上线：真实世界更复杂",
+   "page": 5
+  },
+  {
+   "number": "03",
+   "title": "挖问题：Braintrust 与 Adaline",
+   "page": 6
+  },
+  {
+   "number": "04",
+   "title": "改权重：Trajectory 的 SDPO++",
+   "page": 8
+  },
+  {
+   "number": "05",
+   "title": "下一轮：让真实数据接着转",
+   "page": 9
+  }
+ ],
+ "pages": [
+  {
+   "page": 1,
+   "roles": [
+    "cover"
+   ]
+  },
+  {
+   "page": 2,
+   "section": null,
+   "roles": [
+    "figure",
+    "lead"
+   ],
+   "figures": [
+    "images/b760b5ddc4594589b32b2f6774f67ac3.png"
+   ],
+   "references": 0,
+   "fill": 0.92,
+   "starts": "Braintrust、Adali"
+  },
+  {
+   "page": 3,
+   "section": null,
+   "roles": [
+    "figure"
+   ],
+   "figures": [
+    "images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png",
+    "images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png"
+   ],
+   "references": 0,
+   "fill": 0.92,
+   "starts": "放大：Braintrust与Ad"
+  },
+  {
+   "page": 4,
+   "section": "01",
+   "roles": [
+    "section",
+    "p",
+    "label",
+    "pair"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.89,
+   "starts": "01先验证：改完有没有用Herm"
+  },
+  {
+   "page": 5,
+   "section": "02",
+   "roles": [
+    "section",
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/81cd4c47a812405da5f75b7857cb92ad.png"
+   ],
+   "references": 0,
+   "fill": 0.96,
+   "starts": "02上线：真实世界更复杂让订单A"
+  },
+  {
+   "page": 6,
+   "section": "03",
+   "roles": [
+    "section",
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/32ef028eb07f41fab37eab71364534bf.png"
+   ],
+   "references": 0,
+   "fill": 0.95,
+   "starts": "03挖问题：Braintrust"
+  },
+  {
+   "page": 7,
+   "section": "03",
+   "roles": [
+    "figure",
+    "label",
+    "pair"
+   ],
+   "figures": [
+    "images/de83e70759b94858b41d14803ae35ee3.png"
+   ],
+   "references": 0,
+   "fill": 0.92,
+   "starts": "Braintrust与Adali"
+  },
+  {
+   "page": 8,
+   "section": "04",
+   "roles": [
+    "section",
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png"
+   ],
+   "references": 0,
+   "fill": 0.97,
+   "starts": "04改权重：Trajectory"
+  },
+  {
+   "page": 9,
+   "section": "05",
+   "roles": [
+    "section",
+    "p",
+    "label",
+    "pair"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.96,
+   "starts": "05下一轮：让真实数据接着转同一"
+  },
+  {
+   "page": 10,
+   "section": "05",
+   "roles": [
+    "refs-heading",
+    "ref"
+   ],
+   "figures": [],
+   "references": 21,
+   "fill": 0.96,
+   "starts": "参考资料〔1〕Hermesgit"
+  }
+ ]
+}

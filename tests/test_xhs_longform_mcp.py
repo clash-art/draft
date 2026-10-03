@@ -63,7 +63,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual((b['layout_protocol'],b['format'],b['channel']),('longform-v1','longform','xiaohongshu'))
   self.assertEqual(b['source']['markdown'],ARTICLE)
   self.assertEqual(b['source']['cover'],EDITOR['cover'])
-  self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note'])
+  self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note','xhs-combo-press-blueprint','xhs-combo-tweet-note','xhs-combo-folio-press'])
   self.assertEqual(b['template']['id'],'xhs-blueprint')
   self.assertIn('palette',b['instructions'])
   self.assertIsNone(b['palette'])
