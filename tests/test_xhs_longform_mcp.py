@@ -40,13 +40,14 @@ class LongformMcpTests(unittest.TestCase):
   self.assertIn(EDITOR['cover'],[a['ref'] for a in EDITOR['assets']])
   edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))
   self.assertEqual((edition['format'],edition['template']['id'],edition['body'],edition['condensed']),('longform','xhs-blueprint',CONDENSED,True))
-  self.assertEqual((edition['palette']['name'],edition['palette']['primary']),('Braintrust','#2c1fea'))
-  figures=re.findall(r'^!\[[^\]]*\]\(([^)]+)\)',CONDENSED,re.M)
+  self.assertIsNone(edition['palette'])
+  figures=re.findall(r'^!\[[^\]]*\]\(([^)\s]+)',CONDENSED,re.M)
   self.assertEqual(edition['images'],figures)
-  self.assertEqual(len(figures),6)
-  self.assertTrue(set(figures)<={a['ref'] for a in EDITOR['assets']})
+  self.assertEqual(len(figures),7)
+  self.assertTrue(all((EXAMPLE/ref).is_file() for ref in figures))
+  self.assertGreaterEqual(len(set(figures)&{a['ref'] for a in EDITOR['assets']}),5)
   self.assertEqual(len(re.findall(r'^〔\d+〕',CONDENSED,re.M)),21)
-  self.assertEqual(len(edition['cover_page']['points']),5)
+  self.assertEqual((edition['cover_page']['title'],edition['cover_page']['subtitle']),('工业界如何做 Agent 自进化','从真实反馈到持续改进'))
   for path in sorted((EXAMPLE/'layouts').glob('*.json')):
    layout=json.loads(path.read_text(encoding='utf-8'))
    pages=layout['pages']
@@ -65,7 +66,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-blueprint','xhs-tweet','xhs-brief','xhs-press','xhs-marker','xhs-note'])
   self.assertEqual(b['template']['id'],'xhs-blueprint')
   self.assertIn('palette',b['instructions'])
-  self.assertEqual(b['palette']['name'],'Braintrust')
+  self.assertIsNone(b['palette'])
   self.assertEqual(b['current_edition']['body'],CONDENSED)
   self.assertTrue(b['completeness']['condensed'])
   self.assertFalse(b['completeness']['body_matches_source'])
@@ -98,14 +99,15 @@ class LongformMcpTests(unittest.TestCase):
 
  def test_page_export_saved_through_mcp(self):
   edition=self.save(template=next(t for t in server.list_channel_templates()['items'] if t['id']=='xhs-note'))
-  pages=[self.ws.dispatch('/api/upload',{'name':f'page-{i}.png','data':png()})['ref'] for i in range(32)]
+  pages=[self.ws.dispatch('/api/upload',{'name':f'page-{i}.png','data':png()})['ref'] for i in range(10)]
   b=self.brief()
-  exported=self.save(page_images=pages,page_count=32,rendered_for_revision=edition['revision'])
+  with self.assertRaises(ValueError):self.save(page_images=pages+pages[:1],page_count=11,rendered_for_revision=edition['revision'])
+  exported=self.save(page_images=pages,page_count=10,rendered_for_revision=edition['revision'])
   self.assertEqual((exported['page_images'],exported['render_pending']),(pages,False))
   self.assertEqual(exported['body'],CONDENSED)
   wrong=self.ws.dispatch('/api/upload',{'name':'wrong.png','data':png((1080,1080))})['ref']
-  with self.assertRaises(ValueError):self.save(page_images=pages[:-1]+[wrong],page_count=32,rendered_for_revision=exported['revision'])
-  with self.assertRaises(ValueError):self.save(page_images=pages,page_count=31,rendered_for_revision=exported['revision'])
+  with self.assertRaises(ValueError):self.save(page_images=pages[:-1]+[wrong],page_count=10,rendered_for_revision=exported['revision'])
+  with self.assertRaises(ValueError):self.save(page_images=pages,page_count=9,rendered_for_revision=exported['revision'])
   changed=self.save(body=CONDENSED+'\n补充')
   self.assertEqual((changed['page_images'],changed['render_pending']),([],True))
   self.assertTrue(changed['completeness']['condensed'])
@@ -133,18 +135,18 @@ class LongformMcpTests(unittest.TestCase):
    with self.assertRaises(ValueError):self.save(cover_page=bad)
 
  def test_palette_is_edition_data_for_both_channels(self):
-  brand={'name':'Example','source':'example.org CSS','primary':'#2c1fea','paper':'#fafafa','ink':'#18181b','text':'#3f3f46'}
+  brand={'name':'Example','primary':'#7c8b78','paper':'#f3efe9','ink':'#24201c','text':'#2e2924'}
   saved=self.save(palette=brand)
-  self.assertEqual(saved['palette']['primary'],'#2c1fea')
+  self.assertEqual(saved['palette']['primary'],'#7c8b78')
   self.assertEqual(saved['template']['id'],'xhs-blueprint')
   pages=[self.ws.dispatch('/api/upload',{'name':f'q{i}.png','data':png()})['ref'] for i in range(10)]
   exported=self.save(page_images=pages,page_count=10,rendered_for_revision=saved['revision'])
   changed=self.save(palette={**brand,'primary':'#4a6d47'})
   self.assertEqual((changed['page_images'],changed['render_pending']),([],True))
-  for bad in ({'primary':'blue'},{'text':'#eeeeee','paper':'#ffffff'},{'logo':'#000000'}):
+  for bad in ({'primary':'blue'},{'text':'#eeeeee','paper':'#ffffff'},{'logo':'#000000'},{'primary':'#2c1fea'},{'paper':'#ffe066'}):
    with self.assertRaises(ValueError):self.save(palette=bad)
   wechat=server.get_channel_brief(self.id,'wechat')
-  self.assertEqual((wechat['template']['id'],wechat['palette']['name']),('blueprint','Braintrust'))
+  self.assertEqual((wechat['template']['id'],wechat['palette']),('blueprint',None))
   self.assertIn('palette',wechat['instructions'])
   html=server.save_channel_edition(self.id,'wechat',wechat['current_edition']['title'],wechat['current_edition']['body'],wechat['current_edition']['images'],wechat['source_revision'],wechat['expected_revision'],wechat['template'],palette={'primary':'#4a6d47'})
   self.assertEqual(html['palette'],{'primary':'#4a6d47'})

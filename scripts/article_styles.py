@@ -1,7 +1,7 @@
 """WeChat article layouts as static style specs over colour and type tokens.
 
 Everything is an inline style on WeChat-safe tags (section/p/span/h*/figure/img/blockquote/
-pre/code/table). Decoration is borders and colour blocks only, never injected text, so the
+pre/code/table). Decoration is thin rules, borders and pale tints only, never injected text, so the
 published article text stays identical to the source.
 """
 SANS="-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif"
@@ -12,16 +12,18 @@ def mix(a,b,t):
  x=[int(a[i:i+2],16) for i in (1,3,5)];y=[int(b[i:i+2],16) for i in (1,3,5)]
  return '#'+''.join(f'{round(u+(v-u)*t):02x}' for u,v in zip(x,y))
 
-# Default palettes. An edition palette (the article's project colours) overrides these.
+# Each layout has its own soft palette: a light paper (white, cool grey or a pale muted tint),
+# dark ink and one low-saturation Morandi accent for numbers, small labels, thin rules and links.
+# An edition palette may override these tokens.
 PALETTES={
- 'graphite':dict(paper='#ffffff',surface='#f4f5f7',ink='#16181d',text='#3b3f46',muted='#8a9099',primary='#2f3a48',on_primary='#ffffff',accent='#2f3a48',rule='#e3e6ea'),
- 'wechat':dict(paper='#ffffff',surface='#eef6f1',ink='#18241d',text='#3a443e',muted='#87918b',primary='#1f8a5b',on_primary='#ffffff',accent='#1f8a5b',rule='#dfe9e3'),
- 'essay':dict(paper='#fbf8f3',surface='#f3ece2',ink='#2b2420',text='#463d36',muted='#9a8d80',primary='#8a5a44',on_primary='#ffffff',accent='#8a5a44',rule='#e6dccf'),
- 'journal':dict(paper='#ffffff',surface='#f7f3ef',ink='#1f1a17',text='#3f3833',muted='#968b83',primary='#8c4b35',on_primary='#ffffff',accent='#8c4b35',rule='#e2d8cf'),
- 'lab':dict(paper='#ffffff',surface='#f1f5f8',ink='#15222d',text='#36434f',muted='#7f8d99',primary='#365b76',on_primary='#ffffff',accent='#365b76',rule='#dbe3ea'),
- 'letter':dict(paper='#fcfbf6',surface='#f2f0e6',ink='#2e2c22',text='#4a473b',muted='#9a9684',primary='#686446',on_primary='#ffffff',accent='#686446',rule='#e4e1d3'),
- 'blueprint':dict(paper='#f4f3ef',surface='#e8edf8',ink='#111111',text='#2c2c2c',muted='#85847f',primary='#1a3ba8',on_primary='#ffffff',accent='#1a3ba8',rule='#b9c3d9'),
- 'column':dict(paper='#ffffff',surface='#f6f3f1',ink='#141414',text='#363636',muted='#8c8c8c',primary='#b4232c',on_primary='#ffffff',accent='#b4232c',rule='#e6e1de'),
+ 'graphite':dict(paper='#ffffff',surface='#f2f3f4',ink='#1c1e21',text='#33363a',muted='#80858b',primary='#6b7480',on_primary='#ffffff',accent='#6b7480',rule='#e2e4e7'),
+ 'wechat':dict(paper='#ffffff',surface='#f0f3f1',ink='#1d211f',text='#353a37',muted='#7f8782',primary='#7d9184',on_primary='#ffffff',accent='#7d9184',rule='#e1e6e3'),
+ 'essay':dict(paper='#f6f1ea',surface='#ece5db',ink='#2a2420',text='#3f3833',muted='#8a7f75',primary='#8b7765',on_primary='#ffffff',accent='#8b7765',rule='#ddd3c6'),
+ 'journal':dict(paper='#fcfbf9',surface='#f2eeea',ink='#141414',text='#2c2a28',muted='#85807b',primary='#a0624f',on_primary='#ffffff',accent='#a0624f',rule='#dcd6d0'),
+ 'lab':dict(paper='#f1f3f3',surface='#e5eaea',ink='#1a2020',text='#313838',muted='#7a8484',primary='#6a8a8a',on_primary='#ffffff',accent='#6a8a8a',rule='#d3dbdb'),
+ 'letter':dict(paper='#f4f1ea',surface='#e9e5da',ink='#2b2a23',text='#433f37',muted='#8b877a',primary='#8a8466',on_primary='#ffffff',accent='#8a8466',rule='#dcd7c9'),
+ 'blueprint':dict(paper='#fbfbfa',surface='#eef1f4',ink='#16191d',text='#2c3035',muted='#7d858e',primary='#6e8098',on_primary='#ffffff',accent='#6e8098',rule='#c5cdd6'),
+ 'column':dict(paper='#f6f1f0',surface='#ece3e2',ink='#211c1c',text='#3a3332',muted='#877c7b',primary='#a07a7f',on_primary='#ffffff',accent='#a07a7f',rule='#ded3d2'),
 }
 
 def spec(layout,c,t):
@@ -65,17 +67,17 @@ def spec(layout,c,t):
  p=c['primary']
  if layout=='graphite':
   base.update(
-   kicker=f"margin:44px 0 0;padding-top:14px;border-top:1px solid {c['ink']};font-family:{MONO};font-size:12px;line-height:1.4;letter-spacing:3px;font-weight:700;color:{c['muted']};",
    h3=base['h3'].replace('margin:0 0 16px','margin:6px 0 18px'),
    lead=base['lead']+f"padding-bottom:22px;border-bottom:1px solid {c['rule']};",
    quote=f"margin:28px 0;padding:16px 0;border-top:1px solid {c['ink']};border-bottom:1px solid {c['rule']};color:{c['ink']};font-size:{fs+1:g}px;line-height:{lh:g};",
    frame=f"margin:0;padding:0;border:1px solid {c['rule']};",
    caption=base['caption'].replace('text-align:center','text-align:left').replace('margin:10px 8px 0','margin:10px 0 0'),
-   pre=f"margin:24px 0;padding:16px;background:{c['ink']};color:#f2f3f5;border-radius:4px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;line-height:1.75;",
+   kicker=f"margin:44px 0 0;padding-top:14px;border-top:1px solid {c['ink']};font-family:{MONO};font-size:12px;line-height:1.4;letter-spacing:3px;font-weight:700;color:{p};",
+   pre=f"margin:24px 0;padding:16px;background:{tint};border-left:2px solid {p};white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;line-height:1.75;color:{c['ink']};",
   )
  elif layout=='wechat':
   base.update(
-   kicker=f"margin:40px 0 8px;font-family:{MONO};font-size:12px;line-height:1;letter-spacing:1px;font-weight:700;color:{c['on_primary']};background:{p};display:inline-block;padding:4px 9px;border-radius:999px;",
+   kicker=f"margin:40px 0 8px;font-family:{MONO};font-size:13px;line-height:1.4;letter-spacing:2px;font-weight:700;color:{p};",
    h3_wrap=f"padding-bottom:4px;border-bottom:3px solid {mix(p,c['paper'],0.7)};",
    quote=f"margin:24px 0;padding:16px 18px;background:{tint};border-radius:8px;color:{c['ink']};",
    frame="margin:0;padding:0;border-radius:8px;overflow:hidden;",
@@ -107,7 +109,7 @@ def spec(layout,c,t):
    quote=f"margin:24px 0;padding:14px 16px;background:{tint};border-radius:6px;color:{c['ink']};",
    frame=f"margin:0;padding:8px;background:{tint};border-radius:6px;",
    caption=f"margin:10px 0 0;padding-left:10px;border-left:2px solid {c['rule']};font-size:12px;line-height:1.65;color:{c['muted']};text-align:left;",
-   pre=f"margin:24px 0;padding:16px;background:#14202b;color:#e6edf3;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;line-height:1.75;",
+   pre=f"margin:24px 0;padding:16px;background:{tint};color:{c['ink']};border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;line-height:1.75;",
    ref_heading=f"margin:48px 0 16px;padding-top:12px;border-top:2px solid {mix(p,c['paper'],0.75)};font-size:16px;line-height:1.5;font-weight:700;color:{p};",
   )
  elif layout=='letter':
@@ -124,8 +126,8 @@ def spec(layout,c,t):
   dash=f"1px dashed {c['rule']}"
   base.update(
    lead=f"margin:0 0 26px;padding:16px 18px;background:{c['paper'] if c['paper']!='#ffffff' else tint};border:{dash};font-size:{fs:g}px;line-height:{lh:g};letter-spacing:0.5px;color:{c['ink']};text-align:left;",
-   kicker=f"margin:44px 0 10px;font-family:{MONO};font-size:12px;line-height:1;letter-spacing:2px;font-weight:700;color:{c['on_primary']};background:{p};display:inline-block;padding:6px 10px;",
-   h3=f"margin:0 0 18px;font-size:{fs+4:g}px;line-height:1.45;font-weight:800;color:{c['ink']};letter-spacing:0.3px;",
+   kicker=f"margin:44px 0 10px;font-family:{MONO};font-size:12px;line-height:1;letter-spacing:2px;font-weight:700;color:{p};border:1px solid {p};display:inline-block;padding:5px 9px;",
+   h3=f"margin:0 0 18px;font-family:{SERIF};font-size:{fs+5:g}px;line-height:1.45;font-weight:800;color:{c['ink']};letter-spacing:0.3px;",
    h4=f"margin:26px 0 10px;font-family:{MONO};font-size:13px;line-height:1.5;font-weight:700;color:{c['muted']};letter-spacing:2px;text-transform:uppercase;",
    strong=f"font-weight:700;color:{c['ink']};",
    quote=f"margin:24px 0;padding:14px 16px;background:{tint};border:1px dashed {p};color:{c['ink']};",
@@ -133,7 +135,7 @@ def spec(layout,c,t):
    caption=f"margin:10px 2px 0;padding-left:10px;border-left:2px solid {p};font-size:12px;line-height:1.6;color:{c['muted']};text-align:left;letter-spacing:0.3px;",
    pre=f"margin:24px 0;padding:14px 16px;background:#ffffff;border:{dash};white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;line-height:1.75;color:{c['ink']};",
    code_inline=f"font-family:{MONO};font-size:0.86em;padding:1px 5px;margin:0 2px;background:{tint};color:{p};",
-   th=f"padding:9px 8px;background:{p};color:{c['on_primary']};text-align:left;overflow-wrap:anywhere;font-weight:700;font-family:{MONO};font-size:12px;letter-spacing:1px;",
+   th=f"padding:9px 8px;background:{tint};color:{c['ink']};border-bottom:1px solid {p};text-align:left;overflow-wrap:anywhere;font-weight:700;font-family:{MONO};font-size:12px;letter-spacing:1px;",
    td=f"padding:9px 8px;border-bottom:{dash};text-align:left;overflow-wrap:anywhere;",
    hr=f"margin:32px 0;border:0;border-top:{dash};",
    ref_heading=f"margin:48px 0 14px;padding:0 0 10px;border-bottom:2px solid {p};font-size:16px;line-height:1.5;font-weight:800;color:{c['ink']};letter-spacing:1px;",
@@ -144,9 +146,8 @@ def spec(layout,c,t):
    lead=f"margin:0 0 30px;padding:0 0 0 14px;border-left:4px solid {p};font-size:{fs+1:g}px;line-height:{lh:g};letter-spacing:0.5px;color:{c['ink']};text-align:left;font-weight:500;",
    kicker=f"margin:46px 0 0;font-size:44px;line-height:1;font-weight:900;color:{p};letter-spacing:-1px;font-family:{SANS};",
    h3=f"margin:6px 0 20px;padding:0 0 12px;border-bottom:1px solid {c['ink']};font-size:{fs+5:g}px;line-height:1.4;font-weight:900;color:{c['ink']};",
-   quote=f"margin:28px 0;padding:18px 18px;background:{p};color:{c['on_primary']};font-size:{fs+1:g}px;line-height:{lh:g};font-weight:600;",
-   quote_inner=f"color:{c['on_primary']};",
+   quote=f"margin:28px 0;padding:18px 18px;background:{tint};border-left:3px solid {p};color:{c['ink']};font-size:{fs+1:g}px;line-height:{lh:g};font-weight:600;",
    caption=f"margin:10px 0 0;font-size:12px;line-height:1.65;color:{c['muted']};text-align:left;padding-top:8px;border-top:2px solid {p};display:inline-block;",
-   ref_heading=f"margin:52px 0 16px;padding:8px 12px;background:{c['ink']};color:#ffffff;font-size:15px;line-height:1.5;font-weight:800;letter-spacing:2px;display:inline-block;",
+   ref_heading=f"margin:52px 0 16px;padding:0 0 8px;border-bottom:3px solid {p};color:{c['ink']};font-size:16px;line-height:1.5;font-weight:900;letter-spacing:2px;",
   )
  return base

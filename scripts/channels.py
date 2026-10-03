@@ -35,11 +35,12 @@ def load(ws,e,channel):
     if builtin['id']==selected:result['template']=builtin
   return result
  return {'channel':channel,'format':'longform','title':e.get('title',''),'body':e.get('body',''),'images':[a['ref'] for a in e.get('assets',[])],'template':longform_catalog(ws.root)[0] if channel=='xiaohongshu' else BUILTINS[0],'revision':None,'source_revision':e.get('revision'),'publication':None}
-PALETTE_HINT=('配色跟随文章所讲的项目：从项目 logo、官网 CSS、README 或文档中取品牌色，写入 palette（paper 纸面、surface 浅底块、ink 标题、text 正文、muted 注释、primary 主色块、on_primary 主色上的文字、accent 次强调、rule 分隔线；六位十六进制），'
- 'name 写配色名称，source 写取色来源。正文与纸面对比度需 ≥ 4.5。没有明确项目时不传，使用模板默认配色。')
-BRIEF_INSTRUCTIONS=('默认完整长文：保留原稿标题、完整正文、段落顺序、图片和全部参考资料，body 与源稿一致，images 包含全部素材，不总结、不删减、不改写事实，不生成摘要卡片。'
- '只有用户明确要求精简（例如控制在 10 页以内）时才改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点，保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
+PALETTE_HINT=('配色默认用所选模板自带的柔和配色（白、冷浅灰或很淡的莫兰迪纸面，深色文字，一种低饱和点缀色），一般不传 palette。'
+ '只有用户明确要求时才传 palette 覆盖：paper/surface/ink/text/muted/rule 接近中性，primary/accent 用低饱和莫兰迪色（灰蓝、灰绿、陶土、灰紫、暖灰），不取项目品牌色，不用鲜艳色、大面积色块或渐变；正文与纸面对比度需 ≥ 4.5。')
+BRIEF_INSTRUCTIONS=('小红书笔记最多 10 张图（含封面），渲染器超过 10 页会拒绝导出。全文能排进 10 页时保留原稿标题、完整正文、段落顺序、图片和全部参考资料，body 与源稿一致，不总结、不删减、不改写事实，不生成摘要卡片。'
+ '排不进 10 页或用户要求精简时改写：由你决定内容——按插图顺序压缩正文、挑选关键插图、用单独一行的 <!-- page --> 指定分页、用 cover_page 写封面标题/副标题/最多 5 条要点（可选 image 指定一张封面大图，只有部分模板显示），保留核心论点和引用编号，参考资料可写成短格式；保存时传 condensed=true。'
  '模板只决定字号、行距、颜色和装饰，不决定内容；从 templates 中选一项传给 save_channel_edition（format=longform）。不修改源稿，不同步或发布。分页图片由工作台或 MCP App 按模板生成，长文不按卡片截断。'+PALETTE_HINT)
+MAX_PAGES=10
 IMAGE_REF=re.compile(r'!\[[^\]]*\]\(\s*<?([^)\s>]+)')
 def completeness(e,edition):
  """How the edition compares with the full source; longform must not drop text or images."""
@@ -57,7 +58,18 @@ def cover_page(value):
  if not isinstance(points,list) or len(points)>5 or any(not isinstance(p,str) or not p.strip() or len(p)>30 for p in points):raise ValueError('封面要点最多 5 条，每条不超过 30 字')
  title,subtitle=str(value.get('title','')).strip(),str(value.get('subtitle','')).strip()
  if len(title)>40 or len(subtitle)>60:raise ValueError('封面标题或副标题过长')
- return {'title':title,'subtitle':subtitle,'points':[p.strip() for p in points]}
+ out={'title':title,'subtitle':subtitle,'points':[p.strip() for p in points]}
+ image=value.get('image')
+ if image:
+  if not isinstance(image,str) or not re.fullmatch(r'images/[a-f0-9]{32}\.png',image):raise ValueError('封面图片请使用已上传的图片')
+  out['image']=image
+ byline=value.get('byline')
+ if byline:
+  if not isinstance(byline,dict):raise ValueError('署名无效')
+  name,handle=str(byline.get('name','')).strip(),str(byline.get('handle','')).strip()
+  if not name or len(name)>20 or (handle and not re.fullmatch(r'@?[\w.\u4e00-\u9fff]{1,20}',handle)):raise ValueError('署名名称不超过 20 字，账号只含字母、数字、下划线或中文')
+  out['byline']={'name':name,'handle':handle if not handle or handle.startswith('@') else '@'+handle}
+ return out
 def longform_template(ws,value,edition):
  if value:return validate(value)
  current=edition.get('template') if edition.get('format')=='longform' else None
@@ -87,7 +99,7 @@ def dispatch(ws,route,data):
   xhs=channel=='xiaohongshu'
   return {'layout_protocol':'longform-v1','format':'longform','content_id':e['id'],'channel':channel,'source_revision':e['revision'],'expected_revision':edition['revision'],
           'source':{'title':e['title'],'markdown':e['body'],'agent_context':e.get('agent_context',''),'assets':e.get('assets',[]),'cover':e.get('cover','')},
-          'template':longform_template(ws,None,edition) if xhs else edition['template'],'templates':longform_catalog(ws.root) if xhs else [],
+          'template':longform_template(ws,None,edition) if xhs else edition['template'],'templates':longform_catalog(ws.root) if xhs else [],'max_pages':MAX_PAGES if xhs else None,
           'current_edition':edition,'completeness':completeness(e,edition),
           'instructions':BRIEF_INSTRUCTIONS if xhs else PALETTE_HINT,'palette':edition.get('palette')}
  if route=='/api/channels/save':
@@ -124,12 +136,14 @@ def dispatch(ws,route,data):
   palette=validate_palette(data['palette']) if 'palette' in data else edition.get('palette')
   if format=='longform':
    cover=cover_page(data['cover_page']) if 'cover_page' in data else edition.get('cover_page')
+   if cover and cover.get('image'):ws.image_path(cover['image'])
    condensed=bool(data.get('condensed',edition.get('condensed',False)))
    changed=title!=edition.get('title') or body!=edition.get('body') or template!=edition.get('template') or cover!=edition.get('cover_page') or palette!=edition.get('palette')
    if data.get('rendered_for_revision'):
     if data['rendered_for_revision']!=edition['revision'] or changed:raise ValueError('文章版本已变化，请重新导出')
     refs=data.get('page_images',[])
     if not isinstance(refs,list) or not refs or len(refs)!=data.get('page_count') or len(refs)>200:raise ValueError('分页图片数量无效')
+    if channel=='xiaohongshu' and len(refs)>MAX_PAGES:raise ValueError(f'小红书笔记最多 {MAX_PAGES} 张图（含封面），当前 {len(refs)} 张；请精简正文或调整分页')
     from PIL import Image
     for ref in refs:
      with Image.open(ws.image_path(ref)) as img:
@@ -142,7 +156,7 @@ def dispatch(ws,route,data):
   edition.update(title=title,body=body,images=images,template=template,palette=palette,revision=uuid.uuid4().hex,source_revision=e['revision'])
   save_json(path(ws,e['id'],channel),edition);return {**edition,'completeness':completeness(e,edition)}
  if route=='/api/channels/preview':
-  html=render(edition['body'],edition['template'],edition.get('palette')) if channel=='wechat' or edition.get('format')=='longform' else '<p>'+__import__('html').escape(edition['body']).replace('\n','<br/>')+'</p>'
+  html=render(edition['body'],edition['template'],edition.get('palette'),ws) if channel=='wechat' or edition.get('format')=='longform' else '<p>'+__import__('html').escape(edition['body']).replace('\n','<br/>')+'</p>'
   from wechat import image_bytes
   import base64
   soup=BeautifulSoup(html,'html.parser')

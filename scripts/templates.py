@@ -14,14 +14,14 @@ LAYOUTS=ARTICLE_LAYOUTS+('folio','brief','note','tweet','poster','swiss')
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
 def builtin(id,name,description,**values):return dict(BASE,id=id,name=name,description=description,layout=id,accent=PALETTES[id]['primary'],**values)
 BUILTINS=[
- builtin('graphite','石墨简报','细线分节 · 等宽编号 · 技术长文',font_size=15.5,line_height=1.85,paragraph_gap=18),
- builtin('blueprint','蓝图','暖灰底 · 钴蓝色块 · 虚线框图 · 技术架构',font_size=15.5,line_height=1.85,paragraph_gap=18),
- builtin('wechat','微信清读','胶囊编号 · 浅底引文 · 知识分享',font_size=16,line_height=1.85,paragraph_gap=18),
- builtin('column','专栏','大号编号 · 色块引言 · 观点评论',font_size=16,line_height=1.85,paragraph_gap=20),
- builtin('journal','纸上专题','居中章节 · 双线引文 · 杂志专题',font_size=16,line_height=1.95,paragraph_gap=22),
- builtin('lab','研究手记','左标章节 · 深色代码 · 研究解读',font_size=15.5,line_height=1.9,paragraph_gap=18),
- builtin('essay','人文札记','宋体居中 · 留白段落 · 观点随笔',font_size=16,line_height=2,paragraph_gap=22),
- builtin('letter','周末来信','宋体章节 · 轻图注 · 个人表达',font_size=16.5,line_height=2,paragraph_gap=24),
+ builtin('graphite','石墨简报','细线分节 · 等宽编号 · 石板灰点缀',font_size=15.5,line_height=1.85,paragraph_gap=18),
+ builtin('blueprint','蓝图','白底点阵感 · 宋体标题 · 虚线图框 · 雾霾蓝点缀',font_size=15.5,line_height=1.85,paragraph_gap=18),
+ builtin('wechat','微信清读','清爽白底 · 等宽编号 · 灰绿点缀',font_size=16,line_height=1.85,paragraph_gap=18),
+ builtin('column','专栏','淡玫瑰纸面 · 大号编号 · 灰粉点缀',font_size=16,line_height=1.85,paragraph_gap=20),
+ builtin('journal','纸上专题','报刊式居中章节 · 双线引文 · 陶土红点缀',font_size=16,line_height=1.95,paragraph_gap=22),
+ builtin('lab','研究手记','冷灰纸面 · 左标章节 · 灰青点缀',font_size=15.5,line_height=1.9,paragraph_gap=18),
+ builtin('essay','人文札记','暖米色纸 · 宋体居中 · 暖灰褐点缀',font_size=16,line_height=2,paragraph_gap=22),
+ builtin('letter','周末来信','淡卡其纸面 · 宋体章节 · 橄榄灰点缀',font_size=16.5,line_height=2,paragraph_gap=24),
 ]
 
 def sample_image(name):
@@ -54,6 +54,7 @@ def validate(value):
     if value.get('palette'):out['palette']=validate_palette(value['palette'])
     if value.get('cover_style') in ('editorial','geek-report','consulting-report','clean-review'):out['cover_style']=value['cover_style']
     if value.get('page_ratio') in ('3:4','3:5','1:1','9:16'):out['page_ratio']=value['page_ratio']
+    if value.get('figure_tone') in ('muted','duotone','original'):out['figure_tone']=value['figure_tone']
     return out
 
 def list_templates(root):
@@ -68,15 +69,18 @@ def save_template(root,value):
 REFERENCE_HEADING=re.compile(r'(参考资料|参考文献|参考链接|引用来源|References|Sources)[:：]?',re.I)
 MARKERS=('data-template-root','data-template-wrap','data-template-frame','data-template-url','data-template-number')
 
-def render(body,template,palette=None):
+def render(body,template,palette=None,ws=None):
     """Restyle an article with a layout. Text, links and images are kept exactly; earlier
-    template markup is unwrapped first, so rendering again with another layout is lossless."""
+    template markup is unwrapped first, so rendering again with another layout is lossless.
+    With a workspace, local figures are swapped for copies toned to the layout palette; the
+    original ref is kept in data-template-src so a later render starts from the original."""
     t=validate(template);layout=t['layout'] if t['layout'] in ARTICLE_LAYOUTS else 'graphite'
     c=resolve(PALETTES[layout],t,palette);css=spec(layout,c,t)
     soup=BeautifulSoup(body if re.match(r'\s*<',body) else markdown.markdown(body,extensions=['tables','fenced_code']),'html.parser')
     for marker in MARKERS:
         for node in soup.find_all(attrs={marker:True}):node.unwrap()
     for node in soup.find_all(True):node.attrs.pop('style',None)
+    for img in soup.find_all('img',attrs={'data-template-src':True}):img['src']=img.attrs.pop('data-template-src')
     def style(node,key,extra=''):node['style']=css[key]+extra
     def text_of(node):return node.get_text(strip=True)
     def element_siblings(node):
@@ -154,6 +158,15 @@ def render(body,template,palette=None):
                 for url in entry.find_all('span',attrs={'data-template-url':'true'}):
                     if getattr(url.previous_sibling,'name',None)=='br':url.previous_sibling.extract()
                 for a in entry.find_all('a'):a['style']=f"color:{c['muted']};text-decoration:none;word-break:break-all;"
+    mode=t.get('figure_tone','muted')
+    if ws is not None and mode!='original':
+        from image_tone import toned_ref
+        for img in soup.find_all('img'):
+            ref=img.get('src','')
+            if not re.fullmatch(r'images/[a-f0-9]{32}\.png',ref):continue
+            try:img['src']=toned_ref(ws,ref,c,mode)
+            except (ValueError,OSError):continue
+            img['data-template-src']=ref
     root=soup.new_tag('section');root['data-template-root']='true';root['style']=css['root']
     for child in list(soup.contents):root.append(child.extract())
     soup.append(root)

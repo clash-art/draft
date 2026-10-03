@@ -22,25 +22,13 @@
   "paragraph_gap": 18,
   "reference_size": 13,
   "reference_gap": 8,
-  "accent": "#1a3ba8",
+  "accent": "#6e8098",
   "id": "blueprint",
   "name": "蓝图",
-  "description": "暖灰底 · 钴蓝色块 · 虚线框图 · 技术架构",
+  "description": "白底点阵感 · 宋体标题 · 虚线图框 · 雾霾蓝点缀",
   "layout": "blueprint"
  },
- "palette": {
-  "paper": "#fafafa",
-  "surface": "#eff4ff",
-  "ink": "#18181b",
-  "text": "#3f3f46",
-  "muted": "#71717b",
-  "primary": "#2c1fea",
-  "on_primary": "#ffffff",
-  "accent": "#5770ff",
-  "rule": "#d4d4d8",
-  "name": "Braintrust",
-  "source": "braintrust.dev 站点 CSS：.border-brand-blue #2C1FEA；--blue-50 239 244 255、--blue-500 87 112 255；--zinc-50/300/500/700/900"
- },
+ "palette": null,
  "revision": "5f0c1b7e2d9a4c38b6e1a0f4c2d7e913",
  "source_revision": "40859d54d33d4746af54efe7ddbfbb0a",
  "publication": null

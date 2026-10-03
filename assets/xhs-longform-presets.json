@@ -2,92 +2,99 @@
   {
     "id": "xhs-folio",
     "name": "刊物",
-    "description": "暖白纸面 · 宋体正文 · 大标题封面",
+    "description": "暖米色纸 · 宋体正文 · 首字下沉 · 暖灰褐点缀，可放一张封面大图",
     "layout": "folio",
-    "accent": "#9e3b26",
+    "accent": "#8b7765",
     "font_size": 13,
     "line_height": 1.72,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-blueprint",
     "name": "蓝图",
-    "description": "点阵纸 · 钴蓝色块 · 虚线框图 · 技术图解",
+    "description": "白底点阵 · 宋体大标题 · 虚线图框 · 雾霾蓝点缀",
     "layout": "blueprint",
-    "accent": "#1a3ba8",
+    "accent": "#6e8098",
     "font_size": 13,
     "line_height": 1.7,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-tweet",
     "name": "推文",
-    "description": "大标题 · 嵌入推文卡片 · 白底密排正文",
+    "description": "X 推文截图样式 · 头像与操作栏 · 石板灰蓝点缀",
     "layout": "tweet",
-    "accent": "#1d9bf0",
+    "accent": "#7b8a99",
     "font_size": 13,
     "line_height": 1.68,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-brief",
     "name": "研报",
-    "description": "深色封面 · 章节进度条 · 图号与附录式参考资料",
+    "description": "冷浅灰纸面 · 章节进度条 · 数据封面 · 灰绿点缀",
     "layout": "brief",
-    "accent": "#2b59c3",
+    "accent": "#7c8b78",
     "font_size": 13,
     "line_height": 1.68,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-press",
     "name": "报刊",
-    "description": "黑白报纸 · 宋体密排 · 粗细双线",
+    "description": "报纸版式 · 刊头与粗细双线 · 宋体密排 · 陶土红点缀",
     "layout": "press",
-    "accent": "#b3261e",
+    "accent": "#a0624f",
     "font_size": 12.5,
     "line_height": 1.66,
     "paragraph_gap": 6,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-marker",
-    "name": "荧光",
-    "description": "暖白纸 · 超大黑标题 · 荧光笔重点",
+    "name": "标记",
+    "description": "淡陶土纸面 · 超大黑体 · 粗下划线重点 · 陶土点缀",
     "layout": "marker",
-    "accent": "#ffd100",
+    "accent": "#b07f6b",
     "font_size": 13,
     "line_height": 1.7,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   },
   {
     "id": "xhs-note",
     "name": "轻读",
-    "description": "白色卡片 · 荧光标题 · 圆角图解，贴近小红书阅读",
+    "description": "白底笔记 · 页眉页脚线 · 灰紫点缀，贴近日常阅读",
     "layout": "note",
-    "accent": "#e0533d",
+    "accent": "#8f7a8c",
     "font_size": 13,
     "line_height": 1.72,
     "paragraph_gap": 7,
     "reference_size": 8.5,
     "reference_gap": 2,
-    "page_ratio": "3:4"
+    "page_ratio": "3:4",
+    "figure_tone": "muted"
   }
 ]

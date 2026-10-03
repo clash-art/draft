@@ -49,7 +49,7 @@ def main():
    browser=p.chromium.launch(executable_path=args.chrome) if args.chrome else p.chromium.launch()
    page=browser.new_page(viewport={'width':375,'height':812},device_scale_factor=2)
    for t in chosen:
-    body=inline_images(render(edition['body'],t,palette),ws)
+    body=inline_images(render(edition['body'],t,palette,ws),ws)
     page.set_content(PAGE.format(title=edition['title'],author=e.get('author') or '作者',account='公众号名称',body=body),wait_until='load')
     page.wait_for_timeout(300)
     full=out/f"{t['id']}-full.png";page.screenshot(path=str(full),full_page=True)

@@ -71,9 +71,35 @@ class TemplateTests(unittest.TestCase):
     self.assertEqual(soup.get_text(),BeautifulSoup(render(html,BUILTINS[0]),'html.parser').get_text())
     self.assertEqual(soup.figure.figcaption.get_text(),'图')
     self.assertNotIn('<style',html);self.assertNotIn('class=',html)
+ def test_builtin_palettes_are_soft(self):
+  from article_styles import PALETTES
+  import json
+  from palette import saturation
+  for name,colors in PALETTES.items():
+   with self.subTest(layout=name):self.assertEqual(validate_palette(colors),colors)
+  presets=json.loads((Path(__file__).resolve().parents[1]/'assets/xhs-longform-presets.json').read_text())
+  self.assertEqual(len({t['accent'] for t in presets}),len(presets))
+  for t in presets+BUILTINS:
+   with self.subTest(template=t['id']):self.assertLessEqual(saturation(t['accent']),0.45)
+ def test_figures_are_toned_to_layout_without_touching_originals(self):
+  from PIL import Image
+  with tempfile.TemporaryDirectory() as tmp:
+   ws=Workspace(Path(tmp),lambda:None);(Path(tmp)/'images').mkdir(exist_ok=True)
+   ref='images/'+'a'*32+'.png';Image.new('RGB',(40,20),'#e60023').save(Path(tmp)/ref)
+   body=f'<p>正文</p><p><img src="{ref}" alt="图"/></p>'
+   first=BeautifulSoup(render(body,BUILTINS[0],ws=ws),'html.parser').img
+   self.assertNotEqual(first['src'],ref);self.assertEqual(first['data-template-src'],ref)
+   r,g,b=Image.open(Path(tmp)/first['src']).convert('RGB').getpixel((5,5))
+   self.assertLess(max(r,g,b)-min(r,g,b),90)
+   self.assertEqual(Image.open(Path(tmp)/ref).convert('RGB').getpixel((5,5)),(230,0,35))
+   again=BeautifulSoup(render(str(BeautifulSoup(render(body,BUILTINS[0],ws=ws),'html.parser')),BUILTINS[0],ws=ws),'html.parser').img
+   self.assertEqual((again['src'],again['data-template-src']),(first['src'],ref))
+   plain=BeautifulSoup(render(body,dict(BUILTINS[0],figure_tone='original'),ws=ws),'html.parser').img
+   self.assertEqual(plain['src'],ref)
  def test_palette_validation(self):
-  self.assertEqual(validate_palette({'primary':'#2C1FEA','name':'Braintrust'}),{'primary':'#2c1fea','name':'Braintrust'})
+  self.assertEqual(validate_palette({'primary':'#7C8B78','name':'sage'}),{'primary':'#7c8b78','name':'sage'})
+  self.assertEqual(validate_palette({'paper':'#f3efe9'}),{'paper':'#f3efe9'})
   self.assertIsNone(validate_palette(None))
   self.assertGreater(contrast('#000000','#ffffff'),20)
-  for bad in ({'primary':'#12345'},{'ink':'#f0f0f0','paper':'#ffffff'},{'on_primary':'#ffffff','primary':'#ffd100'},{'background':'#ffffff'},{'name':'only'}):
+  for bad in ({'primary':'#12345'},{'ink':'#f0f0f0','paper':'#ffffff'},{'on_primary':'#ffffff','primary':'#ffd100'},{'primary':'#2c1fea'},{'accent':'#e60023'},{'paper':'#ffe066'},{'background':'#ffffff'},{'name':'only'}):
    with self.assertRaises(ValueError):validate_palette(bad)

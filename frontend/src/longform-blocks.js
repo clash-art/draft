@@ -3,6 +3,7 @@ import {marked} from 'marked';
 // text; layout only decides grouping (section number + heading, image + caption).
 const REFERENCES=/^参考(资料|文献|链接)$/;
 // `<!-- page -->` on its own line starts a new page (used by condensed, figure-led editions).
+// `![说明](图片 "full")` marks a dense diagram for an edge-to-edge plate; the edition decides which.
 const PAGE_BREAK=/^\s*<!--\s*page\s*-->\s*$/;
 const unescape=s=>String(s||'').replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g,'$1');
 const norm=s=>unescape(s).replace(/\s+/g,'').trim();
@@ -30,7 +31,7 @@ export function articleBlocks(markdown){
    if(/^\d{1,2}$/.test(text)&&next?.type==='heading'&&!REFERENCES.test(norm(next.text))){blocks.push({role:'section',number:text,html:inline(next.text)});i++;continue}
    if(child?.type==='image'){
     const caption=next?.type==='paragraph'&&norm(next.text)===norm(child.text)&&norm(next.text)?next:null;
-    blocks.push({role:'figure',src:child.href,alt:unescape(child.text),caption:caption?inline(caption.text):''});if(caption)i++;continue;
+    blocks.push({role:'figure',src:child.href,alt:unescape(child.text),caption:caption?inline(caption.text):'',full:child.title==='full'});if(caption)i++;continue;
    }
    if(child?.type==='strong'&&norm(text).length<=30&&next?.type==='paragraph'){blocks.push({role:'label',html:inline(text)});continue}
    const pair=text.match(/^([^：:\s][^：:\n]{0,23}[：:])([\s\S]+)$/);

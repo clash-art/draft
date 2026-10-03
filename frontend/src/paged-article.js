@@ -4,7 +4,7 @@ import {toPng} from 'html-to-image';
 import {articleCover} from './longform-cover';
 import {pageSize} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
-import {themeFor,splitTitle} from './longform-themes';
+import {themeFor,splitTitle,mix} from './longform-themes';
 export const PAGE_WIDTH=360,PAGE_HEIGHT=480;
 const SPLITTABLE=new Set(['lead','p','quote','list']);
 const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
@@ -12,6 +12,22 @@ const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
 const NO_LINE_START=/[，。、；：？！）》」』”’…—\)\],.;:?!%·]/;
 const imageRef=src=>/^images\/[a-f0-9]{32}\.png$/.test(src||'')?src:'';
 async function resolveImage(src,api,imageMap){const ref=imageRef(src);return {ref,src:ref?imageMap[ref]||(await api('/api/image/preview',{ref})).preview:src}}
+const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+// Pulls a figure toward the theme's tone: a duotone from a softened ink to the paper, blended
+// with a little of the original colour ('muted') or fully ('duotone'). Original pixels are kept
+// for 'original' and for anything the canvas cannot read.
+export async function toneImage(src,theme){
+ const mode=theme.figureTone;if(mode==='original'||!src)return src;
+ try{
+  const img=new Image();img.crossOrigin='anonymous';img.src=src;await img.decode();
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d');g.drawImage(img,0,0);
+  const data=g.getImageData(0,0,c.width,c.height),d=data.data;
+  const dark=rgb(mix(theme.ink,theme.accent,0.35)),light=rgb(mix(theme.paper,'#ffffff',0.6)),keep=mode==='duotone'?0:0.22;
+  for(let i=0;i<d.length;i+=4){const l=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255;
+   for(let k=0;k<3;k++){const tone=dark[k]+(light[k]-dark[k])*l;d[i+k]=Math.round(tone*(1-keep)+d[i+k]*keep)}}
+  g.putImageData(data,0,0);return c.toDataURL('image/png');
+ }catch{return src}
+}
 function cutAt(node,count){
  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);let left=count,n;
  while((n=walker.nextNode())){if(left<=n.length)return [n,left];left-=n.length}return [node,node.childNodes.length];
@@ -31,7 +47,7 @@ function shell(theme,width,height){
 function buildBlock(theme,block,images,figures){
  const make={lead:theme.lead,p:theme.p,section:theme.section,heading:theme.heading,label:theme.label,pair:theme.pair,quote:theme.quote,'refs-heading':theme.refsHeading,ref:theme.ref}[block.role];
  let node;
- if(block.role==='figure'){node=theme.figure(block,images.get(block),++figures.n);node.style.margin=theme.figureMargin}
+ if(block.role==='figure'){node=theme.figure(block,images.get(block),++figures.n);node.style.margin=block.full?`4px -${theme.pad.right}px 8px -${theme.pad.left}px`:theme.figureMargin;if(block.full)node.dataset.full='true'}
  else if(make)node=make(block);
  else{node=document.createElement('div');node.innerHTML=DOMPurify.sanitize(block.html||'');Object.assign(node.style,{margin:`0 0 ${theme.gap}px`,fontSize:theme.size+'px',lineHeight:String(theme.leading),color:theme.body});
   for(const el of node.querySelectorAll('pre,table'))Object.assign(el.style,{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:'100%',fontSize:'12px',lineHeight:'1.6'});
@@ -55,7 +71,9 @@ async function layoutOnce(edition,api,imageMap,opts){
  const template=edition.template||{},theme=themeFor(template,{...opts,palette:edition.palette}),{width,height}=pageSize(template);
  const blocks=articleBlocks(edition.body);
  const images=new Map();
- for(const b of blocks)if(b.role==='figure')images.set(b,await resolveImage(b.src,api,imageMap));
+ for(const b of blocks)if(b.role==='figure'){const r=await resolveImage(b.src,api,imageMap);images.set(b,{...r,src:await toneImage(r.src,theme)})}
+ const plan=edition.cover_page||{};
+ const coverImage=plan.image?await resolveImage(plan.image,api,imageMap).then(async r=>({...r,src:await toneImage(r.src,theme)})):null;
  await document.fonts.ready;
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0',width:width+'px'});document.body.append(host);
  try{
@@ -69,7 +87,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
   const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
   const bottom=()=>current.content.getBoundingClientRect().bottom;
-  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+(theme.bleed||0))};
+  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+Math.max(theme.bleed||0,last.dataset.full?theme.pad.right:0))};
   const empty=()=>!current.content.childElementCount;
   const place=node=>{if(empty())node.style.marginTop='0';current.content.append(node);if(fits())return true;node.remove();return false};
   const used=()=>{const last=current.content.lastElementChild;if(!last)return 0;return last.getBoundingClientRect().bottom+parseFloat(getComputedStyle(last).marginBottom||0)-current.content.getBoundingClientRect().top};
@@ -86,7 +104,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const imageHeight=node=>{const c=node.cloneNode(true);measure.content.replaceChildren(c);const h=c.querySelector('img')?.getBoundingClientRect().height||0;measure.content.replaceChildren();return h};
   const shrinkFigure=(node,room,floor=0.85)=>{const img=node.querySelector('img');if(!img)return false;const cap=img.style.maxHeight,full=imageHeight(node);if(full<40)return false;
    for(let k=0.97;k>=floor-0.001;k-=0.03){img.style.maxHeight=Math.floor(full*k)+'px';if(heightOf(node)<=room)return true}img.style.maxHeight=cap;return false};
-  const capFigure=node=>{const img=node.querySelector('img');if(img)img.style.maxHeight=Math.round(current.content.clientHeight*0.62)+'px'};
+  const capFigure=node=>{const img=node.querySelector('img');if(img)img.style.maxHeight=Math.round(current.content.clientHeight*(node.dataset.full?0.8:0.62))+'px'};
   // Text after a figure up to an authored page break belongs on the figure's page.
   const segmentRest=i=>{let h=0;for(let j=i+1;j<blocks.length;j++){const r=blocks[j].role;if(r==='break')return h;if(r==='figure'||r==='refs-heading')return null;if(r!=='end')h+=heightOf(nodes[j])}return null};
   // Reading order is strict: figures stay exactly where the source places them.
@@ -159,7 +177,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const offsetCover=1;
   // The cover is read as a feed thumbnail: title and key points only, figures stay on inner pages.
   const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
-  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),stats,width,height});
+  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),image:coverImage,stats,width,height});
   const total=pages.length+1;
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
   host.append(cover);
@@ -178,8 +196,8 @@ function fillOf(content){const last=content.lastElementChild;return last?Math.ro
 // the title split at its colon and the section headings.
 function coverContent(edition,sectionPages){
  const plan=edition.cover_page||{},[main,sub]=splitTitle(edition.title||'');
- const points=Array.isArray(plan.points)&&plan.points.length?plan.points.map((label,i)=>({number:String(i+1).padStart(2,'0'),label:String(label)})):sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
- return {title:plan.title||main,subtitle:plan.subtitle??sub,points};
+ const points=Array.isArray(plan.points)&&(plan.points.length||edition.cover_page)?plan.points.map((label,i)=>({number:String(i+1).padStart(2,'0'),label:String(label)})):sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
+ return {title:plan.title||main,subtitle:plan.subtitle??sub,points,byline:plan.byline||null};
 }
 // Width of a block's last line relative to its text column (0–1).
 function lastLineFill(node){

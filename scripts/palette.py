@@ -1,5 +1,7 @@
-"""Per-article colour tokens. Templates ship a default palette; an edition may carry the
-palette of the project the article is about, which overrides the template colours."""
+"""Colour tokens. Every template ships its own soft palette: a light paper (white, cool grey or a
+pale muted tint), dark ink and one low-saturation Morandi accent. An edition may override any
+token, but colours must stay soft: paper and text tokens are near-neutral, and primary/accent
+are muted (low saturation), never vivid brand hues."""
 import re
 
 KEYS=('paper','surface','ink','text','muted','primary','on_primary','accent','rule')
@@ -16,8 +18,19 @@ def contrast(a,b):
  x,y=sorted((_luminance(a),_luminance(b)),reverse=True)
  return (x+0.05)/(y+0.05)
 
+NEUTRAL=('paper','surface','ink','text','muted','rule')
+MAX_CHROMA=28
+MAX_SATURATION=0.45
+def chroma(color):
+ c=[int(color[i:i+2],16) for i in (1,3,5)]
+ return max(c)-min(c)
+def saturation(color):
+ c=[int(color[i:i+2],16)/255 for i in (1,3,5)]
+ hi,lo=max(c),min(c);l=(hi+lo)/2
+ return 0 if hi==lo else (hi-lo)/(1-abs(2*l-1))
+
 # Pairs that carry body text; 4.5 is the WCAG AA threshold for normal text.
-READABLE=(('text','paper',4.5),('ink','paper',4.5),('on_primary','primary',4.5),('muted','paper',2.8))
+READABLE=(('text','paper',4.5),('ink','paper',4.5),('on_primary','primary',3.0),('muted','paper',2.8))
 
 def validate_palette(value):
  if not value:return None
@@ -31,6 +44,12 @@ def validate_palette(value):
  unknown=set(value)-set(KEYS)-{'name','source'}
  if unknown:raise ValueError('未知配色字段：'+'、'.join(sorted(unknown)))
  if not out:raise ValueError('配色至少需要一个颜色')
+ for key in NEUTRAL:
+  if key in out and chroma(out[key])>MAX_CHROMA:raise ValueError(f'配色 {key} 应接近中性（{out[key]} 颜色太重）；纸面可用白、浅灰或很淡的莫兰迪色')
+ for key in ('primary','accent'):
+  if key in out and saturation(out[key])>MAX_SATURATION:raise ValueError(f'配色 {key} 太鲜艳（{out[key]}）；请用低饱和的莫兰迪色，如灰蓝、灰绿、陶土、灰紫、暖灰')
+ for key in ('paper','surface'):
+  if key in out and _luminance(out[key])<0.75:raise ValueError(f'配色 {key} 应为白色或浅灰纸面')
  for fg,bg,minimum in READABLE:
   if fg in out and bg in out and contrast(out[fg],out[bg])<minimum:raise ValueError(f'配色 {fg} 与 {bg} 对比度不足（{contrast(out[fg],out[bg]):.1f}，需要 ≥ {minimum}）')
  for key,limit in (('name',40),('source',300)):

@@ -1,10 +1,11 @@
 {
  "channel": "xiaohongshu",
  "title": "工业界如何做 Agent 自进化",
- "body": "Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。\n\n![Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进](images/b760b5ddc4594589b32b2f6774f67ac3.png)\n\nBraintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进\n\n<!-- page -->\n\n01\n\n### 先验证：改完有没有用\n\nHermes〔1〕保存记忆、从复杂任务中创建 skill；ECC〔2〕从会话中提炼 instincts，再聚合成 skills。\n\n![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)\n\nHermes 与 ECC 将经验转成技能的机制对照\n\n<!-- page -->\n\n风险是 Agent 把一次偶然成功写成通用规则，或围着同一次失败反复改 skill。文件变多了，新任务做得怎样，还得单独测。\n\n**学术界：至少拿出分数**\n\n看实验先看三点：新旧版本的底座和预算是否相同，测试题是否参与过优化，有没有留出任务、重复运行和消融。\n\n改执行框架：SICA〔3〕修改自身代码并评估候选；Self-Harness〔4〕按失败轨迹改 harness，过回归检查才接受；Meta-Harness〔5〕发现给优化 Agent 看原始轨迹，比只给分数更有效。\n\n改模型权重：SDPO〔6〕让看到错误信息的模型当“事后教师”，再蒸馏回原策略；SDFT〔7〕用示范做教学信号，减少旧能力遗忘。\n\n第一方工具：Anthropic 的 skill-creator〔8〕支持有无 skill 对照和版本盲评；OpenAI Codex 的指南〔9〕建议记录执行过程，并随真实失败扩充测试集。\n\n<!-- page -->\n\n02\n\n### 上线：真实世界更复杂\n\n让订单 Agent“取消昨天那单”，接口返回成功，用户却说：“不是这一单。”\n\n![关联执行轨迹与事后反馈，定位订单处理失败](images/81cd4c47a812405da5f75b7857cb92ad.png)\n\n关联执行轨迹与事后反馈，定位订单处理失败\n\n只看接口会记成成功；对照纠正和执行记录，才知道是没澄清多笔订单，还是算错了时区〔10〕。\n\n<!-- page -->\n\n03\n\n### 挖问题：Braintrust 与 Adaline\n\n一万条 trace 先看哪条？Running Coach 案例〔11〕把 19,372 段会话聚成 133 类行为，7 类是问题。\n\n![Adaline 从会话中聚类行为并识别问题](images/32ef028eb07f41fab37eab71364534bf.png)\n\nAdaline 从会话中聚类行为并识别问题\n\nBraintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns〔13〕让 Loop 深挖轨迹，记下有证据的发现。\n\n<!-- page -->\n\n![Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复](images/de83e70759b94858b41d14803ae35ee3.png)\n\nBraintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复\n\n**两条路径**\n\n查原因：Braintrust 用 Loop 保存带证据的 Pattern；Adaline 的行为分析〔14〕关联具体执行证据。\n\n去修复：Braintrust 交给 coding agent；Adaline 用 Improve〔15〕在应用层〔16〕搜索候选 prompt。\n\n<!-- page -->\n\n04\n\n### 改权重：Trajectory 的 SDPO++\n\nTrajectory 的 SDK〔17〕把消息、工具调用和奖励连成轨迹，用 trace\\_id 接上用户反馈。\n\n![SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重](images/e462c30c54124b5aa65e58e51b87f7b8.png)\n\nSDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重\n\nSDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，学生逐 token 向它靠近。APEX-Agents 上通过率从 5% 升到 25%。\n\n<!-- page -->\n\n05\n\n### 下一轮：让真实数据接着转\n\n同一种失败有不同修法：工具缺参数就改接口，指令漏了规则就补 prompt，模型反复做错才考虑更新权重。路线图〔19〕主张联合优化这三层，先沿轨迹定位再动手。\n\n修好多订单澄清，还会冒出时区、部分退款等新失败；日志要能关联结果与纠正。\n\n**上线怎么验证**\n\nA/B：Adaline Labs〔20〕建议把用户分给不同 prompt 版本；有足够流量时随机分组做实验〔21〕，比较完成率、纠正率、成本和延迟。\n\n灰度：控制放量范围，会积累记忆的 Agent 还要隔离两组状态。\n\nDemo 演示一次修改，论文测出一次提升；生产系统要靠真实任务不断提供新的失败、约束和纠正。\n\n<!-- page -->\n\n### 参考资料\n\n〔1〕Hermes github.com/NousResearch/hermes-agent\n\n〔2〕ECC github.com/affaan-m/ECC/blob/main/skills/continuous-learning-v2/SKILL.md\n\n〔3〕SICA arxiv.org/abs/2504.15228\n\n〔4〕Self-Harness arxiv.org/html/2606.09498v1\n\n〔5〕Meta-Harness arxiv.org/html/2603.28052v1\n\n〔6〕SDPO arxiv.org/abs/2601.20802\n\n〔7〕SDFT arxiv.org/abs/2601.19897\n\n〔8〕skill-creator claude.com/blog/improving-skill-creator-test-measure-and-refine-agent-skills\n\n〔9〕Codex 指南 developers.openai.com/blog/eval-skills\n\n〔10〕评测指南 anthropic.com/engineering/demystifying-evals-for-ai-agents\n\n〔11〕Running Coach adaline.ai/blog/agent-metabolism-ai-agent-continuous-improvement\n\n〔12〕Topics braintrust.dev/docs/observe/topics\n\n〔13〕Patterns braintrust.dev/docs/observe/patterns\n\n〔14〕编程 Agent 行为分析 adaline.ai/docs/behaviors/coding-agent-behaviors\n\n〔15〕Improve adaline.ai/docs/improve/overview\n\n〔16〕应用层优化 adaline.ai/agent-self-improvement\n\n〔17〕SDK docs.trajectory.ai/introduction\n\n〔18〕Scaling SDPO trajectory.ai/field-notes/scaling-sdpo\n\n〔19〕路线图 trajectory.ai/field-notes/manifesto\n\n〔20〕Adaline Labs labs.adaline.ai/p/prompt-engineering-as-product-strategy\n\n〔21〕A/B 实验 microsoft.com/en-us/research/publication/the-benefits-of-controlled-experimentation-at-scale/\n",
+ "body": "![Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进](images/b760b5ddc4594589b32b2f6774f67ac3.png \"full\")\n\nBraintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进\n\nHermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。\n\n<!-- page -->\n\n![放大：Braintrust 与 Adaline 两条改进路线](images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png \"full\")\n\n放大：Braintrust 与 Adaline 两条改进路线\n\n![放大：Trajectory 从轨迹学习并更新权重](images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png \"full\")\n\n放大：Trajectory 从轨迹学习并更新权重\n\n<!-- page -->\n\n01\n\n### 先验证：改完有没有用\n\nHermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 instincts，再聚合成 skills。风险是把一次偶然成功写成通用规则，文件变多了，新任务做得怎样还得单独测。\n\n**学术界：至少拿出分数**\n\n看实验先看三点：底座和预算是否相同，测试题是否参与过优化，有没有留出任务和消融。\n\n改执行框架：SICA〔3〕修改自身代码；Self-Harness〔4〕按失败轨迹改 harness；Meta-Harness〔5〕给优化 Agent 看原始轨迹。\n\n改模型权重：SDPO〔6〕让模型当“事后教师”再蒸馏；SDFT〔7〕用示范减少旧能力遗忘。\n\n第一方工具：skill-creator〔8〕支持有无 skill 对照；Codex 指南〔9〕建议随真实失败扩充测试集。\n\n<!-- page -->\n\n02\n\n### 上线：真实世界更复杂\n\n让订单 Agent“取消昨天那单”，接口返回成功，用户却说：“不是这一单。”\n\n![关联执行轨迹与事后反馈，定位订单处理失败](images/81cd4c47a812405da5f75b7857cb92ad.png)\n\n关联执行轨迹与事后反馈，定位订单处理失败\n\n只看接口会记成成功；对照纠正和执行记录，才知道是没澄清多笔订单，还是算错了时区〔10〕。\n\n<!-- page -->\n\n03\n\n### 挖问题：Braintrust 与 Adaline\n\n一万条 trace 先看哪条？Running Coach 案例〔11〕把 19,372 段会话聚成 133 类行为，7 类是问题。\n\n![Adaline 从会话中聚类行为并识别问题](images/32ef028eb07f41fab37eab71364534bf.png)\n\nAdaline 从会话中聚类行为并识别问题\n\nBraintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns〔13〕让 Loop 深挖轨迹，记下有证据的发现。\n\n<!-- page -->\n\n![Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复](images/de83e70759b94858b41d14803ae35ee3.png \"full\")\n\nBraintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复\n\n**两条路径**\n\n查原因：Braintrust 用 Loop 保存带证据的 Pattern；Adaline 的行为分析〔14〕关联具体执行证据。\n\n去修复：Braintrust 交给 coding agent；Adaline 用 Improve〔15〕在应用层〔16〕搜索候选 prompt。\n\n<!-- page -->\n\n04\n\n### 改权重：Trajectory 的 SDPO++\n\nTrajectory 的 SDK〔17〕把消息、工具调用和奖励连成轨迹，用 trace\\_id 接上用户反馈。\n\n![SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重](images/e462c30c54124b5aa65e58e51b87f7b8.png \"full\")\n\nSDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重\n\nSDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，学生逐 token 向它靠近。APEX-Agents 上通过率从 5% 升到 25%。\n\n<!-- page -->\n\n05\n\n### 下一轮：让真实数据接着转\n\n同一种失败有不同修法：工具缺参数就改接口，指令漏了规则就补 prompt，模型反复做错才考虑更新权重。路线图〔19〕主张联合优化这三层，先沿轨迹定位再动手。\n\n修好多订单澄清，还会冒出时区、部分退款等新失败；日志要能关联结果与纠正。\n\n**上线怎么验证**\n\nA/B：Adaline Labs〔20〕建议把用户分给不同 prompt 版本；有足够流量时随机分组做实验〔21〕，比较完成率、纠正率、成本和延迟。\n\n灰度：控制放量范围，会积累记忆的 Agent 还要隔离两组状态。\n\nDemo 演示一次修改，论文测出一次提升；生产系统要靠真实任务不断提供新的失败、约束和纠正。\n\n<!-- page -->\n\n### 参考资料\n\n〔1〕Hermes github.com/NousResearch/hermes-agent\n\n〔2〕ECC github.com/affaan-m/ECC/blob/main/skills/continuous-learning-v2/SKILL.md\n\n〔3〕SICA arxiv.org/abs/2504.15228\n\n〔4〕Self-Harness arxiv.org/html/2606.09498v1\n\n〔5〕Meta-Harness arxiv.org/html/2603.28052v1\n\n〔6〕SDPO arxiv.org/abs/2601.20802\n\n〔7〕SDFT arxiv.org/abs/2601.19897\n\n〔8〕skill-creator claude.com/blog/improving-skill-creator-test-measure-and-refine-agent-skills\n\n〔9〕Codex 指南 developers.openai.com/blog/eval-skills\n\n〔10〕评测指南 anthropic.com/engineering/demystifying-evals-for-ai-agents\n\n〔11〕Running Coach adaline.ai/blog/agent-metabolism-ai-agent-continuous-improvement\n\n〔12〕Topics braintrust.dev/docs/observe/topics\n\n〔13〕Patterns braintrust.dev/docs/observe/patterns\n\n〔14〕编程 Agent 行为分析 adaline.ai/docs/behaviors/coding-agent-behaviors\n\n〔15〕Improve adaline.ai/docs/improve/overview\n\n〔16〕应用层优化 adaline.ai/agent-self-improvement\n\n〔17〕SDK docs.trajectory.ai/introduction\n\n〔18〕Scaling SDPO trajectory.ai/field-notes/scaling-sdpo\n\n〔19〕路线图 trajectory.ai/field-notes/manifesto\n\n〔20〕Adaline Labs labs.adaline.ai/p/prompt-engineering-as-product-strategy\n\n〔21〕A/B 实验 microsoft.com/en-us/research/publication/the-benefits-of-controlled-experimentation-at-scale/\n",
  "images": [
   "images/b760b5ddc4594589b32b2f6774f67ac3.png",
-  "images/b88e98237d11484fa8ccffa36b05b23f.png",
+  "images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png",
+  "images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png",
   "images/81cd4c47a812405da5f75b7857cb92ad.png",
   "images/32ef028eb07f41fab37eab71364534bf.png",
   "images/de83e70759b94858b41d14803ae35ee3.png",
@@ -13,15 +14,16 @@
  "template": {
   "id": "xhs-blueprint",
   "name": "蓝图",
-  "description": "点阵纸 · 钴蓝色块 · 虚线框图 · 技术图解",
+  "description": "白底点阵 · 宋体大标题 · 虚线图框 · 雾霾蓝点缀",
   "layout": "blueprint",
-  "accent": "#1a3ba8",
+  "accent": "#6e8098",
   "font_size": 13,
   "line_height": 1.7,
   "paragraph_gap": 7,
   "reference_size": 8.5,
   "reference_gap": 2,
-  "page_ratio": "3:4"
+  "page_ratio": "3:4",
+  "figure_tone": "muted"
  },
  "revision": "3a6014f6d7f84c59a6f070e6cb7438e0",
  "source_revision": "40859d54d33d4746af54efe7ddbfbb0a",
@@ -34,25 +36,11 @@
  "cover_page": {
   "title": "工业界如何做 Agent 自进化",
   "subtitle": "从真实反馈到持续改进",
-  "points": [
-   "先验证：改完有没有用",
-   "上线：真实世界更复杂",
-   "挖问题：Braintrust 与 Adaline",
-   "改权重：Trajectory 的 SDPO++",
-   "下一轮：让真实数据接着转"
-  ]
+  "points": [],
+  "byline": {
+   "name": "Agent 工程笔记",
+   "handle": "@agent_eng_notes"
+  }
  },
- "palette": {
-  "paper": "#fafafa",
-  "surface": "#eff4ff",
-  "ink": "#18181b",
-  "text": "#3f3f46",
-  "muted": "#71717b",
-  "primary": "#2c1fea",
-  "on_primary": "#ffffff",
-  "accent": "#5770ff",
-  "rule": "#d4d4d8",
-  "name": "Braintrust",
-  "source": "braintrust.dev 站点 CSS：.border-brand-blue #2C1FEA；--blue-50 239 244 255、--blue-500 87 112 255；--zinc-50/300/500/700/900"
- }
+ "palette": null
 }

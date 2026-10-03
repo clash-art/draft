@@ -1,8 +1,18 @@
-Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。
-
-![Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进](images/b760b5ddc4594589b32b2f6774f67ac3.png)
+![Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进](images/b760b5ddc4594589b32b2f6774f67ac3.png "full")
 
 Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进
+
+Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。
+
+<!-- page -->
+
+![放大：Braintrust 与 Adaline 两条改进路线](images/c1a0b7e4d2f94a6b8e3c5d7f9a1b2c3d.png "full")
+
+放大：Braintrust 与 Adaline 两条改进路线
+
+![放大：Trajectory 从轨迹学习并更新权重](images/c2b1c8f5e3a04b7c9f4d6e8a0b2c3d4e.png "full")
+
+放大：Trajectory 从轨迹学习并更新权重
 
 <!-- page -->
 
@@ -10,25 +20,17 @@ Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改�
 
 ### 先验证：改完有没有用
 
-Hermes〔1〕保存记忆、从复杂任务中创建 skill；ECC〔2〕从会话中提炼 instincts，再聚合成 skills。
-
-![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)
-
-Hermes 与 ECC 将经验转成技能的机制对照
-
-<!-- page -->
-
-风险是 Agent 把一次偶然成功写成通用规则，或围着同一次失败反复改 skill。文件变多了，新任务做得怎样，还得单独测。
+Hermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 instincts，再聚合成 skills。风险是把一次偶然成功写成通用规则，文件变多了，新任务做得怎样还得单独测。
 
 **学术界：至少拿出分数**
 
-看实验先看三点：新旧版本的底座和预算是否相同，测试题是否参与过优化，有没有留出任务、重复运行和消融。
+看实验先看三点：底座和预算是否相同，测试题是否参与过优化，有没有留出任务和消融。
 
-改执行框架：SICA〔3〕修改自身代码并评估候选；Self-Harness〔4〕按失败轨迹改 harness，过回归检查才接受；Meta-Harness〔5〕发现给优化 Agent 看原始轨迹，比只给分数更有效。
+改执行框架：SICA〔3〕修改自身代码；Self-Harness〔4〕按失败轨迹改 harness；Meta-Harness〔5〕给优化 Agent 看原始轨迹。
 
-改模型权重：SDPO〔6〕让看到错误信息的模型当“事后教师”，再蒸馏回原策略；SDFT〔7〕用示范做教学信号，减少旧能力遗忘。
+改模型权重：SDPO〔6〕让模型当“事后教师”再蒸馏；SDFT〔7〕用示范减少旧能力遗忘。
 
-第一方工具：Anthropic 的 skill-creator〔8〕支持有无 skill 对照和版本盲评；OpenAI Codex 的指南〔9〕建议记录执行过程，并随真实失败扩充测试集。
+第一方工具：skill-creator〔8〕支持有无 skill 对照；Codex 指南〔9〕建议随真实失败扩充测试集。
 
 <!-- page -->
 
@@ -60,7 +62,7 @@ Braintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns�
 
 <!-- page -->
 
-![Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复](images/de83e70759b94858b41d14803ae35ee3.png)
+![Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复](images/de83e70759b94858b41d14803ae35ee3.png "full")
 
 Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复
 
@@ -78,7 +80,7 @@ Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修�
 
 Trajectory 的 SDK〔17〕把消息、工具调用和奖励连成轨迹，用 trace\_id 接上用户反馈。
 
-![SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重](images/e462c30c54124b5aa65e58e51b87f7b8.png)
+![SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重](images/e462c30c54124b5aa65e58e51b87f7b8.png "full")
 
 SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重
 

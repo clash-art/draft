@@ -34,7 +34,7 @@ const condensed=readFileSync(new URL('../../examples/xhs-longform-agent-self-evo
 test('agent-authored page breaks become break blocks and the condensed edition keeps all references',()=>{
  assert.deepEqual(articleBlocks('一段\n\n<!-- page -->\n\n二段').map(b=>b.role),['lead','break','p']);
  const blocks=articleBlocks(condensed);
- assert.equal(count(blocks,'figure'),6);
+ assert.equal(count(blocks,'figure'),7);
  assert.ok(count(blocks,'break')>=5);
  const refs=blocks.filter(b=>b.role==='ref');
  assert.equal(refs.length,21);
