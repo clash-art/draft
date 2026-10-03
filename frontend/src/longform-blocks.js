@@ -2,12 +2,14 @@ import {marked} from 'marked';
 // Classifies the source Markdown into layout blocks. Every block keeps its original
 // text; layout only decides grouping (section number + heading, image + caption).
 const REFERENCES=/^参考(资料|文献|链接)$/;
+// `<!-- page -->` on its own line starts a new page (used by condensed, figure-led editions).
+const PAGE_BREAK=/^\s*<!--\s*page\s*-->\s*$/;
 const unescape=s=>String(s||'').replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g,'$1');
 const norm=s=>unescape(s).replace(/\s+/g,'').trim();
 const inline=text=>marked.parseInline(text||'');
 function onlyChild(token){const kids=(token.tokens||[]).filter(t=>!(t.type==='text'&&!t.text.trim())&&t.type!=='br');return kids.length===1?kids[0]:null}
 export function parseReference(text){
- const m=unescape(text).trim().match(/^(〔\d+〕|\[\d+\]|［\d+］|\d+[.、])\s*([\s\S]*?)\s*(https?:\/\/\S+)?\s*$/);
+ const m=unescape(text).trim().match(/^(〔\d+〕|\[\d+\]|［\d+］|\d+[.、])\s*([\s\S]*?)\s*(https?:\/\/\S+|(?:[\w-]+\.)+[a-z]{2,}\/\S*)?\s*$/);
  if(!m)return null;
  return {number:m[1],name:m[2].replace(/\s+/g,' ').trim(),url:m[3]||''};
 }
@@ -16,6 +18,7 @@ export function articleBlocks(markdown){
  const blocks=[];let references=false,lead=false;
  for(let i=0;i<tokens.length;i++){
   const t=tokens[i],next=tokens[i+1],prev=blocks[blocks.length-1];
+  if(t.type==='html'&&PAGE_BREAK.test(t.text)){blocks.push({role:'break'});continue}
   if(t.type==='heading'){
    if(REFERENCES.test(norm(t.text))){references=true;blocks.push({role:'refs-heading',html:inline(t.text)});continue}
    blocks.push({role:'heading',level:t.depth,html:inline(t.text)});continue;

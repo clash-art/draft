@@ -4,9 +4,9 @@ import {toPng} from 'html-to-image';
 import {articleCover} from './longform-cover';
 import {pageSize} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
-import {themeFor} from './longform-themes';
+import {themeFor,splitTitle} from './longform-themes';
 export const PAGE_WIDTH=360,PAGE_HEIGHT=480;
-const SPLITTABLE=new Set(['lead','p','quote','list','pair']);
+const SPLITTABLE=new Set(['lead','p','quote','list']);
 const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
 // Characters that must not start a line (and therefore a continued page).
 const NO_LINE_START=/[，。、；：？！）》」』”’…—\)\],.;:?!%·]/;
@@ -56,15 +56,14 @@ async function layoutOnce(edition,api,imageMap,opts){
  const blocks=articleBlocks(edition.body);
  const images=new Map();
  for(const b of blocks)if(b.role==='figure')images.set(b,await resolveImage(b.src,api,imageMap));
- const bodyRefs=new Set(blocks.filter(b=>b.role==='figure').map(b=>imageRef(b.src)).filter(Boolean));
- const coverRef=(edition.images||[]).find(ref=>!bodyRefs.has(ref));
- const coverImage=coverRef?await resolveImage(coverRef,api,imageMap):null;
  await document.fonts.ready;
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0',width:width+'px'});document.body.append(host);
  try{
   const figures={n:0},nodes=blocks.map(b=>buildBlock(theme,b,images,figures));
   const endAt=blocks.findIndex(b=>b.role==='refs-heading');
-  if(theme.end){const end=theme.end();end.dataset.role='end';nodes.splice(endAt<0?nodes.length:endAt,0,end);blocks.splice(endAt<0?blocks.length:endAt,0,{role:'end'})}
+  // The end mark closes the body, so it goes before any page break that precedes the references.
+  let endPos=endAt<0?blocks.length:endAt;while(endPos>0&&blocks[endPos-1].role==='break')endPos--;
+  if(theme.end){const end=theme.end();end.dataset.role='end';nodes.splice(endPos,0,end);blocks.splice(endPos,0,{role:'end'})}
   await Promise.all(nodes.flatMap(n=>[...n.querySelectorAll('img')].map(img=>img.decode().catch(()=>{}))));
   const measure=shell(theme,width,height);host.append(measure.page);
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
@@ -93,6 +92,8 @@ async function layoutOnce(edition,api,imageMap,opts){
   next();
   for(let i=0;i<nodes.length;i++){
    const b=blocks[i],node=nodes[i];
+   if(b.role==='break'){if(!empty())newPage();continue}
+   if(b.role==='end'){if(!empty())place(node);continue}
    if(b.role==='section'){section={number:b.number,html:b.html};sectionIndex++}
    if(KEEP_WITH_NEXT.has(b.role)){
     if(!empty()&&free()<heightOf(node)+minNext(i+1))newPage();
@@ -134,11 +135,11 @@ async function layoutOnce(edition,api,imageMap,opts){
      let a=0,z=lo;const target=(headLines-1)*lineOf(node)+1;
      while(a<z){const mid=Math.ceil((a+z)/2),part=fragment(node,offset,offset+mid);part.style.margin='0';measure.content.replaceChildren(part);const s=getComputedStyle(part);const h=part.getBoundingClientRect().height-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom);measure.content.replaceChildren();if(h<=target)a=mid;else z=mid-1}
      if(a>0)lo=adjust(a);
-    }
+    }else if(tailLines<2&&!empty()){newPage();continue}
     const part=fragment(node,offset,offset+lo);if(offset)part.style.marginTop='0';
     part.style.marginBottom='0';
     current.content.append(part);
-    if(lastLineFill(part)>0.9)part.style.textAlignLast='justify';
+    if(lastLineFill(part)>0.96)part.style.textAlignLast='justify';
     current.roles.push(b.role);offset+=lo;newPage();
    }
   }
@@ -152,28 +153,30 @@ async function layoutOnce(edition,api,imageMap,opts){
   if(pages.some(p=>[...p.content.querySelectorAll('img')].some(img=>img.getBoundingClientRect().height<40)))throw Error('有图片未能完整显示，未生成图片');
   const title=edition.title||'',sections=articleSections(blocks),stats=articleStats(edition.body,blocks);
   const offsetCover=1;
-  // Legacy Lieflat covers have no image slot, so they are used only when no cover image would be lost.
-  const legacyCover=template.cover_style&&!coverImage?await articleCover(edition,source,width,height):null;
-  const cover=legacyCover||theme.cover({title,image:coverImage,sections:sectionPages.map(s=>({...s,page:s.page+offsetCover})),stats,width,height});
+  // The cover is read as a feed thumbnail: title and key points only, figures stay on inner pages.
+  const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
+  const cover=legacyCover||theme.cover({...coverContent(edition,sectionPages),stats,width,height});
   const total=pages.length+1;
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title})});
   host.append(cover);
-  const hero=cover.querySelector('[data-cover-image]');
-  if(hero)await hero.decode().catch(()=>{});
-  const fitHero=()=>{if(!hero)return;hero.style.maxHeight='100%';const slot=hero.parentElement.parentElement,frame=hero.parentElement,s=getComputedStyle(frame);hero.style.maxHeight=Math.max(60,slot.clientHeight-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom)-2)+'px'};
   const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>c.getBoundingClientRect().bottom>bottom+0.5)};
-  fitHero();
-  for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove();fitHero()}
+  for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
   if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
-  if(coverRef&&!cover.querySelector(`img[data-ref="${coverRef}"]`))throw Error('封面图片未显示');
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
-  const meta={template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,cover_image:coverRef||null,
+  const meta={template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
    pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:[...p.content.querySelectorAll('img')].map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
   return {pages:html,meta};
  }finally{host.remove()}
 }
 function fillOf(content){const last=content.lastElementChild;return last?Math.round(Math.min(1,(last.getBoundingClientRect().bottom-content.getBoundingClientRect().top)/content.clientHeight)*100)/100:0}
+// Cover text is edition content (cover_page, chosen by the agent); without it, fall back to
+// the title split at its colon and the section headings.
+function coverContent(edition,sectionPages){
+ const plan=edition.cover_page||{},[main,sub]=splitTitle(edition.title||'');
+ const points=Array.isArray(plan.points)&&plan.points.length?plan.points.map((label,i)=>({number:String(i+1).padStart(2,'0'),label:String(label)})):sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
+ return {title:plan.title||main,subtitle:plan.subtitle??sub,points};
+}
 // Width of a block's last line relative to its text column (0–1).
 function lastLineFill(node){
  const range=document.createRange();range.selectNodeContents(node);
