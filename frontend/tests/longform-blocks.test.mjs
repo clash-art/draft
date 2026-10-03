@@ -29,3 +29,18 @@ test('unrecognised Markdown is passed through instead of dropped',()=>{
  assert.match(blocks[2].html,/<li>二<\/li>/);
  assert.match(blocks.at(-1).html,/不带编号的来源/);
 });
+
+const condensed=readFileSync(new URL('../../examples/xhs-longform-agent-self-evolution/xiaohongshu-condensed.md',import.meta.url),'utf8');
+test('agent-authored page breaks become break blocks and the condensed edition keeps all references',()=>{
+ assert.deepEqual(articleBlocks('一段\n\n<!-- page -->\n\n二段').map(b=>b.role),['lead','break','p']);
+ const blocks=articleBlocks(condensed);
+ assert.equal(count(blocks,'figure'),6);
+ assert.ok(count(blocks,'break')>=5);
+ const refs=blocks.filter(b=>b.role==='ref');
+ assert.equal(refs.length,21);
+ assert.ok(refs.every(r=>r.name&&r.url),'short-form references keep a name and a link');
+});
+
+test('bare-domain links are recognised as reference URLs',()=>{
+ assert.deepEqual(parseReference('〔1〕Hermes github.com/NousResearch/hermes-agent'),{number:'〔1〕',name:'Hermes',url:'github.com/NousResearch/hermes-agent'});
+});

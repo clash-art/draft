@@ -13,6 +13,7 @@ from wechat import save_json
 EXAMPLE=ROOT/'examples/xhs-longform-agent-self-evolution'
 ARTICLE=(EXAMPLE/'article.md').read_text(encoding='utf-8')
 EDITOR=json.loads((EXAMPLE/'editor.json').read_text(encoding='utf-8'))
+CONDENSED=(EXAMPLE/'xiaohongshu-condensed.md').read_text(encoding='utf-8')
 
 def png(size=(1080,1440)):
  buffer=io.BytesIO();Image.new('RGB',size,'white').save(buffer,'PNG');return base64.b64encode(buffer.getvalue()).decode()
@@ -32,21 +33,28 @@ class LongformMcpTests(unittest.TestCase):
   args=dict(content_id=self.id,channel='xiaohongshu',title=e['title'],body=e['body'],images=e['images'],source_revision=b['source_revision'],expected_revision=b['expected_revision'],template=e['template'])
   return server.save_channel_edition(**{**args,**changes})
 
- def test_example_is_complete_source(self):
+ def test_example_keeps_full_source_and_ships_condensed_edition(self):
   self.assertEqual(EDITOR['body'],ARTICLE)
   self.assertEqual(len(re.findall(r'^!\[',ARTICLE,re.M)),10)
   self.assertEqual(len(re.findall(r'^〔\d+〕',ARTICLE,re.M)),21)
   self.assertIn(EDITOR['cover'],[a['ref'] for a in EDITOR['assets']])
   edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))
-  self.assertEqual((edition['format'],edition['template']['id'],edition['body']),('longform','xhs-folio',ARTICLE))
-  self.assertEqual(edition['images'],[a['ref'] for a in EDITOR['assets']])
+  self.assertEqual((edition['format'],edition['template']['id'],edition['body'],edition['condensed']),('longform','xhs-folio',CONDENSED,True))
+  figures=re.findall(r'^!\[[^\]]*\]\(([^)]+)\)',CONDENSED,re.M)
+  self.assertEqual(edition['images'],figures)
+  self.assertEqual(len(figures),6)
+  self.assertTrue(set(figures)<={a['ref'] for a in EDITOR['assets']})
+  self.assertEqual(len(re.findall(r'^〔\d+〕',CONDENSED,re.M)),21)
+  self.assertEqual(len(edition['cover_page']['points']),5)
   for path in sorted((EXAMPLE/'layouts').glob('*.json')):
    layout=json.loads(path.read_text(encoding='utf-8'))
    pages=layout['pages']
    self.assertEqual(layout['page_count'],len(pages),path.name)
-   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),10,path.name)
+   self.assertLessEqual(layout['page_count'],10,path.name)
+   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),6,path.name)
    self.assertEqual(sum(p.get('references',0) for p in pages),21,path.name)
-   self.assertEqual(layout['cover_image'],EDITOR['cover'],path.name)
+   self.assertEqual(pages[0].get('figures',[]),[],path.name)
+   self.assertNotIn('cover_image',layout,path.name)
 
  def test_brief_is_longform_v1_and_never_truncated(self):
   b=self.brief()
@@ -55,9 +63,11 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual(b['source']['cover'],EDITOR['cover'])
   self.assertEqual([t['id'] for t in b['templates']],['xhs-folio','xhs-brief','xhs-note'])
   self.assertEqual(b['template']['id'],'xhs-folio')
-  self.assertEqual(b['current_edition']['body'],ARTICLE)
-  self.assertTrue(b['completeness']['body_matches_source'])
-  self.assertEqual((b['completeness']['missing_images'],b['completeness']['body_images_not_listed']),([],[]))
+  self.assertEqual(b['current_edition']['body'],CONDENSED)
+  self.assertTrue(b['completeness']['condensed'])
+  self.assertFalse(b['completeness']['body_matches_source'])
+  self.assertEqual(b['completeness']['body_images_not_listed'],[])
+  self.assertIn('condensed',b['instructions'])
   self.assertNotIn('卡片',b['instructions'].replace('不生成摘要卡片','').replace('不按卡片截断',''))
 
  def test_legacy_cards_edition_is_saved_as_longform_with_longform_template(self):
@@ -65,7 +75,7 @@ class LongformMcpTests(unittest.TestCase):
   b=self.brief()
   self.assertEqual((b['format'],b['template']['id']),('longform','xhs-folio'))
   saved=server.save_channel_edition(self.id,'xiaohongshu',EDITOR['title'],ARTICLE,[a['ref'] for a in EDITOR['assets']],b['source_revision'],'old')
-  self.assertEqual((saved['format'],saved['template']['id'],saved['cards']),('longform','xhs-folio',[]))
+  self.assertEqual((saved['format'],saved['template']['id'],saved['cards'],saved['condensed']),('longform','xhs-folio',[],False))
   self.assertEqual(saved['body'],ARTICLE)
   self.assertTrue(saved['render_pending'])
   self.assertTrue(saved['completeness']['body_matches_source'])
@@ -79,7 +89,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertIn(custom['id'],[t['id'] for t in server.list_channel_templates()['items']])
   saved=self.save(template=custom)
   self.assertEqual((saved['template']['layout'],saved['template']['font_size']),('brief',16))
-  self.assertEqual(saved['body'],ARTICLE)
+  self.assertEqual((saved['body'],saved['condensed']),(CONDENSED,True))
   with self.assertRaises(ValueError):server.list_channel_templates('wechat')
   with self.assertRaises(ValueError):self.save(format='summary')
 
@@ -89,14 +99,35 @@ class LongformMcpTests(unittest.TestCase):
   b=self.brief()
   exported=self.save(page_images=pages,page_count=32,rendered_for_revision=edition['revision'])
   self.assertEqual((exported['page_images'],exported['render_pending']),(pages,False))
-  self.assertEqual(exported['body'],ARTICLE)
+  self.assertEqual(exported['body'],CONDENSED)
   wrong=self.ws.dispatch('/api/upload',{'name':'wrong.png','data':png((1080,1080))})['ref']
   with self.assertRaises(ValueError):self.save(page_images=pages[:-1]+[wrong],page_count=32,rendered_for_revision=exported['revision'])
   with self.assertRaises(ValueError):self.save(page_images=pages,page_count=31,rendered_for_revision=exported['revision'])
-  changed=self.save(body=ARTICLE+'\n补充')
+  changed=self.save(body=CONDENSED+'\n补充')
   self.assertEqual((changed['page_images'],changed['render_pending']),([],True))
-  self.assertFalse(changed['completeness']['body_matches_source'])
+  self.assertTrue(changed['completeness']['condensed'])
   self.assertEqual(b['layout_protocol'],'longform-v1')
+
+ def test_full_edition_round_trip(self):
+  saved=self.save(body=ARTICLE,images=[a['ref'] for a in EDITOR['assets']],condensed=False,cover_page={})
+  self.assertEqual((saved['body'],saved['condensed'],saved['cover_page']),(ARTICLE,False,None))
+  self.assertTrue(saved['completeness']['body_matches_source'])
+  self.assertFalse(saved['completeness']['condensed'])
+  self.assertEqual(saved['completeness']['missing_images'],[])
+
+ def test_cover_page_is_edition_content(self):
+  plan={'title':'自进化','subtitle':'从反馈到改进','points':['验证','上线','改权重']}
+  saved=self.save(cover_page=plan)
+  self.assertEqual(saved['cover_page'],plan)
+  self.assertTrue(saved['condensed'])
+  self.assertEqual(self.brief()['current_edition']['cover_page'],plan)
+  pages=[self.ws.dispatch('/api/upload',{'name':f'p{i}.png','data':png()})['ref'] for i in range(10)]
+  exported=self.save(page_images=pages,page_count=10,rendered_for_revision=saved['revision'])
+  self.assertFalse(exported['render_pending'])
+  again=self.save(cover_page={**plan,'subtitle':'换个副标题'})
+  self.assertEqual((again['page_images'],again['render_pending']),([],True))
+  for bad in ({'points':['x']*6},{'points':['长'*31]},{'title':'长'*41},'封面'):
+   with self.assertRaises(ValueError):self.save(cover_page=bad)
 
  def test_longform_prepare_is_refused(self):
   edition=self.save()
