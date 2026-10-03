@@ -52,7 +52,7 @@ export async function layoutArticle(edition,api,imageMap={}){
  return result;
 }
 async function layoutOnce(edition,api,imageMap,opts){
- const template=edition.template||{},theme=themeFor(template,opts),{width,height}=pageSize(template);
+ const template=edition.template||{},theme=themeFor(template,{...opts,palette:edition.palette}),{width,height}=pageSize(template);
  const blocks=articleBlocks(edition.body);
  const images=new Map();
  for(const b of blocks)if(b.role==='figure')images.set(b,await resolveImage(b.src,api,imageMap));
@@ -84,9 +84,11 @@ async function layoutOnce(edition,api,imageMap,opts){
    if(KEEP_WITH_NEXT.has(b.role))return heightOf(n)+minNext(i+1);
    return heightOf(n)};
   const imageHeight=node=>{const c=node.cloneNode(true);measure.content.replaceChildren(c);const h=c.querySelector('img')?.getBoundingClientRect().height||0;measure.content.replaceChildren();return h};
-  const shrinkFigure=(node,room)=>{const img=node.querySelector('img');if(!img)return false;const cap=img.style.maxHeight,full=imageHeight(node);if(full<40)return false;
-   for(let k=0.97;k>=0.85;k-=0.03){img.style.maxHeight=Math.floor(full*k)+'px';if(heightOf(node)<=room)return true}img.style.maxHeight=cap;return false};
+  const shrinkFigure=(node,room,floor=0.85)=>{const img=node.querySelector('img');if(!img)return false;const cap=img.style.maxHeight,full=imageHeight(node);if(full<40)return false;
+   for(let k=0.97;k>=floor-0.001;k-=0.03){img.style.maxHeight=Math.floor(full*k)+'px';if(heightOf(node)<=room)return true}img.style.maxHeight=cap;return false};
   const capFigure=node=>{const img=node.querySelector('img');if(img)img.style.maxHeight=Math.round(current.content.clientHeight*0.62)+'px'};
+  // Text after a figure up to an authored page break belongs on the figure's page.
+  const segmentRest=i=>{let h=0;for(let j=i+1;j<blocks.length;j++){const r=blocks[j].role;if(r==='break')return h;if(r==='figure'||r==='refs-heading')return null;if(r!=='end')h+=heightOf(nodes[j])}return null};
   // Reading order is strict: figures stay exactly where the source places them.
   const newPage=next;
   next();
@@ -103,6 +105,8 @@ async function layoutOnce(edition,api,imageMap,opts){
    }
    if(b.role==='figure'){
     capFigure(node);
+    const rest=segmentRest(i);
+    if(rest!==null){const room=free()-rest;if(room>0&&heightOf(node)>room)shrinkFigure(node,room,0.8)}
     if(place(node)){current.roles.push('figure');continue}
     if(!empty()&&shrinkFigure(node,free())&&place(node)){current.roles.push('figure');continue}
     if(!empty())newPage();
