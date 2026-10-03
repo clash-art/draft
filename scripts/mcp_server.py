@@ -262,13 +262,13 @@ def content_app_channel(path:str,data:dict)->dict:
                 'requested_mode':data.get('requestedMode') if data.get('requestedMode') in ('inline','fullscreen','pip') else None,
                 'actual_mode':data.get('actualMode') if data.get('actualMode') in ('inline','fullscreen','pip') else 'unknown'})
   save_json(root/'app-host.json',state);return state
- allowed={'/api/channels/get','/api/channels/save','/api/channels/brief','/api/channels/preview','/api/templates/list','/api/image/preview'}
+ allowed={'/api/channels/get','/api/channels/save','/api/channels/brief','/api/channels/preview','/api/templates/list','/api/image/preview','/api/font'}
  if path not in allowed:raise ValueError('此操作请在本机工作台的关联与发布区完成')
  return route('content_app_channel',path,data)
 
 # Explicit app-only routes: local edits and external mutations use separate tools.
 WORKBENCH_LOCAL_ROUTES={
- '/api/editor/load','/api/editor/save','/api/editor/markdown','/api/image/preview','/api/upload',
+ '/api/editor/load','/api/editor/save','/api/editor/markdown','/api/image/preview','/api/font','/api/upload',
  '/api/pending/list','/api/pending/new','/api/pending/open','/api/pending/unlink','/api/pending/import','/api/pending/link',
  '/api/audit','/api/comments/add','/api/comments/list','/api/comments/resolve','/api/review/latest',
  '/api/publication/manual','/api/publication/analytics-link','/api/publication/link','/api/publication/metric',

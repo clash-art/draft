@@ -6,7 +6,15 @@ from pathlib import Path
 from urllib.parse import urlparse,unquote,parse_qs
 from bs4 import BeautifulSoup
 import markdown
+from functools import lru_cache
 from wechat import prepare,build_article,image_bytes,save_json,analyze_rows,ALIASES,date_windows
+
+FONTS=Path(__file__).resolve().parents[1]/'assets/fonts'
+@lru_cache(maxsize=1)
+def font_files():
+ """Bundled page-font files listed in the manifest (built by scripts/build_fonts.py)."""
+ manifest=FONTS/'manifest.json'
+ return frozenset(f for face in json.loads(manifest.read_text())['faces'] for f,_ in face['files']) if manifest.exists() else frozenset()
 
 class Workspace:
  def __init__(self,root,client_factory,account_identity=lambda: "default"):
@@ -383,6 +391,12 @@ class Workspace:
   if route=='/api/image/preview':
    binary,mime,_=image_bytes(self.image_path(data.get('ref','')))
    return {'preview':'data:'+mime+';base64,'+base64.b64encode(binary).decode()}
+  if route=='/api/font':
+   files=data.get('files')
+   if not isinstance(files,list) or not 0<len(files)<=48:raise ValueError('字体文件列表无效')
+   known=font_files()
+   if any(f not in known for f in files):raise ValueError('未知字体文件')
+   return {'fonts':{f:'data:font/woff2;base64,'+base64.b64encode((FONTS/f).read_bytes()).decode() for f in files}}
   if route=='/api/bridge/status':
    p=self.root/'mcp-status.json'
    return {'transport':'stdio','tools':20,'last_call':json.loads(p.read_text()) if p.exists() else None}

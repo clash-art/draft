@@ -7,9 +7,16 @@ import DOMPurify from 'dompurify';
 // Each theme follows one saved reference post (its colour mood, type and cover composition)
 // and one tasteful accent used for numbers, small labels, rules and links, never large fills
 // or gradients. An edition palette may override these tokens.
-export const SANS='"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",sans-serif';
-export const SERIF='"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong","SimSun",serif';
-export const MONO='"SF Mono","JetBrains Mono",Menlo,Consolas,"Noto Sans Mono CJK SC",monospace';
+// Page fonts are the bundled open-licensed faces (see fonts.js); the system names after them only
+// serve characters outside the bundled coverage. Latin pairs: Inter with the sans, the serif's and
+// rounded face's own Latin, JetBrains Mono for figures and labels. Inter also backs the CJK faces for
+// the spacing characters they lack (the fixed CJK/Latin quarter-em space).
+export const SANS='"Draft Inter","Draft Sans SC","PingFang SC","Noto Sans CJK SC",sans-serif';
+export const SERIF='"Draft Serif SC","Draft Inter","Songti SC","Noto Serif CJK SC",serif';
+export const MONO='"Draft Mono","Draft Sans SC","Draft Inter",monospace';
+export const ROUNDED='"Draft Rounded SC","Draft Inter","PingFang SC",sans-serif';
+// Display face (得意黑) for very large titles only; it has one weight, so callers set 400.
+export const DISPLAY='"Draft Smiley","Draft Sans SC","Draft Inter","PingFang SC",sans-serif';
 const hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:null;
 export function mix(a,b,t){const p=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));const x=p(a),y=p(b);return '#'+x.map((v,i)=>Math.round(v+(y[i]-v)*t).toString(16).padStart(2,'0')).join('')}
 export function el(tag,style={},children=[],attrs={}){
@@ -91,7 +98,7 @@ function refEntry(t,b,s={}){
  return el('div',row,[el('span',{whiteSpace:'nowrap',letterSpacing:'-0.04em',color:t.ink,fontWeight:'700',...s.num},[b.number]),detail]);
 }
 function pointList(items,make){return items.slice(0,5).map((s,i)=>make(s,i,s.label))}
-const coverPage=(t,width,height,style)=>el('article',{boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',background:t.paper,color:t.ink,display:'flex',flexDirection:'column',...style},[],{'data-cover':'true'});
+const coverPage=(t,width,height,style)=>el('article',{fontSynthesis:'none',boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',background:t.paper,color:t.ink,display:'flex',flexDirection:'column',...style},[],{'data-cover':'true'});
 const smallCaps=(t,extra={})=>({fontFamily:MONO,fontSize:'7.5px',lineHeight:'1.3',letterSpacing:'0.2em',textTransform:'uppercase',color:t.muted,...extra});
 const pageNo=(index,total)=>`${String(index).padStart(2,'0')} / ${String(total).padStart(2,'0')}`;
 
@@ -122,13 +129,13 @@ function blueprint(template,opts){
    page.append(deco('div',{position:'absolute',bottom:'12px',left:t.pad.left+'px',right:t.pad.right+'px',display:'flex',justifyContent:'flex-end',fontFamily:MONO,fontSize:'8.5px',color:t.ink,fontWeight:'700',letterSpacing:'0.08em'},[pageNo(index,total)]));
   },
   cover({title:main,subtitle:sub,points:items,stats,width,height}){
-   const page=coverPage(t,width,height,{...paper,fontFamily:SANS,padding:'24px 24px 22px'});
+   const page=coverPage(t,width,height,{...paper,fontFamily:SANS,padding:'24px 20px 22px'});
    const mark=pos=>deco('span',{position:'absolute',width:'10px',height:'10px',...Object.fromEntries(Object.entries(pos).map(([k,v])=>[k,String(v).replace(t.ink,t.accent)]))});
    page.append(mark({top:'12px',left:'12px',borderTop:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({top:'12px',right:'12px',borderTop:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}),mark({bottom:'12px',left:'12px',borderBottom:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({bottom:'12px',right:'12px',borderBottom:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}));
    page.append(deco('div',{display:'flex',justifyContent:'space-between'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent}),['Long read']),el('span',smallCaps(t,{fontSize:'9px'}),[`${stats.figures} figures · ${stats.references} refs`])]));
    page.append(el('div',{flex:'1'}));
-   page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:'46px',lineHeight:'1.18',fontWeight:'900',color:t.ink,textAlign:'left',...BALANCE},[main]));
-   if(sub)page.append(deco('div',{marginTop:'16px',alignSelf:'flex-start',border:`1px solid ${t.accent}`,background:'#ffffff',fontSize:'16px',lineHeight:'1.4',fontWeight:'700',padding:'6px 10px',color:t.ink,...BALANCE},[sub]));
+   page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:'52px',lineHeight:'1.16',fontWeight:'700',letterSpacing:'-0.01em',color:t.ink,textAlign:'left',...BALANCE},[main]));
+   if(sub)page.append(deco('div',{marginTop:'18px',alignSelf:'flex-start',border:`1px solid ${t.accent}`,background:'#ffffff',fontSize:'18px',lineHeight:'1.4',fontWeight:'700',padding:'6px 10px',color:t.ink,...BALANCE},[sub]));
    if(items.length)page.append(optional(deco('div',{marginTop:'14px'},pointList(items,(s,i,label)=>el('div',{display:'flex',gap:'8px',padding:'4px 0',borderTop:dash,fontSize:'13.5px',lineHeight:'1.35',fontWeight:'700'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent,width:'16px'}),[s.number]),label])))));
    page.append(el('div',{flex:'1.3'}));
    page.append(deco('div',{display:'flex',justifyContent:'space-between',borderTop:dash,paddingTop:'6px'},[el('span',smallCaps(t,{fontSize:'8.5px'}),['Spec sheet']),el('span',smallCaps(t,{fontSize:'8.5px'}),[`${stats.minutes} min read`])]));
@@ -181,11 +188,11 @@ function tweet(template,opts){
   cover({title:main,subtitle:sub,points:items,byline,stats,total,width,height}){
    who=account(byline);
    const page=coverPage(t,width,height,{fontFamily:SANS,padding:'34px 22px 24px'});
-   page.append(deco('h1',{margin:'0',fontSize:'44px',lineHeight:'1.2',fontWeight:'900',color:t.ink,textAlign:'left',letterSpacing:'-0.01em',...BALANCE},[main]));
+   page.append(deco('h1',{margin:'0',fontSize:'52px',lineHeight:'1.18',fontWeight:'700',color:t.ink,textAlign:'left',letterSpacing:'-0.01em',...BALANCE},[main]));
    page.append(deco('div',{height:'1px',background:t.rule,margin:'18px 0 0'}));
    page.append(el('div',{flex:'1',minHeight:'14px'}));
    const body=[header(who,34)];
-   if(sub)body.push(el('div',{fontSize:'17px',lineHeight:'1.45',color:t.ink,...BALANCE},[sub]));
+   if(sub)body.push(el('div',{fontSize:'18px',lineHeight:'1.45',color:t.ink,...BALANCE},[sub]));
    if(items.length)body.push(optional(el('div',{},pointList(items,(s,i,label)=>el('div',{fontSize:'14px',lineHeight:'1.5',color:t.ink},[`${i+1}/ ${label}`])))));
    body.push(el('div',{fontSize:'11.5px',color:t.muted},[`长文 · ${stats.figures} 张图 · ${stats.minutes} 分钟读完`]));
    body.push(el('div',{borderTop:`1px solid ${t.rule}`,paddingTop:'9px'},[actions(15)]));
@@ -446,7 +453,6 @@ function canvas(template,opts){
 // 手绘 (after 是金三啊's minimal posts): warm off-white paper with a barely visible dot texture, a small quiet
 // grey doodle generated for the article (edition illustrations) and one chunky title in a single size.
 const DOODLE={id:'doodle',size:13,leading:1.68,gap:7,refSize:9,refGap:3,paper:'#ffffff',backdrop:'#f8f7f3',surface:'#f0efea',ink:'#363636',body:'#3a3a3a',muted:'#8f8f8b',rule:'#e4e3de',accent:'#d39a52',pad:{top:50,right:24,bottom:28,left:24}};
-const ROUNDED='"Yuanti SC","HarmonyOS Sans SC",'+SANS;
 function doodle(template,opts){
  const t=tokens(template,DOODLE,opts);const {px}=t;
  const dots={background:t.backdrop,backgroundImage:`radial-gradient(${mix(t.backdrop,t.ink,0.07)} 0.8px,transparent 0.9px)`,backgroundSize:'14px 14px'};
@@ -457,7 +463,7 @@ function doodle(template,opts){
   :deco('div',{width:size+'px',height:size+'px',boxSizing:'border-box',border:`1.5px dashed ${t.muted}`,borderRadius:'16px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px',padding:'8px',textAlign:'center',color:t.muted,fontSize:size>100?'11px':'7px',lineHeight:'1.35'},[el('span',{fontWeight:'800',letterSpacing:'0.08em'},['插图待生成']),size>100?el('span',{},[item.concept]):null]);
  return {...t,
   art,
-  shell:{...dots,color:t.body,fontFamily:SANS},
+  shell:{...dots,color:t.body,fontFamily:ROUNDED},
   lead:b=>html(el('p',text(t,{color:t.ink,textAlign:'left'})),b.html,t),
   p:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
   section(b){const head=el('div',{flex:'1',minWidth:'0'},[el('div',{fontSize:px(0.8),fontWeight:'800',color:t.accent,marginBottom:'2px'},[b.number]),phrased(html(el('h3',bold(1.3,{margin:'0',lineHeight:'1.5',textAlign:'left'})),b.html,t))]);
@@ -477,9 +483,9 @@ function doodle(template,opts){
   cover({title:main,lines,illustrations={},width,height}){
    const page=coverPage(t,width,height,{...dots,fontFamily:ROUNDED,position:'relative',padding:'0'});
    const item=illustrations.cover;
-   if(item)page.append(deco('div',{position:'absolute',left:'36px',top:Math.round(height*0.19)+'px'},[sticker(item,132)]));
-   const type={margin:'0',fontSize:'45px',lineHeight:'54px',fontWeight:'800',color:t.ink,letterSpacing:'0.02em',textAlign:'left'};
-   page.append(deco('h1',{position:'absolute',left:'36px',right:'30px',top:Math.round(height*0.545)+'px',...type,...(lines?{}:BALANCE)},lines?lines.map(line=>el('div',{whiteSpace:'nowrap'},[line])):[main]));
+   if(item)page.append(deco('div',{position:'absolute',left:'30px',top:Math.round(height*0.16)+'px'},[sticker(item,140)]));
+   const type={margin:'0',fontSize:'50px',lineHeight:'60px',fontWeight:'700',color:t.ink,letterSpacing:'0.02em',textAlign:'left'};
+   page.append(deco('h1',{position:'absolute',left:'30px',right:'20px',top:Math.round(height*0.52)+'px',...type,...(lines?{}:BALANCE)},lines?lines.map(line=>el('div',{whiteSpace:'nowrap'},[line])):[main]));
    return page;
   },
  };
@@ -534,18 +540,19 @@ function bigtype(template,opts){
  Object.assign(t,{strongStyle:{fontWeight:'700',background:soft,padding:'0 2px'}});
  const block={background:mix(t.accent,t.paper,0.5),padding:'0 4px'};
  const big=(size,extra)=>({fontSize:px(size),lineHeight:'1.42',fontWeight:'500',color:t.ink,...extra});
+ const display=(size,extra)=>big(size,{fontFamily:DISPLAY,fontWeight:'400',letterSpacing:'0.01em',...extra});
  return {...t,
   shell:{background:t.paper,color:t.body,fontFamily:SANS},
   lead:b=>html(el('p',text(t,{color:t.ink,fontSize:px(1.06)})),b.html,t),
   p:b=>html(el('p',text(t,{textAlign:'left'})),b.html,t),
-  section:b=>el('header',{margin:'12px 0 8px'},[el('h3',big(1.36,{margin:'0',textAlign:'left'}),[el('span',{...block,marginRight:'6px'},[b.number]),phrased(html(el('span'),b.html,t))])]),
+  section:b=>el('header',{margin:'12px 0 8px'},[el('h3',display(1.46,{margin:'0',textAlign:'left'}),[el('span',{...block,marginRight:'6px'},[b.number]),phrased(html(el('span'),b.html,t))])]),
   heading:b=>html(el('h4',big(1.14,{margin:'12px 0 6px',fontWeight:'600'})),b.html,t),
   label:b=>html(el('div',big(1.04,{margin:'10px 0 5px',fontWeight:'600'})),b.html,t),
   pair:b=>keyPair(t,el('p',text(t,{textAlign:'left',margin:'0 0 6px'})),b,{fontWeight:'700',background:soft,padding:'0 2px'}),
   figure:(b,image,n)=>figure(t,b,image,n,{caption:plainCaption(t)}),
   figureMargin:'8px 0 12px',bleed:0,
   quote:b=>html(el('blockquote',big(1.12,{margin:'10px 0',padding:'0 0 0 10px',borderLeft:`4px solid ${t.accent}`})),b.html,t),
-  refsHeading:b=>html(el('h3',big(1.3,{margin:'14px 0 8px'})),b.html,t),
+  refsHeading:b=>html(el('h3',display(1.4,{margin:'14px 0 8px'})),b.html,t),
   ref:b=>refEntry(t,b),
   end:null,
   frame(page,{index,total}){
@@ -555,10 +562,10 @@ function bigtype(template,opts){
    const page=coverPage(t,width,height,{fontFamily:SANS,padding:'28px 20px 0'});
    const m=main.match(/[A-Za-z][\w+.\- ]*[\u4e00-\u9fff]{0,3}/);
    const words=m?[main.slice(0,m.index),el('span',block,[m[0]]),main.slice(m.index+m[0].length)]:[main];
-   const line={margin:'0',fontSize:'44px',lineHeight:'1.6',fontWeight:'500',color:t.ink,textAlign:'left',letterSpacing:'0.01em',...BALANCE};
+   const line={margin:'0',fontFamily:DISPLAY,fontSize:'48px',lineHeight:'1.36',fontWeight:'400',color:t.ink,textAlign:'left',letterSpacing:'0.01em',...BALANCE};
    page.append(deco('h1',line,words));
    if(sub)page.append(deco('div',line,[sub]));
-   if(image)page.append(deco('div',{position:'absolute',right:'14px',bottom:'16px',width:'168px',borderRadius:'20px',overflow:'hidden',transform:'rotate(3deg)'},[el('img',{display:'block',width:'100%',height:'auto'},[],{src:image.src,alt:''})]));
+   if(image)page.append(deco('div',{position:'absolute',right:'14px',bottom:'16px',width:'148px',borderRadius:'18px',overflow:'hidden',transform:'rotate(3deg)'},[el('img',{display:'block',width:'100%',height:'auto'},[],{src:image.src,alt:''})]));
    page.append(deco('div',{position:'absolute',left:'20px',bottom:'18px',fontSize:'11px',color:t.muted},[`约 ${stats.minutes} 分钟读完`]));
    return page;
   },

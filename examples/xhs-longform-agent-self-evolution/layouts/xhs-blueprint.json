@@ -1,5 +1,6 @@
 {
  "max_pages": 10,
+ "font_fallback": "",
  "over_limit": false,
  "template": {
   "id": "xhs-blueprint",

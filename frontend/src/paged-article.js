@@ -1,6 +1,7 @@
 import {marked} from 'marked';
 import DOMPurify from 'dompurify';
 import {toPng} from 'html-to-image';
+import {loadFonts,fontEmbedCSS} from './fonts';
 import {articleCover} from './longform-cover';
 import {pageSize} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
@@ -38,7 +39,7 @@ export function contentText(node){const copy=node.cloneNode(true);copy.querySele
 function sourceText(body){const div=document.createElement('div');div.innerHTML=DOMPurify.sanitize(marked.parse(body||''));return div}
 function shell(theme,width,height){
  const page=document.createElement('article');
- Object.assign(page.style,{boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',fontSize:theme.size+'px',lineHeight:String(theme.leading),...theme.shell});
+ Object.assign(page.style,{fontSynthesis:'none',boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',fontSize:theme.size+'px',lineHeight:String(theme.leading),...theme.shell});
  if(theme.sheet){const sheet=document.createElement('div');sheet.dataset.deco='true';Object.assign(sheet.style,theme.sheet);page.append(sheet)}
  const content=document.createElement('div');
  Object.assign(content.style,{position:'absolute',top:theme.pad.top+'px',left:theme.pad.left+'px',right:theme.pad.right+'px',height:(height-theme.pad.top-theme.pad.bottom)+'px',display:'flow-root',overflowWrap:'anywhere'});
@@ -86,6 +87,8 @@ async function layoutOnce(edition,api,imageMap,opts){
   let endPos=endAt<0?blocks.length:endAt;while(endPos>0&&blocks[endPos-1].role==='break')endPos--;
   if(theme.end){const end=theme.end();end.dataset.role='end';nodes.splice(endPos,0,end);blocks.splice(endPos,0,{role:'end'})}
   await Promise.all(nodes.flatMap(n=>[...n.querySelectorAll('img')].map(img=>img.decode().catch(()=>{}))));
+  const stage=shell(theme,width,height);stage.content.append(...nodes.map(n=>n.cloneNode(true)));host.append(stage.page);
+  await loadFonts(stage.page,api);stage.page.remove();
   const measure=shell(theme,width,height);host.append(measure.page);
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
   const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
@@ -185,11 +188,12 @@ async function layoutOnce(edition,api,imageMap,opts){
   const cover=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height});
   pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title,byline:content.byline})});
   host.append(cover);
+  const fallback=await loadFonts(host,api);
   const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
   for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
   if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
-  const meta={max_pages:MAX_PAGES,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
+  const meta={max_pages:MAX_PAGES,font_fallback:fallback,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
    pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:figuresOf(p.content).map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
   return {pages:html,meta};
@@ -221,5 +225,5 @@ export async function exportArticlePages(pages,api,onProgress=()=>{},{maxPages=M
  if(!pages.length)throw Error('请等待分页预览完成');
  if(pages.length>maxPages)throw Error(`小红书笔记最多 ${MAX_PAGES} 张图（含封面），当前 ${pages.length} 页；请精简正文或调整分页后再导出`);
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0'});document.body.append(host);const refs=[];
- try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const png=await toPng(host.firstElementChild,{width:parseFloat(host.firstElementChild.style.width),height:parseFloat(host.firstElementChild.style.height),pixelRatio:3,skipFonts:true});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.png`,data:png.split(',')[1]})).ref)}return refs}finally{host.remove()}
+ try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const page=host.firstElementChild,png=await toPng(page,{width:parseFloat(page.style.width),height:parseFloat(page.style.height),pixelRatio:3,fontEmbedCSS:await fontEmbedCSS(page,api)});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.png`,data:png.split(',')[1]})).ref)}return refs}finally{host.remove()}
 }

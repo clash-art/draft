@@ -71,7 +71,7 @@ def main():
     contact_sheet(files,out/f'{identifier}-contact-sheet.png')
     (folder/'layout.json').write_text(json.dumps(result['meta'],ensure_ascii=False,indent=1))
     fills=[p.get('fill',1) for p in result['meta']['pages'][1:-1]]
-    summary[identifier]={'name':result['template']['name'],'pages':result['count'],'min_fill':min(fills),'avg_fill':round(sum(fills)/len(fills),2),'sparse_pages':[i+2 for i,f in enumerate(fills) if f<0.75],'over_limit':result['meta'].get('over_limit',False)}
+    summary[identifier]={'name':result['template']['name'],'pages':result['count'],'min_fill':min(fills),'avg_fill':round(sum(fills)/len(fills),2),'sparse_pages':[i+2 for i,f in enumerate(fills) if f<0.75],'over_limit':result['meta'].get('over_limit',False),'font_fallback':result['meta'].get('font_fallback','')}
     print(identifier,json.dumps(summary[identifier],ensure_ascii=False),flush=True)
    if args.save:
     saved=page.evaluate('id=>__xhs.exportAndSave(id)',ids[0])

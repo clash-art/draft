@@ -1,4 +1,4 @@
-import base64,io,sys,tempfile,unittest
+import base64,io,json,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import Mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
@@ -16,6 +16,19 @@ class WorkspaceTests(unittest.TestCase):
   self.assertEqual(report['errors'],[]);self.assertEqual(len(report['images']),1)
   self.assertIn('data:image/png;base64,',report['preview_html'])
   self.assertTrue(Path(report['review_file']).exists())
+ def test_bundled_fonts_are_open_licensed_and_served_only_from_manifest(self):
+  root=Path(workspace.__file__).resolve().parents[1]/'assets/fonts'
+  manifest=json.loads((root/'manifest.json').read_text())
+  self.assertEqual({f['family'] for f in manifest['faces']},{'Draft Sans SC','Draft Serif SC','Draft Rounded SC','Draft Inter','Draft Mono','Draft Smiley'})
+  for face in manifest['faces']:
+   self.assertTrue(face['files'] and all((root/f).is_file() and (root/f).read_bytes()[:4]==b'wOF2' for f,_ in face['files']),face['id'])
+   self.assertIn('SIL Open Font License',(root/'licenses'/f"{face['source']}.txt").read_text())
+   self.assertIn(face['name'],(root/'LICENSES.md').read_text())
+  first=next(f for face in manifest['faces'] for f,_ in face['files'])
+  served=self.ws.dispatch('/api/font',{'files':[first]})['fonts'][first]
+  self.assertEqual(base64.b64decode(served.split(',',1)[1]),(root/first).read_bytes())
+  for bad in (['../manifest.json'],['sans-sc-400/missing.woff2'],[],'sans-sc-400/sc000.woff2',[first]*49):
+   with self.assertRaises(ValueError):self.ws.dispatch('/api/font',{'files':bad})
  def test_arbitrary_local_file_blocked(self):
   with self.assertRaises(ValueError):self.ws.dispatch('/api/audit',{'title':'标题','body':'![图](../../private.png)'})
  def test_save_reuses_receipt_for_same_operation(self):

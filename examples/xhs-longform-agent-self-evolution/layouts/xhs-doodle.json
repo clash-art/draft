@@ -1,5 +1,6 @@
 {
  "max_pages": 10,
+ "font_fallback": "",
  "over_limit": false,
  "template": {
   "id": "xhs-doodle",
@@ -7,7 +8,7 @@
   "layout": "doodle",
   "page_ratio": "3:4"
  },
- "compact": 0,
+ "compact": 1,
  "page_count": 10,
  "sections": [
   {
@@ -168,7 +169,7 @@
    ],
    "figures": [],
    "references": 21,
-   "fill": 0.96,
+   "fill": 0.89,
    "starts": "参考资料〔1〕Hermesgit"
   }
  ]
