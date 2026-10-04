@@ -50,15 +50,15 @@
    "roles": [
     "figure",
     "lead",
-    "p",
-    "section"
+    "section",
+    "p"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.86,
-   "starts": "下图从左到右对应Braintru"
+   "fill": 0.8,
+   "starts": "Hermes、ECC这类开源Ag"
   },
   {
    "page": 3,
@@ -71,8 +71,8 @@
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.95,
-   "starts": "Hermes自称self-imp"
+   "fill": 0.85,
+   "starts": "学术界在这点上稍微靠谱些，至少要"
   },
   {
    "page": 4,
@@ -115,8 +115,8 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.82,
-   "starts": "Agent行为分析会给出诊断、建"
+   "fill": 0.75,
+   "starts": "Adaline也会深入调查：它的"
   },
   {
    "page": 7,
@@ -130,7 +130,7 @@
     "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.87,
+   "fill": 0.84,
    "starts": "评测仍要写具体：多笔订单时应澄清"
   },
   {
