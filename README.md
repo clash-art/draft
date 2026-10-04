@@ -217,10 +217,11 @@ remain separate acceptance checks.
 
 插件和本机工作台始终先走本机。不配置 Cloudflare 时，Codex / Cursor 仍通过 `.mcp.json` 启动 `scripts/run-mcp.sh`，文章、图片和公众号凭据留在 `~/.config/wechat-drafts/`，断网也能编辑、审核和预览。云端不是插件的必经之路。
 
-Cloudflare 只做两件可选的事：
+Cloudflare 默认只做**同步**，外加托管静态工作台页面（Worker + R2，免费 Workers 计划即可）：
 
-- **同步。** 把稿件、图片和账号设置送到你自己的 R2 存储，另一台电脑再拉下来。
-- **回退入口。** Worker 提供网页工作台，以及一个远程 MCP。只有在你明确设置 `DRAFT_MCP=remote` 时，插件才会改连这个地址。平时不要设。
+- **同步。** 把稿件、图片和模板送到 R2，另一台电脑用 `sync_client.py` 拉下来。
+- **静态网页。** 同一 Worker 提供打包好的 `assets/ui` 壳；`/sync/*` 可读写对象。默认**没有**云端 Python 引擎，因此 URL 上的 `/api` 与 `/mcp` 会返回 503，完整编辑仍在本机 `config_ui.py` 或插件 MCP。
+- **可选回退引擎（付费 Container）。** 只有部署 `wrangler.engine.jsonc` 时，Worker 才会把 `/api` 与 `/mcp` 转给容器里的 `scripts/hosted.py`。远程 MCP 仍要显式设置 `DRAFT_MCP=remote`。
 
 ### 同步什么、冲突怎么处理
 
@@ -231,7 +232,9 @@ python3 scripts/sync_client.py resolve workspace/editor.json --keep local
 python3 scripts/sync_client.py resolve workspace/editor.json --keep remote
 ```
 
-不同步这些本机状态：小红书 Chrome 登录目录 `workspace/xiaohongshu-profile/`、文件锁、MCP 会话状态。公众号 AppID / AppSecret 默认会同步，因为换一台电脑需要同一套账号设置；不想同步密钥时在配置里写 `DRAFT_SYNC_SECRETS=0`。关掉之后不会再上传，但已经在存储桶里的副本不会自动删除。小红书扫码仍在你自己的电脑上完成，云端页面不会打开 Chrome。
+不同步这些本机状态：小红书 Chrome 登录目录 `workspace/xiaohongshu-profile/`、文件锁、MCP 会话状态。**默认也不同步** `credentials.json`（公众号 AppID / AppSecret）。只有显式设置 `DRAFT_SYNC_SECRETS=1` 时才会把密钥放进 R2；换机后请在每台设备本地填写账号，或在你接受风险后再开启同步。若曾开启过，桶里可能仍有旧副本，需自行删除。小红书扫码仍在你自己的电脑上完成，云端页面不会打开 Chrome。
+
+访问控制目前使用**同一枚** `DRAFT_ACCESS_TOKEN`（应用密码，非 Cloudflare API Token），在所有设备与浏览器标签间共享。以后如需按设备登录，可以再单独做。
 
 未配置时：
 
@@ -266,30 +269,37 @@ DRAFT_ACCESS_TOKEN=与网页相同的访问令牌
 
 `scripts/mcp_remote.py` 把 stdio MCP 转到 `DRAFT_URL/mcp`。本机图片和表格仍在你的电脑上读取，再把内容交给云端。
 
-### 部署
+### 部署（默认：仅同步 + 静态 UI）
 
-这次没有部署。Cloudflare 登录不可用，仓库里也没有 API Token。下面的命令留到具备凭据之后再执行，不要把令牌写进 git。
+默认 `wrangler.jsonc` **不含** Container，适合 Workers 免费计划：R2 桶 + Worker + 静态资源 + `/sync/*`。
 
-1. 在 Cloudflare 控制台用模板 **Edit Cloudflare Workers** 创建 API Token。该模板已经包含 Workers Scripts、Workers Routes、Workers KV、Workers Tail、**Workers R2 Storage Write**、Account Settings Read、User Details Read、User Memberships Read。
-2. 在同一枚令牌上额外加上 **Containers Write**（权限列表里也可能显示为 Containers Edit）。回退引擎跑在 Cloudflare Containers 里，模板本身不含这项。存储桶只做设备同步时，R2 权限已经在模板里。
-3. 把账号 ID 放进 Cursor Cloud Agent Secrets，名字用 `CLOUDFLARE_ACCOUNT_ID`。API Token 用 `CLOUDFLARE_API_TOKEN`。
-4. 生成应用访问令牌并写成 Worker secret，不要写成 Wrangler 变量：
+1. 用模板 **Edit Cloudflare Workers** 创建 API Token（已含 Workers R2 Storage Write 等）。**默认部署不需要** Containers Write。
+2. 在 Cursor Cloud Agent Secrets 写入 `CLOUDFLARE_ACCOUNT_ID` 与 `CLOUDFLARE_API_TOKEN`。
+3. 生成应用访问令牌（至少 32 字符），写入 Worker secret（不要写进 git）：
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 cd cloudflare
 npx wrangler r2 bucket create clash-art-draft
 npx wrangler secret put DRAFT_ACCESS_TOKEN
-```
-
-5. 若希望云端网页看到各台设备同步后的稿件，再在 R2 控制台创建一对 **S3 API 访问密钥**（Object Read & Write，限定桶 `clash-art-draft`），并写入 Worker secrets：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET`。设备之间的同步不需要这组密钥，Worker 直接使用 R2 绑定。这组密钥只给回退容器，避免容器在处理请求时再回调 Worker。
-6. 部署：
-
-```bash
-cd cloudflare
 npx wrangler deploy --config wrangler.jsonc
 ```
 
-Containers 需要 Workers 付费计划。部署完成后把 `https://clash-art-draft.<account-subdomain>.workers.dev` 填进 `hosted.env` 的 `DRAFT_SYNC_URL`。微信接口若从容器调用，出口 IP 不固定，白名单仍以「账号设置」里的诊断结果为准。
+4. 把 `https://clash-art-draft.<account-subdomain>.workers.dev` 写入 `hosted.env` 的 `DRAFT_SYNC_URL`，令牌写入 `DRAFT_ACCESS_TOKEN`。
 
-本地已经用 `wrangler dev --config wrangler.dev.jsonc --local` 验证同步和网页回退，不需要账号登录。开发配置不启动容器；`DRAFT_DEV_ORIGIN` 指向本机 `scripts/hosted.py`。
+### 可选：Container 回退引擎（付费）
+
+只有需要 URL 上的实时 `/api`、远程 MCP，或容器内读 R2 时，才部署 `wrangler.engine.jsonc`：
+
+- API Token 额外加上 **Containers Write**（或 Containers Edit）。
+- Workers **付费**计划 + Container 计费。
+- 若容器要从 R2 直接读同步对象，再创建 R2 **S3 API 密钥**并写入 secrets：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET`（笔记本同步仍只用 Worker 的 R2 绑定，不需要 S3 密钥）。
+
+```bash
+cd cloudflare
+npx wrangler deploy --config wrangler.engine.jsonc
+```
+
+微信 API 若从容器出口调用，IP 不固定；白名单仍以本机「账号设置」诊断为准。
+
+本地用 `wrangler dev --config wrangler.dev.jsonc --local` 验证同步；在 `.dev.vars` 里设 `DRAFT_DEV_ORIGIN=http://127.0.0.1:8788` 可联调完整 `/api`（指向本机 `scripts/hosted.py`），与生产默认配置无关。

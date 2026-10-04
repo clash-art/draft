@@ -62,7 +62,13 @@ async function remote(request: Request, env: Env): Promise<Response> {
     return fetch(targetUrl(env.DRAFT_DEV_ORIGIN, request.url), { method: request.method, headers, body, redirect: "manual" });
   }
   if (env.DRAFT_CONTAINER) return env.DRAFT_CONTAINER.getByName("owner").fetch(request);
-  return json({ error: "远程引擎未配置。同步接口仍然可用；插件请继续使用本机服务。" }, 503);
+  return json(
+    {
+      error:
+        "默认部署只提供同步与静态页面。完整 /api 与 /mcp 需要可选 Container 部署（wrangler.engine.jsonc），或本地 wrangler dev 时设置 DRAFT_DEV_ORIGIN。插件请继续使用本机服务。",
+    },
+    503,
+  );
 }
 
 function json(body: unknown, status: number): Response {

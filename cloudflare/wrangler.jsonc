@@ -16,26 +16,5 @@
   ],
   "r2_buckets": [
     { "binding": "DRAFT_BUCKET", "bucket_name": "clash-art-draft" }
-  ],
-  "containers": [
-    {
-      "name": "draft",
-      "class_name": "DraftContainer",
-      "scheduling_policy": "durable_object",
-      "images": {
-        "base": {
-          "dockerfile": "../Dockerfile",
-          "build_context": ".."
-        }
-      }
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      { "name": "DRAFT_CONTAINER", "class_name": "DraftContainer" }
-    ]
-  },
-  "exports": {
-    "DraftContainer": { "type": "durable-object", "storage": "sqlite" }
-  }
+  ]
 }

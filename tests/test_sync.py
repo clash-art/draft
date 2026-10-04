@@ -65,6 +65,16 @@ class SyncPlanTests(unittest.TestCase):
             self.assertIn("cloud", (root / "workspace" / "editor.json").read_text(encoding="utf-8"))
             self.assertEqual(sync_engine.plan(replica.hashes(), replica.read_base(), store.manifest()), [])
 
+    def test_secrets_off_by_default(self):
+        self.assertFalse(sync_client.include_secrets({}))
+        self.assertTrue(sync_client.include_secrets({"DRAFT_SYNC_SECRETS": "1"}))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "credentials.json").write_text('{"app_id":"wx1234567890abcdef"}', encoding="utf-8")
+            (root / "workspace").mkdir()
+            self.assertNotIn("credentials.json", sync_engine.DirectoryReplica(root, include_secrets=False).hashes())
+            self.assertIn("credentials.json", sync_engine.DirectoryReplica(root, include_secrets=True).hashes())
+
     def test_private_files_stay_on_the_device(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

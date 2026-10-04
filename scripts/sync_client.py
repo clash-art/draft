@@ -71,7 +71,8 @@ def merged_env():
 
 
 def include_secrets(env):
-    return env.get("DRAFT_SYNC_SECRETS", "1") != "0"
+    """WeChat AppID/AppSecret sync only when DRAFT_SYNC_SECRETS=1."""
+    return env.get("DRAFT_SYNC_SECRETS", "0") == "1"
 
 
 def state_dir():

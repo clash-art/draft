@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "wrangler dev --config wrangler.dev.jsonc --local --port 8787 --ip 127.0.0.1",
     "test": "node --experimental-strip-types --test src/auth.test.ts src/proxy.test.ts",
-    "deploy": "wrangler deploy --config wrangler.jsonc"
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "deploy:engine": "wrangler deploy --config wrangler.engine.jsonc"
   },
   "devDependencies": {
     "wrangler": "4.147.0"
