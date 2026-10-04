@@ -57,22 +57,22 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.95,
+   "fill": 0.81,
    "starts": "Hermes、ECC这类开源Ag"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
-    "p",
-    "figure"
+    "figure",
+    "p"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.86,
-   "starts": "测泛化，重复运行看波动，消融实验"
+   "fill": 0.99,
+   "starts": "Agent可能把一次偶然成功总结"
   },
   {
    "page": 4,
@@ -115,7 +115,7 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.89,
+   "fill": 0.99,
    "starts": "沿用订单例子，“取消请求”“负面"
   },
   {
@@ -123,15 +123,15 @@
    "section": "03",
    "roles": [
     "figure",
-    "p",
-    "section"
+    "section",
+    "p"
    ],
    "figures": [
     "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.96,
-   "starts": "评测仍要写具体：多笔订单时应澄清"
+   "fill": 0.85,
+   "starts": "Trajectory：用轨迹和反"
   },
   {
    "page": 8,

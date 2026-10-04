@@ -10,11 +10,11 @@ Hermes、ECC 这类开源 Agent 会把任务经验写成 skill，留给下次使
 
 Hermes 自称 self-improving agent，会保存记忆、检索历史会话，从复杂任务中创建和修改 skills。ECC 从会话中提炼带 confidence 的 instincts，再通过 /evolve 聚合成 skills、commands 或 agents。
 
+![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)
+
 Agent 可能把一次偶然成功总结成通用规则，也可能围着同一次失败反复修改 skill。文件变多了，新任务做得怎么样，还得单独测。
 
 学术界在这点上稍微靠谱些，至少要拿出分数。读这些实验，要看新旧版本是否使用相同底座和预算，测试题是否参与过优化。留出任务测泛化，重复运行看波动，消融实验则检查新增机制贡献了多少收益。
-
-![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)
 
 **改执行框架的研究**包括 SICA、Self-Harness 和 Meta-Harness。SICA 修改自身代码并评估候选版本；Self-Harness 根据失败轨迹修改 harness，通过回归检查后接受；Meta-Harness 搜索执行框架，其文本分类消融实验显示，让优化 Agent 访问原始轨迹，比只给分数或摘要更有效。
 
@@ -66,9 +66,9 @@ Adaline 进一步把修复接进 Improve。每轮针对一个 prompt，调整�
 
 Running Coach 案例中，系统围绕问题生成评测，用已知错误的输出变体检查评估器，再结合 GEPA 式反思优化和合成数据搜索候选 prompt。审阅者对照修改、回归结果、成本和延迟决定发布。公司报告完成了 30 多轮改进，验证涉及 776 个测试用例、23 个合成数据集。
 
-![订单澄清与直接执行的对照评测及合成测试](images/a62d300f0c864992a5e1933586fbffb5.png)
-
 评测仍要写具体：多笔订单时应澄清，唯一订单时应执行。只测前者，Agent 可能靠每次反问拿高分。团队可以围绕真实失败生成不同日期表达、订单数量和用户回答，再用独立真实请求检查遗漏。
+
+![订单澄清与直接执行的对照评测及合成测试](images/a62d300f0c864992a5e1933586fbffb5.png)
 
 04
 
