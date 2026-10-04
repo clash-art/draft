@@ -172,7 +172,7 @@ def dispatch(ws,route,data):
     for ref in refs:
      with Image.open(ws.image_path(ref)) as img:
       expected_size=PAGE_RATIOS[template.get('page_ratio',DEFAULT_PAGE_RATIO)]
-      if img.format!='PNG' or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
+      if img.format not in ('JPEG','PNG') or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
     edition['page_images']=refs
    elif changed:edition['page_images']=[]
    edition.update(cards=[],cover_page=cover,illustrations=art,condensed=condensed,render_pending=not bool(edition.get('page_images')))

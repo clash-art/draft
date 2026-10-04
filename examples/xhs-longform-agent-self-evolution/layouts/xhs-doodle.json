@@ -14,17 +14,17 @@
   {
    "number": "01",
    "title": "先验证改完有没有用",
-   "page": 2
+   "page": 3
   },
   {
    "number": "02",
    "title": "离线验证之后，还有真实世界",
-   "page": 4
+   "page": 3
   },
   {
    "number": "03",
    "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
-   "page": 5
+   "page": 4
   },
   {
    "number": "04",
@@ -49,67 +49,63 @@
    "section": null,
    "roles": [
     "figure",
-    "lead",
-    "section",
-    "p"
+    "lead"
    ],
    "figures": [
-    "images/b760b5ddc4594589b32b2f6774f67ac3.png"
+    "images/b760b5ddc4594589b32b2f6774f67ac3.png",
+    "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.8,
+   "fill": 0.97,
    "starts": "Hermes、ECC这类开源Ag"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
-    "figure",
+    "section",
     "p"
    ],
-   "figures": [
-    "images/b88e98237d11484fa8ccffa36b05b23f.png"
-   ],
+   "figures": [],
    "references": 0,
-   "fill": 0.85,
-   "starts": "学术界在这点上稍微靠谱些，至少要"
+   "fill": 0.94,
+   "starts": "先验证改完有没有用Hermes自"
   },
   {
    "page": 4,
    "section": "02",
    "roles": [
-    "section",
     "p",
-    "figure"
+    "figure",
+    "section"
    ],
    "figures": [
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 0.97,
-   "starts": "离线验证之后，还有真实世界从be"
+   "fill": 0.88,
+   "starts": "如果团队只检查接口返回，就会把这"
   },
   {
    "page": 5,
-   "section": "02",
+   "section": "03",
    "roles": [
-    "p",
-    "section",
-    "figure"
+    "figure",
+    "p"
    ],
    "figures": [
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.98,
-   "starts": "团队可以据此补充离线测试，再用后"
+   "fill": 0.79,
+   "starts": "Adaline的RunningC"
   },
   {
    "page": 6,
    "section": "03",
    "roles": [
-    "p",
-    "figure"
+    "figure",
+    "p"
    ],
    "figures": [
     "images/de83e70759b94858b41d14803ae35ee3.png"

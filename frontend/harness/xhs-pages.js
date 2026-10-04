@@ -9,7 +9,7 @@ async function api(path,data){
 }
 async function edition(){const source=await api('/api/editor/load',{});return {source,edition:await api('/api/channels/get',{id:source.id,channel:'xiaohongshu'})}}
 async function templates(){return (await api('/api/channels/templates/list',{format:'longform'})).items}
-// Paginates with the requested template and returns PNG data through the real export code path.
+// Paginates with the requested template and returns JPEG data through the real export code path.
 // full=true lays out the complete source article instead of the edition's own content;
 // noPalette=true ignores the edition's project palette and shows the template's own colours.
 // placeholderArt drops generated illustration images to preview the not-yet-generated state.
@@ -28,9 +28,9 @@ async function render(templateId,{png=true,full=false,noPalette=false,ratio,cove
  if(!png)return {template,count:pages.length,meta};
  const captured=[];
  await exportArticlePages(pages,async(path,data)=>{if(path!=='/api/upload')return api(path,data);captured.push(data.data);return {ref:'captured'}},()=>{},{maxPages:Infinity});
- return {template,count:pages.length,meta,pngs:captured};
+ return {template,count:pages.length,meta,images:captured};
 }
-// Full export: upload page PNGs and save them onto the channel edition, exactly as the workbench does.
+// Full export: upload page JPEGs and save them onto the channel edition, exactly as the workbench does.
 async function exportAndSave(templateId){
  const {source,edition:loaded}=await edition();let e=loaded;
  if(templateId&&e.template?.id!==templateId){

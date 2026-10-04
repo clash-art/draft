@@ -1,9 +1,9 @@
 import {marked} from 'marked';
 import DOMPurify from 'dompurify';
-import {toPng} from 'html-to-image';
+import {toJpeg} from 'html-to-image';
 import {loadFonts,fontEmbedCSS} from './fonts';
 import {articleCover} from './longform-cover';
-import {pageSize,pageRatio,COVER_SAFE} from './page-size';
+import {pageSize,pageRatio,COVER_SAFE,exportPixelRatio} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
 import {themeFor,splitTitle,mix} from './longform-themes';
 const SPLITTABLE=new Set(['lead','p','quote','list']);
@@ -264,5 +264,5 @@ export async function exportArticlePages(pages,api,onProgress=()=>{},{maxPages=M
  if(!pages.length)throw Error('请等待分页预览完成');
  if(pages.length>maxPages)throw Error(`小红书笔记最多 ${MAX_PAGES} 张图（含封面），当前 ${pages.length} 页；请精简正文或调整分页后再导出`);
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0'});document.body.append(host);const refs=[];
- try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const page=host.firstElementChild,png=await toPng(page,{width:parseFloat(page.style.width),height:parseFloat(page.style.height),pixelRatio:3,fontEmbedCSS:await fontEmbedCSS(page,api)});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.png`,data:png.split(',')[1]})).ref)}return refs}finally{host.remove()}
+ try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const page=host.firstElementChild,bg=getComputedStyle(page).backgroundColor,jpeg=await toJpeg(page,{width:parseFloat(page.style.width),height:parseFloat(page.style.height),pixelRatio:exportPixelRatio(),quality:.95,backgroundColor:bg&&bg!=='transparent'&&bg!=='rgba(0, 0, 0, 0)'?bg:'#ffffff',fontEmbedCSS:await fontEmbedCSS(page,api)});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.jpg`,data:jpeg.split(',')[1]})).ref)}return refs}finally{host.remove()}
 }

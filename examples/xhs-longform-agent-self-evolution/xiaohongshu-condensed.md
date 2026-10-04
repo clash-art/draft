@@ -2,6 +2,8 @@
 
 Hermes、ECC 这类开源 Agent 会把任务经验写成 skill，论文再用 benchmark 测 Agent 到底有没有进步。到了工业界，团队每天还要处理评测之外的新请求。Braintrust 让 Agent 调查生产记录，带着证据提出修复建议；Adaline 把问题接进 prompt 搜索与评测；Trajectory 则关联执行轨迹和事后反馈，用来研究权重更新。新的任务和用户反馈，是团队决定下一轮改什么的依据。
 
+![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)
+
 01
 
 ### 先验证改完有没有用
@@ -9,10 +11,6 @@ Hermes、ECC 这类开源 Agent 会把任务经验写成 skill，论文再用 be
 Hermes 自称 self-improving agent，会保存记忆、检索历史会话，从复杂任务中创建和修改 skills。ECC 从会话中提炼带 confidence 的 instincts，再通过 /evolve 聚合成 skills、commands 或 agents。
 
 Agent 可能把一次偶然成功总结成通用规则，也可能围着同一次失败反复修改 skill。文件变多了，新任务做得怎么样，还得单独测。
-
-<!-- page -->
-
-![Hermes 与 ECC 将经验转成技能的机制对照](images/b88e98237d11484fa8ccffa36b05b23f.png)
 
 学术界在这点上稍微靠谱些，至少要拿出分数。读这些实验，要看新旧版本是否使用相同底座和预算，测试题是否参与过优化。留出任务测泛化，重复运行看波动，消融实验则检查新增机制贡献了多少收益。
 

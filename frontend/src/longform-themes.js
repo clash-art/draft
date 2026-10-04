@@ -2,7 +2,7 @@ import DOMPurify from 'dompurify';
 // Page themes for Xiaohongshu longform. All styling is inline so exported PNGs and the
 // in-app HTML preview match regardless of surrounding app CSS. Elements marked
 // data-deco carry no article text and are excluded from content verification.
-// Sizes are CSS px on a 360px-wide page (exported at 3x, 1080px); every text size is
+// Sizes are CSS px on a 360px-wide page (exported at 4x / 1440px JPEG); every text size is
 // derived from the body size so a template scales as a whole.
 // Each theme follows one saved reference post (its colour mood, type and cover composition)
 // and one tasteful accent used for numbers, small labels, rules and links, never large fills

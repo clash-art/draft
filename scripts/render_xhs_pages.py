@@ -1,9 +1,9 @@
-"""Developer visual check: render Xiaohongshu longform pages to PNG in headless Chrome.
+"""Developer visual check: render Xiaohongshu longform pages to JPEG in headless Chrome.
 
 Starts a local workbench backend on a throwaway copy of an example, serves
 frontend/harness/xhs-pages.html with Vite, and runs the same pagination and
-html-to-image export code as the app. Requires `npm ci` in frontend/ and
-Playwright with a local Chrome (or --chrome PATH).
+html-to-image export code as the app (1440 px wide, 3:5 → 1440×2400). Requires
+`npm ci` in frontend/ and Playwright with a local Chrome (or --chrome PATH).
 """
 import argparse,base64,io,json,os,shutil,subprocess,sys,tempfile,threading,time,urllib.request
 from pathlib import Path
@@ -38,7 +38,7 @@ def main():
  parser.add_argument('--full',action='store_true',help='渲染完整源稿（不使用渠道版本的精简正文与封面内容）')
  parser.add_argument('--no-palette',action='store_true',help='忽略渠道版本的项目配色，使用模板默认配色')
  parser.add_argument('--placeholder-art',action='store_true',help='不使用已生成的手绘插图，显示「插图待生成」占位')
- parser.add_argument('--save',action='store_true',help='同时走完整导出：上传分页 PNG 并保存到渠道版本（只写临时工作区）')
+ parser.add_argument('--save',action='store_true',help='同时走完整导出：上传分页 JPEG 并保存到渠道版本（只写临时工作区）')
  args=parser.parse_args()
  from config_ui import make_server
  from load_example import load
@@ -66,8 +66,8 @@ def main():
     folder=out/identifier
     if folder.exists():shutil.rmtree(folder)
     folder.mkdir(parents=True);files=[]
-    for i,data in enumerate(result['pngs']):
-     f=folder/f'page-{i+1:02d}.png';f.write_bytes(base64.b64decode(data));files.append(f)
+    for i,data in enumerate(result['images']):
+     f=folder/f'page-{i+1:02d}.jpg';f.write_bytes(base64.b64decode(data));files.append(f)
     contact_sheet(files,out/f'{identifier}-contact-sheet.png')
     (folder/'layout.json').write_text(json.dumps(result['meta'],ensure_ascii=False,indent=1))
     fills=[p.get('fill',1) for p in result['meta']['pages'][1:-1]]

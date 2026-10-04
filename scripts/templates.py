@@ -14,7 +14,10 @@ XHS_THEMES=('blueprint','tweet','wireframe','photo','xstyle','canvas','doodle','
 # Retired page themes stay accepted; the renderer maps them onto current ones.
 LAYOUTS=ARTICLE_LAYOUTS+XHS_THEMES+('folio','brief','note','poster','swiss','press','marker')
 # Xiaohongshu longform page sizes; the default is the tallest ratio the note viewer shows whole.
-PAGE_RATIOS={'3:4':(1080,1440),'3:5':(1080,1800),'1:1':(1080,1080),'9:16':(1080,1920)}
+EXPORT_WIDTH=1440
+CSS_PAGE_WIDTH=360
+_EXPORT_SCALE=EXPORT_WIDTH//CSS_PAGE_WIDTH
+PAGE_RATIOS={'3:4':(1440,1920),'3:5':(1440,2400),'1:1':(1440,1440),'9:16':(1440,2560)}
 DEFAULT_PAGE_RATIO='3:5'
 # Longform pages are 360 CSS px wide, so dense note text sits below the article minimum.
 LONGFORM_FONT_MIN=9
