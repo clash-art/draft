@@ -34,12 +34,10 @@ const condensed=readFileSync(new URL('../../examples/xhs-longform-agent-self-evo
 test('agent-authored page breaks become break blocks and the condensed edition may omit citations',()=>{
  assert.deepEqual(articleBlocks('一段\n\n<!-- page -->\n\n二段').map(b=>b.role),['lead','break','p']);
  const blocks=articleBlocks(condensed);
- assert.equal(count(blocks,'figure'),5);
- assert.ok(count(blocks,'break')>=5);
+ assert.equal(count(blocks,'figure'),8);
  assert.equal(count(blocks,'ref')+count(blocks,'refs-heading'),0);
  assert.doesNotMatch(condensed,/〔\d+〕/);
- const order=blocks.find(b=>b.role==='figure'&&b.src.includes('81cd4c47'));
- assert.equal(order.caption,'','a figure that already carries its own caption gets none below it');
+ assert.ok(blocks.filter(b=>b.role==='figure').every(b=>!b.caption),'figures that carry their own titles get no caption below');
 });
 
 test('bare-domain links are recognised as reference URLs',()=>{

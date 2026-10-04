@@ -9,13 +9,14 @@ import mcp_server as server
 from load_example import load
 from workspace import Workspace
 from wechat import save_json
+from templates import PAGE_RATIOS,DEFAULT_PAGE_RATIO
 
 EXAMPLE=ROOT/'examples/xhs-longform-agent-self-evolution'
 ARTICLE=(EXAMPLE/'article.md').read_text(encoding='utf-8')
 EDITOR=json.loads((EXAMPLE/'editor.json').read_text(encoding='utf-8'))
 CONDENSED=(EXAMPLE/'xiaohongshu-condensed.md').read_text(encoding='utf-8')
 
-def png(size=(1080,1440)):
+def png(size=PAGE_RATIOS[DEFAULT_PAGE_RATIO]):
  buffer=io.BytesIO();Image.new('RGB',size,'white').save(buffer,'PNG');return base64.b64encode(buffer.getvalue()).decode()
 
 class LongformMcpTests(unittest.TestCase):
@@ -43,9 +44,9 @@ class LongformMcpTests(unittest.TestCase):
   self.assertIsNone(edition['palette'])
   figures=re.findall(r'^!\[[^\]]*\]\(([^)\s]+)',CONDENSED,re.M)
   self.assertEqual(edition['images'],figures)
-  self.assertEqual(len(figures),5)
+  self.assertEqual(len(figures),8)
   self.assertTrue(all((EXAMPLE/ref).is_file() for ref in figures))
-  self.assertGreaterEqual(len(set(figures)&{a['ref'] for a in EDITOR['assets']}),5)
+  self.assertGreaterEqual(len(set(figures)&{a['ref'] for a in EDITOR['assets']}),8)
   self.assertNotRegex(CONDENSED,r'〔\d+〕|参考资料')
   self.assertEqual((edition['cover_page']['title'],edition['cover_page']['subtitle']),('工业界如何做 Agent 自进化','从真实反馈到持续改进'))
   for path in sorted((EXAMPLE/'layouts').glob('*.json')):
@@ -53,7 +54,8 @@ class LongformMcpTests(unittest.TestCase):
    pages=layout['pages']
    self.assertEqual(layout['page_count'],len(pages),path.name)
    self.assertLessEqual(layout['page_count'],10,path.name)
-   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),5,path.name)
+   self.assertEqual(sum(len(p.get('figures',[])) for p in pages),len(figures),path.name)
+   self.assertEqual(layout['template']['page_ratio'],DEFAULT_PAGE_RATIO,path.name)
    self.assertEqual(sum(p.get('references',0) for p in pages),0,path.name)
    self.assertEqual(pages[0].get('figures',[]),[],path.name)
    self.assertNotIn('cover_image',layout,path.name)
@@ -141,7 +143,7 @@ class LongformMcpTests(unittest.TestCase):
  def test_illustrations_are_planned_then_filled(self):
   edition=json.loads((EXAMPLE/'channels/xiaohongshu.json').read_text(encoding='utf-8'))
   shipped=edition['illustrations']
-  self.assertEqual([x['slot'] for x in shipped],['cover','section:01','section:03','section:04'])
+  self.assertEqual([x['slot'] for x in shipped],['cover'])
   self.assertTrue(all((EXAMPLE/x['image']).is_file() and x['prompt'] for x in shipped))
   self.assertFalse({x['image'] for x in shipped}&set(edition['images']))
   self.assertEqual(self.brief()['current_edition']['illustrations'],shipped)

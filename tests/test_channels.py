@@ -4,7 +4,7 @@ from unittest.mock import patch,Mock
 from PIL import Image
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from workspace import Workspace
-from templates import BUILTINS
+from templates import BUILTINS,PAGE_RATIOS,DEFAULT_PAGE_RATIO
 from wechat import save_json
 class ChannelsTests(unittest.TestCase):
  def setUp(self):
@@ -123,7 +123,7 @@ class ChannelsTests(unittest.TestCase):
 
  def test_longform_export_is_separate_and_invalidated(self):
   saved=self.save()
-  stream=io.BytesIO();Image.new('RGB',(1080,1440),'white').save(stream,format='PNG')
+  stream=io.BytesIO();Image.new('RGB',PAGE_RATIOS[DEFAULT_PAGE_RATIO],'white').save(stream,format='PNG')
   ref=self.w.upload({'data':base64.b64encode(stream.getvalue()).decode()})['ref']
   result=self.save(page_images=[ref],page_count=1,rendered_for_revision=saved['revision'])
   self.assertEqual(result['body'],self.e['body'])

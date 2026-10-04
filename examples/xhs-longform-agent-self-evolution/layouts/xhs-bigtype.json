@@ -6,35 +6,35 @@
   "id": "xhs-bigtype",
   "name": "大字",
   "layout": "bigtype",
-  "page_ratio": "3:4"
+  "page_ratio": "3:5"
  },
  "compact": 0,
- "page_count": 10,
+ "page_count": 9,
  "sections": [
   {
    "number": "01",
-   "title": "先验证：改完有没有用",
-   "page": 3
+   "title": "先验证改完有没有用",
+   "page": 2
   },
   {
    "number": "02",
-   "title": "上线：真实世界更复杂",
+   "title": "离线验证之后，还有真实世界",
    "page": 4
   },
   {
    "number": "03",
-   "title": "挖问题：Braintrust 与 Adaline",
-   "page": 6
+   "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
+   "page": 5
   },
   {
    "number": "04",
-   "title": "改权重：Trajectory 的 SDPO++",
-   "page": 8
+   "title": "Trajectory：用轨迹和反馈更新权重",
+   "page": 7
   },
   {
    "number": "05",
-   "title": "下一轮：让真实数据接着转",
-   "page": 10
+   "title": "真实数据怎样支持下一轮改进",
+   "page": 9
   }
  ],
  "pages": [
@@ -48,30 +48,31 @@
    "page": 2,
    "section": null,
    "roles": [
-    "figure",
     "lead",
-    "p"
+    "p",
+    "figure",
+    "section"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.96,
-   "starts": "Braintrust、Adali"
+   "fill": 0.95,
+   "starts": "Hermes、ECC会把任务经验"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
-    "section",
     "p",
-    "label",
-    "pair"
+    "figure"
    ],
-   "figures": [],
+   "figures": [
+    "images/b88e98237d11484fa8ccffa36b05b23f.png"
+   ],
    "references": 0,
-   "fill": 0.89,
-   "starts": "01先验证：改完有没有用Herm"
+   "fill": 0.86,
+   "starts": "测泛化，重复运行看波动，消融实验"
   },
   {
    "page": 4,
@@ -86,89 +87,78 @@
    ],
    "references": 0,
    "fill": 0.96,
-   "starts": "02上线：真实世界更复杂从ben"
+   "starts": "离线验证之后，还有真实世界从be"
   },
   {
    "page": 5,
    "section": "02",
    "roles": [
-    "label",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.92,
-   "starts": "评测要看实际结果Anthropi"
-  },
-  {
-   "page": 6,
-   "section": "03",
-   "roles": [
-    "section",
     "p",
+    "section",
     "figure"
    ],
    "figures": [
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.92,
-   "starts": "03挖问题：Braintrust"
+   "fill": 0.97,
+   "starts": "筛选：用户没投诉不代表做对了，服"
+  },
+  {
+   "page": 6,
+   "section": "03",
+   "roles": [
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/de83e70759b94858b41d14803ae35ee3.png"
+   ],
+   "references": 0,
+   "fill": 0.89,
+   "starts": "沿用订单例子，“取消请求”“负面"
   },
   {
    "page": 7,
    "section": "03",
    "roles": [
     "figure",
-    "p"
+    "p",
+    "section"
    ],
    "figures": [
-    "images/de83e70759b94858b41d14803ae35ee3.png"
+    "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.95,
-   "starts": "Braintrust的Patte"
+   "fill": 0.96,
+   "starts": "评测仍要写具体：多笔订单时应澄清"
   },
   {
    "page": 8,
    "section": "04",
    "roles": [
-    "section",
-    "p",
-    "figure"
+    "figure",
+    "p"
    ],
    "figures": [
-    "images/e462c30c54124b5aa65e58e51b87f7b8.png"
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png",
+    "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
    ],
    "references": 0,
-   "fill": 0.86,
-   "starts": "04改权重：Trajectory"
+   "fill": 0.99,
+   "starts": "用户反馈回来时，模型可能已经更新"
   },
   {
    "page": 9,
    "section": "04",
    "roles": [
-    "label",
-    "p"
-   ],
-   "figures": [],
-   "references": 0,
-   "fill": 0.91,
-   "starts": "一条失败轨迹也能训练教师看到“取"
-  },
-  {
-   "page": 10,
-   "section": "05",
-   "roles": [
-    "section",
     "p",
-    "label",
-    "pair"
+    "section"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.89,
-   "starts": "05下一轮：让真实数据接着转修好"
+   "fill": 0.83,
+   "starts": "Trajectory的路线图还提"
   }
  ]
 }
