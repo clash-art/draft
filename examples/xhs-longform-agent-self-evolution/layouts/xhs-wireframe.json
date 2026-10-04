@@ -19,12 +19,12 @@
   {
    "number": "02",
    "title": "离线验证之后，还有真实世界",
-   "page": 4
+   "page": 3
   },
   {
    "number": "03",
    "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
-   "page": 5
+   "page": 4
   },
   {
    "number": "04",
@@ -34,7 +34,7 @@
   {
    "number": "05",
    "title": "真实数据怎样支持下一轮改进",
-   "page": 9
+   "page": 8
   }
  ],
  "pages": [
@@ -57,7 +57,7 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.76,
+   "fill": 1,
    "starts": "Hermes、ECC这类开源Ag"
   },
   {
@@ -65,100 +65,100 @@
    "section": "01",
    "roles": [
     "figure",
-    "p"
+    "p",
+    "section"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.92,
-   "starts": "Agent可能把一次偶然成功总结"
+   "fill": 0.98,
+   "starts": "harness，通过回归检查后接"
   },
   {
    "page": 4,
    "section": "02",
    "roles": [
-    "section",
     "p",
-    "figure"
+    "figure",
+    "section"
    ],
    "figures": [
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 0.97,
-   "starts": "离线验证之后，还有真实世界从be"
+   "fill": 0.98,
+   "starts": "如果团队只检查接口返回，就会把这"
   },
   {
    "page": 5,
-   "section": "02",
+   "section": "03",
    "roles": [
-    "p",
-    "section",
-    "figure"
+    "figure",
+    "p"
    ],
    "figures": [
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
    "fill": 0.98,
-   "starts": "团队可以据此补充离线测试，再用后"
+   "starts": "但知道“哪类请求很多”，离“该改"
   },
   {
    "page": 6,
    "section": "03",
    "roles": [
+    "figure",
+    "p"
+   ],
+   "figures": [
+    "images/de83e70759b94858b41d14803ae35ee3.png",
+    "images/a62d300f0c864992a5e1933586fbffb5.png"
+   ],
+   "references": 0,
+   "fill": 0.93,
+   "starts": "prompt。审阅者对照修改、回"
+  },
+  {
+   "page": 7,
+   "section": "04",
+   "roles": [
+    "section",
     "p",
     "figure"
    ],
    "figures": [
-    "images/de83e70759b94858b41d14803ae35ee3.png"
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.88,
-   "starts": "Adaline也会深入调查：它的"
-  },
-  {
-   "page": 7,
-   "section": "03",
-   "roles": [
-    "figure",
-    "section",
-    "p"
-   ],
-   "figures": [
-    "images/a62d300f0c864992a5e1933586fbffb5.png"
-   ],
-   "references": 0,
-   "fill": 0.81,
+   "fill": 0.94,
    "starts": "Trajectory：用轨迹和反"
   },
   {
    "page": 8,
    "section": "04",
    "roles": [
+    "p",
     "figure",
-    "p"
+    "section"
    ],
    "figures": [
-    "images/e462c30c54124b5aa65e58e51b87f7b8.png",
     "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
    ],
    "references": 0,
-   "fill": 0.98,
-   "starts": "用户反馈回来时，模型可能已经更新"
+   "fill": 0.94,
+   "starts": "长任务会拖慢同步训练，团队把轨迹"
   },
   {
    "page": 9,
-   "section": "04",
+   "section": "05",
    "roles": [
-    "p",
-    "section"
+    "p"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.78,
-   "starts": "Trajectory的路线图还提"
+   "fill": 0.34,
+   "starts": "有足够流量时，团队可以做线上A/"
   }
  ]
 }

@@ -34,7 +34,7 @@ function cutAt(node,count){
 }
 function fragment(node,start,end){const range=document.createRange();const [a,ao]=cutAt(node,start),[b,bo]=cutAt(node,end);range.setStart(a,ao);range.setEnd(b,bo);const copy=node.cloneNode(false);copy.append(range.cloneContents());return copy}
 // Text that counts as article content: everything except decoration.
-export function contentText(node){const copy=node.cloneNode(true);copy.querySelectorAll('[data-deco]').forEach(d=>d.remove());return copy.textContent.replace(/\s/g,'')}
+export function contentText(node){const copy=node.cloneNode(true);copy.querySelectorAll('[data-deco],img').forEach(d=>d.remove());return copy.textContent.replace(/\s/g,'')}
 // Section numbers ("01" above a heading) structure the article but are not printed on the pages.
 function sourceText(body){const div=document.createElement('div');div.innerHTML=DOMPurify.sanitize(marked.parse(body||''));
  for(const p of div.querySelectorAll('p'))if(/^\d{1,2}$/.test(p.textContent.trim())&&/^H[1-6]$/.test(p.nextElementSibling?.tagName||'')&&!/^参考(资料|文献|链接)$/.test(p.nextElementSibling.textContent.trim()))p.remove();
@@ -93,7 +93,6 @@ async function layoutOnce(edition,api,imageMap,opts){
   await loadFonts(stage.page,api);stage.page.remove();
   const measure=shell(theme,width,height);host.append(measure.page);
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
-  const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
   const bottom=()=>current.content.getBoundingClientRect().bottom;
   const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1)};
   const empty=()=>!current.content.childElementCount;
@@ -116,12 +115,34 @@ async function layoutOnce(edition,api,imageMap,opts){
   const capFigure=node=>{const img=node.querySelector('img');if(img)img.style.maxHeight=Math.round(current.content.clientHeight*(node.dataset.full?0.8:0.62))+'px'};
   // Text after a figure up to an authored page break belongs on the figure's page.
   const segmentRest=i=>{let h=0;for(let j=i+1;j<blocks.length;j++){const r=blocks[j].role;if(r==='break')return h;if(r==='figure'||r==='refs-heading')return null;if(r!=='end')h+=heightOf(nodes[j])}return null};
-  // Reading order is strict: figures stay exactly where the source places them.
-  const newPage=next;
-  next();
+  // When a figure does not fit, following text may flow on the current page and the figure floats to the next (at most one page).
+  const canFloatFigure=i=>{for(let j=i+1;j<blocks.length;j++){const r=blocks[j].role;if(r==='break'||r==='figure'||r==='refs-heading'||r==='end')return false;if(SPLITTABLE.has(r)||r==='lead'||KEEP_WITH_NEXT.has(r)||r==='label'||r==='pair'||r==='quote'||r==='heading'||r==='table'||r==='code'||r==='html'||r==='ref')return true}return false};
+  let deferredFigure=null;
+  const placeFigureNow=(node,index,opts={})=>{const {allowDefer=true}=opts;
+   const img=node.querySelector('img');if(img)img.style.maxHeight='';
+   capFigure(node);
+   const rest=segmentRest(index);
+   if(rest!==null){const room=free()-rest;if(room>0&&heightOf(node)>room)shrinkFigure(node,room,node.dataset.full?0.72:0.8)}
+   if(place(node)){current.roles.push('figure');return true}
+   if(!empty()&&shrinkFigure(node,free())&&place(node)){current.roles.push('figure');return true}
+   if(!empty()&&allowDefer&&canFloatFigure(index)&&free()>=lineOf(node)*1.2){
+    deferredFigure={node,index,fromPage:pages.length};return 'deferred'}
+   if(!empty())newPage();
+   if(place(node)||shrinkFigure(node,current.content.clientHeight)&&place(node)){current.roles.push('figure');return true}
+   return false;
+  };
+  const flushDeferredFigure=()=>{
+   if(!deferredFigure)return;
+   const {node,index}=deferredFigure;deferredFigure=null;
+   if(!placeFigureNow(node,index,{allowDefer:false}))throw Error('图片超出页面，请调整模板字号或素材尺寸；全文未截断');
+  };
+  const startPage=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
+  const newPage=()=>{if(empty())return;startPage();flushDeferredFigure()};
+  startPage();
   for(let i=0;i<nodes.length;i++){
    const b=blocks[i],node=nodes[i];
-   if(b.role==='break'){if(!empty())newPage();continue}
+   if(deferredFigure&&pages.length>deferredFigure.fromPage+1)flushDeferredFigure();
+   if(b.role==='break'){if(deferredFigure)flushDeferredFigure();if(!empty())newPage();continue}
    if(b.role==='end'){if(!empty())place(node);continue}
    if(b.role==='section'){section={number:b.number,html:b.html};sectionIndex++}
    if(KEEP_WITH_NEXT.has(b.role)){
@@ -136,13 +157,9 @@ async function layoutOnce(edition,api,imageMap,opts){
     current.roles.push(b.role);continue;
    }
    if(b.role==='figure'){
-    capFigure(node);
-    const rest=segmentRest(i);
-    if(rest!==null){const room=free()-rest;if(room>0&&heightOf(node)>room)shrinkFigure(node,room,node.dataset.full?0.72:0.8)}
-    if(place(node)){current.roles.push('figure');continue}
-    if(!empty()&&shrinkFigure(node,free())&&place(node)){current.roles.push('figure');continue}
-    if(!empty())newPage();
-    if(place(node)||shrinkFigure(node,current.content.clientHeight)&&place(node)){current.roles.push('figure');continue}
+    if(deferredFigure)flushDeferredFigure();
+    const placed=placeFigureNow(node,i);
+    if(placed==='deferred'||placed===true)continue;
     throw Error('图片超出页面，请调整模板字号或素材尺寸；全文未截断');
    }
    if(!SPLITTABLE.has(b.role)){
@@ -179,6 +196,7 @@ async function layoutOnce(edition,api,imageMap,opts){
     current.roles.push(b.role);offset+=lo;newPage();
    }
   }
+  if(deferredFigure)flushDeferredFigure();
   measure.page.remove();
   for(let i=pages.length-1;i>0;i--)if(!pages[i].content.childElementCount)pages.splice(i,1);
   const source=sourceText(edition.body);

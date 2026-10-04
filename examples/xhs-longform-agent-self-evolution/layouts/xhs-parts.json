@@ -57,7 +57,7 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.8,
+   "fill": 0.95,
    "starts": "Hermes、ECC这类开源Ag"
   },
   {
@@ -71,8 +71,8 @@
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.99,
-   "starts": "Agent可能把一次偶然成功总结"
+   "fill": 0.86,
+   "starts": "测泛化，重复运行看波动，消融实验"
   },
   {
    "page": 4,
@@ -130,7 +130,7 @@
     "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.85,
+   "fill": 0.98,
    "starts": "Trajectory：用轨迹和反"
   },
   {
@@ -146,19 +146,19 @@
    ],
    "references": 0,
    "fill": 0.99,
-   "starts": "用户反馈回来时，模型可能已经更新"
+   "starts": "长任务会拖慢同步训练，团队把轨迹"
   },
   {
    "page": 9,
-   "section": "04",
+   "section": "05",
    "roles": [
-    "p",
-    "section"
+    "section",
+    "p"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.8,
-   "starts": "Trajectory的路线图还提"
+   "fill": 0.65,
+   "starts": "真实数据怎样支持下一轮改进修好“"
   }
  ]
 }
