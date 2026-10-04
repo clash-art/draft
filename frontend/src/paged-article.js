@@ -48,7 +48,7 @@ function shell(theme,width,height){
 function buildBlock(theme,block,images,figures){
  const make={lead:theme.lead,p:theme.p,section:theme.section,heading:theme.heading,label:theme.label,pair:theme.pair,quote:theme.quote,'refs-heading':theme.refsHeading,ref:theme.ref}[block.role];
  let node;
- if(block.role==='figure'){node=theme.figure(block,images.get(block),++figures.n);node.style.margin=block.full?`4px -${theme.pad.right}px 8px -${theme.pad.left}px`:theme.figureMargin;if(block.full)node.dataset.full='true'}
+ if(block.role==='figure'){node=theme.figure(block,images.get(block),++figures.n);node.style.margin=theme.figureMargin;if(block.full)node.dataset.full='true'}
  else if(make)node=make(block);
  else{node=document.createElement('div');node.innerHTML=DOMPurify.sanitize(block.html||'');Object.assign(node.style,{margin:`0 0 ${theme.gap}px`,fontSize:theme.size+'px',lineHeight:String(theme.leading),color:theme.body});
   for(const el of node.querySelectorAll('pre,table'))Object.assign(el.style,{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:'100%',fontSize:'12px',lineHeight:'1.6'});
@@ -93,7 +93,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const pages=[];let current,section=null,sectionIndex=-1;const sectionPages=[];
   const next=()=>{current={...shell(theme,width,height),section,sectionIndex,roles:[]};host.append(current.page);pages.push(current)};
   const bottom=()=>current.content.getBoundingClientRect().bottom;
-  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1+Math.max(theme.bleed||0,current.content.querySelector('[data-full]')?theme.pad.right:0))};
+  const fits=()=>{const last=current.content.lastElementChild;return !last||(last.getBoundingClientRect().bottom<=bottom()+0.5&&current.content.scrollWidth<=current.content.clientWidth+1)};
   const empty=()=>!current.content.childElementCount;
   const place=node=>{if(empty())node.style.marginTop='0';current.content.append(node);if(fits())return true;node.remove();return false};
   const used=()=>{const last=current.content.lastElementChild;if(!last)return 0;return last.getBoundingClientRect().bottom+parseFloat(getComputedStyle(last).marginBottom||0)-current.content.getBoundingClientRect().top};
@@ -186,7 +186,7 @@ async function layoutOnce(edition,api,imageMap,opts){
   const total=pages.length+1;
   const content=coverContent(edition,sectionPages),parts=sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
   const cover=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height});
-  pages.forEach((p,i)=>{delete p.content.dataset.content;theme.frame(p.page,{index:i+2,total,section:p.section,sectionIndex:p.sectionIndex,sectionCount:sections.length,title,byline:content.byline})});
+  pages.forEach(p=>{delete p.content.dataset.content});
   host.append(cover);
   const fallback=await loadFonts(host,api);
   const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};

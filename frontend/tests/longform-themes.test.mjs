@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-import {themeColors,THEME_LAYOUTS} from '../src/longform-themes.js';
+import {themeColors,themeFor,THEME_LAYOUTS} from '../src/longform-themes.js';
 const presets=JSON.parse(readFileSync(new URL('../../assets/xhs-longform-presets.json',import.meta.url),'utf8'));
 
 test('every base preset maps to its own page theme; combos compose existing parts',()=>{
@@ -17,4 +17,13 @@ test('edition palette overrides template colours, which override theme defaults'
  assert.deepEqual([c.accent,c.paper,c.body,c.onPrimary,c.surface,c.ink],['#2c1fea','#fafafa','#3f3f46','#ffffff','#eff4ff','#000000']);
  assert.equal(themeColors(base,{},{primary:'not-a-colour'}).accent,'#111111');
  assert.match(themeColors(base,{}).surface,/^#[0-9a-f]{6}$/);
+});
+
+test('no preset draws a page header or footer, and figures stay inside the text column',()=>{
+ for(const layout of THEME_LAYOUTS){
+  const theme=themeFor({layout});
+  assert.equal(theme.frame,undefined,layout);
+  assert.doesNotMatch(theme.figureMargin,/-/,layout);
+  assert.ok(theme.pad.top<=30&&theme.pad.bottom<=30,layout);
+ }
 });
