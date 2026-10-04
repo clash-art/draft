@@ -1,0 +1,10 @@
+.git
+.venv
+**/node_modules
+**/.wrangler
+**/__pycache__
+cloudflare/.dev.vars
+tests
+frontend/node_modules
+work
+*.pyc

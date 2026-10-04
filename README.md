@@ -212,3 +212,84 @@ This verifies live resource loading only; actual host rendering and message deli
 remain separate acceptance checks.
 
 小红书默认长文模式与源稿内容一致，模板切换只影响预览样式。旧卡片模式保留用于明确要求短图文的场景。当前长文可编辑和预览，自动填写长文尚未接通；不会回退到短图文发布入口。
+
+## 本地优先与可选云同步
+
+插件和本机工作台始终先走本机。不配置 Cloudflare 时，Codex / Cursor 仍通过 `.mcp.json` 启动 `scripts/run-mcp.sh`，文章、图片和公众号凭据留在 `~/.config/wechat-drafts/`，断网也能编辑、审核和预览。云端不是插件的必经之路。
+
+Cloudflare 只做两件可选的事：
+
+- **同步。** 把稿件、图片和账号设置送到你自己的 R2 存储，另一台电脑再拉下来。
+- **回退入口。** Worker 提供网页工作台，以及一个远程 MCP。只有在你明确设置 `DRAFT_MCP=remote` 时，插件才会改连这个地址。平时不要设。
+
+### 同步什么、冲突怎么处理
+
+每台设备保留一份私有游标 `sync-base.json`（不会上传）。两边都没变就跳过；只有一边变了就跟着那边走；两边都改了同一文件则**两边都保留**，本机文件不动，云端版本另存到 `sync-conflicts/`，命令以状态码 3 结束。之后执行：
+
+```bash
+python3 scripts/sync_client.py resolve workspace/editor.json --keep local
+python3 scripts/sync_client.py resolve workspace/editor.json --keep remote
+```
+
+不同步这些本机状态：小红书 Chrome 登录目录 `workspace/xiaohongshu-profile/`、文件锁、MCP 会话状态。公众号 AppID / AppSecret 默认会同步，因为换一台电脑需要同一套账号设置；不想同步密钥时在配置里写 `DRAFT_SYNC_SECRETS=0`。关掉之后不会再上传，但已经在存储桶里的副本不会自动删除。小红书扫码仍在你自己的电脑上完成，云端页面不会打开 Chrome。
+
+未配置时：
+
+```bash
+python3 scripts/sync_client.py status
+```
+
+打印「云同步未配置」并退出 0。本机稿件不会被改。配置好了但网络失败时，命令失败并说明本机稿件未改。
+
+### 打开同步
+
+在本机创建 `~/.config/wechat-drafts/hosted.env`，权限 `chmod 600`：
+
+```bash
+DRAFT_SYNC_URL=https://clash-art-draft.<account-subdomain>.workers.dev
+DRAFT_ACCESS_TOKEN=至少32个字符的访问令牌
+```
+
+访问令牌是你自己生成的应用密码，不是 Cloudflare API Token。浏览器打开 `https://<同一主机>/#<同一令牌>`，令牌只留在该标签页的 sessionStorage。插件不读取这个文件，因此同步配置不会把 MCP 改成远程。
+
+示例见 `examples/hosted.env.example`。
+
+### 远程 MCP 只是回退
+
+默认不要改 `.mcp.json`。只有这台机器跑不了本机 Python、又确实要连云端引擎时，才在插件环境里设置：
+
+```bash
+DRAFT_MCP=remote
+DRAFT_URL=https://clash-art-draft.<account-subdomain>.workers.dev
+DRAFT_ACCESS_TOKEN=与网页相同的访问令牌
+```
+
+`scripts/mcp_remote.py` 把 stdio MCP 转到 `DRAFT_URL/mcp`。本机图片和表格仍在你的电脑上读取，再把内容交给云端。
+
+### 部署
+
+这次没有部署。Cloudflare 登录不可用，仓库里也没有 API Token。下面的命令留到具备凭据之后再执行，不要把令牌写进 git。
+
+1. 在 Cloudflare 控制台用模板 **Edit Cloudflare Workers** 创建 API Token。该模板已经包含 Workers Scripts、Workers Routes、Workers KV、Workers Tail、**Workers R2 Storage Write**、Account Settings Read、User Details Read、User Memberships Read。
+2. 在同一枚令牌上额外加上 **Containers Write**（权限列表里也可能显示为 Containers Edit）。回退引擎跑在 Cloudflare Containers 里，模板本身不含这项。存储桶只做设备同步时，R2 权限已经在模板里。
+3. 把账号 ID 放进 Cursor Cloud Agent Secrets，名字用 `CLOUDFLARE_ACCOUNT_ID`。API Token 用 `CLOUDFLARE_API_TOKEN`。
+4. 生成应用访问令牌并写成 Worker secret，不要写成 Wrangler 变量：
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+cd cloudflare
+npx wrangler r2 bucket create clash-art-draft
+npx wrangler secret put DRAFT_ACCESS_TOKEN
+```
+
+5. 若希望云端网页看到各台设备同步后的稿件，再在 R2 控制台创建一对 **S3 API 访问密钥**（Object Read & Write，限定桶 `clash-art-draft`），并写入 Worker secrets：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET`。设备之间的同步不需要这组密钥，Worker 直接使用 R2 绑定。这组密钥只给回退容器，避免容器在处理请求时再回调 Worker。
+6. 部署：
+
+```bash
+cd cloudflare
+npx wrangler deploy --config wrangler.jsonc
+```
+
+Containers 需要 Workers 付费计划。部署完成后把 `https://clash-art-draft.<account-subdomain>.workers.dev` 填进 `hosted.env` 的 `DRAFT_SYNC_URL`。微信接口若从容器调用，出口 IP 不固定，白名单仍以「账号设置」里的诊断结果为准。
+
+本地已经用 `wrangler dev --config wrangler.dev.jsonc --local` 验证同步和网页回退，不需要账号登录。开发配置不启动容器；`DRAFT_DEV_ORIGIN` 指向本机 `scripts/hosted.py`。
