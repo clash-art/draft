@@ -19,7 +19,7 @@
   {
    "number": "02",
    "title": "离线验证之后，还有真实世界",
-   "page": 3
+   "page": 4
   },
   {
    "number": "03",
@@ -58,27 +58,27 @@
    ],
    "references": 0,
    "fill": 0.94,
-   "starts": "Hermes、ECC会把任务经验"
+   "starts": "Hermes、ECC这类开源Ag"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
     "p",
-    "figure",
-    "section"
+    "figure"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.98,
+   "fill": 0.86,
    "starts": "测泛化，重复运行看波动，消融实验"
   },
   {
    "page": 4,
    "section": "02",
    "roles": [
+    "section",
     "p",
     "figure"
    ],
@@ -86,37 +86,37 @@
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 1,
-   "starts": "真实用户会说含糊的话，还会临时改"
+   "fill": 0.95,
+   "starts": "离线验证之后，还有真实世界从be"
   },
   {
    "page": 5,
-   "section": "03",
+   "section": "02",
    "roles": [
-    "section",
     "p",
+    "section",
     "figure"
    ],
    "figures": [
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.98,
-   "starts": "Braintrust与Adali"
+   "fill": 0.96,
+   "starts": "筛选：用户没投诉不代表做对了，服"
   },
   {
    "page": 6,
    "section": "03",
    "roles": [
-    "figure",
-    "p"
+    "p",
+    "figure"
    ],
    "figures": [
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.69,
-   "starts": "Adaline进一步把修复接进I"
+   "fill": 0.89,
+   "starts": "沿用订单例子，“取消请求”“负面"
   },
   {
    "page": 7,
@@ -157,7 +157,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.83,
+   "fill": 0.8,
    "starts": "Trajectory的路线图还提"
   }
  ]
