@@ -48,31 +48,31 @@
    "page": 2,
    "section": null,
    "roles": [
+    "figure",
     "lead",
     "p",
-    "figure",
     "section"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.97,
-   "starts": "Hermes、ECC这类开源Ag"
+   "fill": 0.94,
+   "starts": "下图从左到右对应Braintru"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
-    "figure",
-    "p"
+    "p",
+    "figure"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.86,
-   "starts": "测泛化，重复运行看波动，消融实验"
+   "fill": 0.99,
+   "starts": "的instincts，再通过/e"
   },
   {
    "page": 4,
@@ -115,23 +115,23 @@
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.99,
+   "fill": 0.93,
    "starts": "沿用订单例子，“取消请求”“负面"
   },
   {
    "page": 7,
    "section": "03",
    "roles": [
+    "p",
     "figure",
-    "section",
-    "p"
+    "section"
    ],
    "figures": [
     "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.98,
-   "starts": "Trajectory：用轨迹和反"
+   "fill": 0.91,
+   "starts": "评测仍要写具体：多笔订单时应澄清"
   },
   {
    "page": 8,
@@ -145,20 +145,20 @@
     "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
    ],
    "references": 0,
-   "fill": 0.99,
-   "starts": "长任务会拖慢同步训练，团队把轨迹"
+   "fill": 0.95,
+   "starts": "因此，一条失败轨迹也能用于训练，"
   },
   {
    "page": 9,
-   "section": "05",
+   "section": "04",
    "roles": [
-    "section",
-    "p"
+    "p",
+    "section"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.65,
-   "starts": "真实数据怎样支持下一轮改进修好“"
+   "fill": 0.9,
+   "starts": "在APEX-Agents上，他们"
   }
  ]
 }

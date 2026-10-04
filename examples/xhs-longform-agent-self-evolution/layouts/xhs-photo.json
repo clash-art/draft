@@ -19,7 +19,7 @@
   {
    "number": "02",
    "title": "离线验证之后，还有真实世界",
-   "page": 3
+   "page": 4
   },
   {
    "number": "03",
@@ -29,12 +29,12 @@
   {
    "number": "04",
    "title": "Trajectory：用轨迹和反馈更新权重",
-   "page": 6
+   "page": 7
   },
   {
    "number": "05",
    "title": "真实数据怎样支持下一轮改进",
-   "page": 8
+   "page": 9
   }
  ],
  "pages": [
@@ -48,37 +48,37 @@
    "page": 2,
    "section": null,
    "roles": [
+    "figure",
     "lead",
     "p",
-    "figure",
     "section"
    ],
    "figures": [
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.94,
-   "starts": "Hermes、ECC这类开源Ag"
+   "fill": 0.87,
+   "starts": "下图从左到右对应Braintru"
   },
   {
    "page": 3,
    "section": "01",
    "roles": [
     "figure",
-    "p",
-    "section"
+    "p"
    ],
    "figures": [
     "images/b88e98237d11484fa8ccffa36b05b23f.png"
    ],
    "references": 0,
-   "fill": 0.97,
-   "starts": "改执行框架的研究包括SICA、S"
+   "fill": 0.95,
+   "starts": "Hermes自称self-imp"
   },
   {
    "page": 4,
    "section": "02",
    "roles": [
+    "section",
     "p",
     "figure"
    ],
@@ -86,79 +86,79 @@
     "images/81cd4c47a812405da5f75b7857cb92ad.png"
    ],
    "references": 0,
-   "fill": 0.86,
-   "starts": "假设用户让订单Agent“取消昨"
+   "fill": 0.97,
+   "starts": "离线验证之后，还有真实世界从be"
   },
   {
    "page": 5,
-   "section": "03",
+   "section": "02",
    "roles": [
-    "section",
     "p",
+    "section",
     "figure"
    ],
    "figures": [
     "images/32ef028eb07f41fab37eab71364534bf.png"
    ],
    "references": 0,
-   "fill": 0.97,
-   "starts": "Braintrust与Adali"
+   "fill": 0.98,
+   "starts": "团队可以据此补充离线测试，再用后"
   },
   {
    "page": 6,
    "section": "03",
    "roles": [
-    "figure",
     "p",
-    "section"
+    "figure"
    ],
    "figures": [
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
-   "fill": 0.99,
-   "starts": "Adaline进一步把修复接进I"
+   "fill": 0.83,
+   "starts": "程Agent行为分析会给出诊断、"
   },
   {
    "page": 7,
-   "section": "04",
+   "section": "03",
    "roles": [
     "figure",
+    "section",
     "p"
    ],
    "figures": [
-    "images/a62d300f0c864992a5e1933586fbffb5.png",
-    "images/e462c30c54124b5aa65e58e51b87f7b8.png"
+    "images/a62d300f0c864992a5e1933586fbffb5.png"
    ],
    "references": 0,
-   "fill": 0.94,
-   "starts": "训练时，同一个模型分别充当学生和"
+   "fill": 0.87,
+   "starts": "评测仍要写具体：多笔订单时应澄清"
   },
   {
    "page": 8,
    "section": "04",
    "roles": [
-    "p",
     "figure",
-    "section"
+    "p"
    ],
    "figures": [
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png",
     "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
    ],
    "references": 0,
-   "fill": 0.98,
-   "starts": "用户反馈回来时，模型可能已经更新"
+   "fill": 0.95,
+   "starts": "因此，一条失败轨迹也能用于训练，"
   },
   {
    "page": 9,
-   "section": "05",
+   "section": "04",
    "roles": [
-    "p"
+    "p",
+    "section"
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.47,
-   "starts": "出值得修的新问题。重复一万次相同"
+   "fill": 0.91,
+   "starts": "在APEX-Agents上，他们"
   }
  ]
 }
