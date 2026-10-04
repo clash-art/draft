@@ -104,10 +104,11 @@ async function layoutOnce(edition,api,imageMap,opts){
   const lineOf=node=>{const c=node.cloneNode(false);c.textContent='字';measure.content.replaceChildren(c);const s=getComputedStyle(c),h=parseFloat(s.lineHeight)||parseFloat(s.fontSize)*1.7;measure.content.replaceChildren();return h};
   const linesOf=node=>{const c=node.cloneNode(true);c.style.margin='0';measure.content.replaceChildren(c);const s=getComputedStyle(c);const h=c.getBoundingClientRect().height-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom);measure.content.replaceChildren();return Math.round(h/lineOf(node))};
   // Space the following block needs so a heading/label is never stranded at a page bottom.
-  const minNext=i=>{const b=blocks[i],n=nodes[i];if(!b)return 0;
-   if(SPLITTABLE.has(b.role)){const h=heightOf(n),two=lineOf(n)*2+parseFloat(getComputedStyle(n).marginTop||0)+4;return Math.min(h,two)}
+  const minFollowLines=(role,tail)=>role==='section'||role==='heading'?Math.max(tail,3):tail;
+  const minNext=(i,tailLines=2)=>{const b=blocks[i],n=nodes[i];if(!b)return 0;
+   if(SPLITTABLE.has(b.role)){const h=heightOf(n),need=lineOf(n)*tailLines+parseFloat(getComputedStyle(n).marginTop||0)+4;return Math.min(h,need)}
    if(b.role==='figure')return heightOf(n)*0.72;
-   if(KEEP_WITH_NEXT.has(b.role))return heightOf(n)+minNext(i+1);
+   if(KEEP_WITH_NEXT.has(b.role))return heightOf(n)+minNext(i+1,minFollowLines(b.role,tailLines));
    return heightOf(n)};
   const imageHeight=node=>{const c=node.cloneNode(true);measure.content.replaceChildren(c);const h=c.querySelector('img')?.getBoundingClientRect().height||0;measure.content.replaceChildren();return h};
   const shrinkFigure=(node,room,floor=0.85)=>{const img=node.querySelector('img');if(!img)return false;const cap=img.style.maxHeight,full=imageHeight(node);if(full<40)return false;
@@ -124,8 +125,13 @@ async function layoutOnce(edition,api,imageMap,opts){
    if(b.role==='end'){if(!empty())place(node);continue}
    if(b.role==='section'){section={number:b.number,html:b.html};sectionIndex++}
    if(KEEP_WITH_NEXT.has(b.role)){
-    if(!empty()&&free()<heightOf(node)+minNext(i+1))newPage();
+    const follow=minFollowLines(b.role,2);
+    if(!empty()&&free()<heightOf(node)+minNext(i+1,follow))newPage();
     if(!place(node)){if(!empty())newPage();if(!place(node))throw Error('标题超出页面，请调小字号；全文未截断')}
+    if((b.role==='section'||b.role==='heading')&&blocks[i+1]&&SPLITTABLE.has(blocks[i+1].role)){
+     const nn=nodes[i+1],need=lineOf(nn)*3+parseFloat(getComputedStyle(nn).marginTop||0)+4;
+     if(free()<need){node.remove();newPage();if(!place(node))throw Error('标题超出页面，请调小字号；全文未截断')}
+    }
     if(b.role==='section'){if(current.content.firstElementChild===node){current.section=section;current.sectionIndex=sectionIndex}sectionPages.push({...section,page:pages.length})}
     current.roles.push(b.role);continue;
    }
