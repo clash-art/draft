@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {themeColors,themeFor,THEME_LAYOUTS} from '../src/longform-themes.js';
+import {pageSize,DEFAULT_PAGE_RATIO,COVER_SAFE} from '../src/page-size.js';
 const presets=JSON.parse(readFileSync(new URL('../../assets/xhs-longform-presets.json',import.meta.url),'utf8'));
 
 test('every base preset maps to its own page theme; combos compose existing parts',()=>{
@@ -26,4 +27,28 @@ test('no preset draws a page header or footer, and figures stay inside the text 
   assert.doesNotMatch(theme.figureMargin,/-/,layout);
   assert.ok(theme.pad.top<=30&&theme.pad.bottom<=30,layout);
  }
+});
+
+test('pages default to tall 3:5 with covers inside the 3:4 feed crop',()=>{
+ assert.equal(DEFAULT_PAGE_RATIO,'3:5');
+ assert.deepEqual(pageSize({}),{width:360,height:600});
+ assert.deepEqual(pageSize({page_ratio:'3:4'}),{width:360,height:480});
+ assert.deepEqual(COVER_SAFE,{width:360,height:480});
+ assert.ok(presets.every(p=>!p.page_ratio),'presets follow the single default page size');
+});
+
+test('body text is dense: about 31 CJK characters per line at line-height 1.6',()=>{
+ for(const p of presets){
+  const theme=themeFor(p),column=360-theme.pad.left-theme.pad.right,perLine=column/theme.size;
+  assert.ok(perLine>=30&&perLine<=32,`${p.id}: ${perLine.toFixed(1)} per line`);
+  assert.equal(theme.leading,1.6,p.id);
+  assert.ok(theme.gap<=6,p.id);
+ }
+});
+
+test('section titles carry no number, label or icon',()=>{
+ const source=readFileSync(new URL('../src/longform-themes.js',import.meta.url),'utf8');
+ const sections=source.split('\n').filter(l=>/^\s+section[:(]/.test(l));
+ assert.equal(sections.length,THEME_LAYOUTS.length);
+ assert.ok(sections.every(l=>/^\s+section:b=>sectionHead\(t,b(,\{[^}]*\})?\),$/.test(l)),sections.join('\n'));
 });
