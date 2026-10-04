@@ -13,6 +13,11 @@ ARTICLE_LAYOUTS=tuple(PALETTES)
 XHS_THEMES=('blueprint','tweet','wireframe','photo','xstyle','canvas','doodle','devlog','plain','parts','bigtype')
 # Retired page themes stay accepted; the renderer maps them onto current ones.
 LAYOUTS=ARTICLE_LAYOUTS+XHS_THEMES+('folio','brief','note','poster','swiss','press','marker')
+# Xiaohongshu longform page sizes; the default is the tallest ratio the note viewer shows whole.
+PAGE_RATIOS={'3:4':(1080,1440),'3:5':(1080,1800),'1:1':(1080,1080),'9:16':(1080,1920)}
+DEFAULT_PAGE_RATIO='3:5'
+# Longform pages are 360 CSS px wide, so dense note text sits below the article minimum.
+LONGFORM_FONT_MIN=9
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
 def builtin(id,name,description,**values):return dict(BASE,id=id,name=name,description=description,layout=id,accent=PALETTES[id]['primary'],**values)
 BUILTINS=[
@@ -41,10 +46,10 @@ SAMPLE=f'''<p>一篇好的文章，让文字讲清观点，让图片帮助理解
 <h2>把信息组织成可读的层次</h2><ul><li>用段落解释一个观点。</li><li>用列表给出并列的建议。</li><li>用表格比较真正需要比较的内容。</li></ul><table><thead><tr><th>内容</th><th>呈现方式</th></tr></thead><tbody><tr><td>流程与关系</td><td>配图与图注</td></tr><tr><td>方法与操作</td><td>步骤与代码</td></tr></tbody></table><pre><code>article.preview()
 article.save_draft()</code></pre><h3>参考资料</h3><p>〔1〕排版示例 · 研究与方法<br/>https://example.org/research/a-long-reference-address-that-needs-to-wrap-on-a-mobile-screen</p><p>〔2〕排版示例 · 项目文档<br/><a href="https://example.org/docs">https://example.org/docs</a></p>'''
 
-def validate(value):
+def validate(value,font_min=12):
     out={'id':str(value.get('id','')),'name':str(value.get('name','')).strip()[:40],'description':str(value.get('description','')).strip()[:120]}
     if not out['name']:raise ValueError('请填写模板名称')
-    for key,low,high in [('font_size',12,20),('line_height',1.5,2.4),('paragraph_gap',4,32),('reference_size',8,15),('reference_gap',1,24)]:
+    for key,low,high in [('font_size',font_min,20),('line_height',1.5,2.4),('paragraph_gap',4,32),('reference_size',8,15),('reference_gap',1,24)]:
         try:n=float(value.get(key,BASE[key]))
         except (ValueError,TypeError):raise ValueError('模板数值无效') from None
         if not low<=n<=high:raise ValueError('模板数值超出范围：'+key)
@@ -56,7 +61,7 @@ def validate(value):
     out['accent']=accent
     if value.get('palette'):out['palette']=validate_palette(value['palette'])
     if value.get('cover_style') in ('editorial','geek-report','consulting-report','clean-review'):out['cover_style']=value['cover_style']
-    if value.get('page_ratio') in ('3:4','3:5','1:1','9:16'):out['page_ratio']=value['page_ratio']
+    if value.get('page_ratio') in PAGE_RATIOS:out['page_ratio']=value['page_ratio']
     if value.get('figure_tone') in ('muted','duotone','original'):out['figure_tone']=value['figure_tone']
     for key in ('cover_layout','palette_from'):
         if value.get(key) in XHS_THEMES:out[key]=value[key]

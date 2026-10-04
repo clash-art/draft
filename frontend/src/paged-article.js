@@ -3,10 +3,9 @@ import DOMPurify from 'dompurify';
 import {toPng} from 'html-to-image';
 import {loadFonts,fontEmbedCSS} from './fonts';
 import {articleCover} from './longform-cover';
-import {pageSize} from './page-size';
+import {pageSize,pageRatio,COVER_SAFE} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
 import {themeFor,splitTitle,mix} from './longform-themes';
-export const PAGE_WIDTH=360,PAGE_HEIGHT=480;
 const SPLITTABLE=new Set(['lead','p','quote','list']);
 const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
 // Characters that must not start a line (and therefore a continued page).
@@ -36,7 +35,10 @@ function cutAt(node,count){
 function fragment(node,start,end){const range=document.createRange();const [a,ao]=cutAt(node,start),[b,bo]=cutAt(node,end);range.setStart(a,ao);range.setEnd(b,bo);const copy=node.cloneNode(false);copy.append(range.cloneContents());return copy}
 // Text that counts as article content: everything except decoration.
 export function contentText(node){const copy=node.cloneNode(true);copy.querySelectorAll('[data-deco]').forEach(d=>d.remove());return copy.textContent.replace(/\s/g,'')}
-function sourceText(body){const div=document.createElement('div');div.innerHTML=DOMPurify.sanitize(marked.parse(body||''));return div}
+// Section numbers ("01" above a heading) structure the article but are not printed on the pages.
+function sourceText(body){const div=document.createElement('div');div.innerHTML=DOMPurify.sanitize(marked.parse(body||''));
+ for(const p of div.querySelectorAll('p'))if(/^\d{1,2}$/.test(p.textContent.trim())&&/^H[1-6]$/.test(p.nextElementSibling?.tagName||'')&&!/^参考(资料|文献|链接)$/.test(p.nextElementSibling.textContent.trim()))p.remove();
+ return div}
 function shell(theme,width,height){
  const page=document.createElement('article');
  Object.assign(page.style,{fontSynthesis:'none',boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden',fontSize:theme.size+'px',lineHeight:String(theme.leading),...theme.shell});
@@ -185,19 +187,32 @@ async function layoutOnce(edition,api,imageMap,opts){
   const legacyCover=template.cover_style?await articleCover(edition,source,width,height):null;
   const total=pages.length+1;
   const content=coverContent(edition,sectionPages),parts=sectionPages.map(s=>({number:s.number,label:sourceTextOf(s.html)}));
-  const cover=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height});
+  const safe=Math.min(height,COVER_SAFE.height);
+  const card=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height:safe});
+  const cover=legacyCover||safe>=height?card:coverFrame(card,width,height);
   pages.forEach(p=>{delete p.content.dataset.content});
   host.append(cover);
   const fallback=await loadFonts(host,api);
-  const overflows=()=>{const bottom=cover.getBoundingClientRect().bottom-parseFloat(getComputedStyle(cover).paddingBottom||0);return [...cover.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
-  for(const extra of [...cover.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
+  const overflows=()=>{const bottom=card.getBoundingClientRect().bottom-parseFloat(getComputedStyle(card).paddingBottom||0);return [...card.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
+  for(const extra of [...card.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
   if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
-  const meta={max_pages:MAX_PAGES,font_fallback:fallback,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:template.page_ratio||'3:4'},compact:opts.compact,page_count:html.length,
+  const meta={max_pages:MAX_PAGES,font_fallback:fallback,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:pageRatio(template)},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
    pages:[{page:1,roles:['cover']},...pages.map((p,i)=>({page:i+2,section:p.section?.number||null,roles:[...new Set(p.roles)],figures:figuresOf(p.content).map(img=>img.dataset.ref),references:p.roles.filter(r=>r==='ref').length,fill:fillOf(p.content),starts:contentText(p.content).slice(0,16)}))]};
   return {pages:html,meta};
  }finally{host.remove()}
+}
+// The feed thumbnail crops the cover to 3:4, so a taller cover is the 3:4 card centred on plain paper
+// of the same background.
+const BACKGROUND=['background','backgroundColor','backgroundImage','backgroundSize','backgroundPosition','backgroundRepeat'];
+function coverFrame(card,width,height){
+ const page=document.createElement('article');page.dataset.cover='true';
+ Object.assign(page.style,{fontSynthesis:'none',boxSizing:'border-box',width:width+'px',height:height+'px',position:'relative',overflow:'hidden'});
+ for(const k of BACKGROUND)if(card.style[k])page.style[k]=card.style[k];
+ const top=Math.round((height-parseFloat(card.style.height))/2);
+ Object.assign(card.style,{position:'absolute',left:'0',top:top+'px',background:'transparent'});
+ delete card.dataset.cover;page.append(card);return page;
 }
 // Article figures only; decorative illustrations inside data-deco are not body images.
 const figuresOf=node=>[...node.querySelectorAll('img')].filter(img=>!img.closest('[data-deco]'));

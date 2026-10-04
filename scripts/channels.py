@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 import requests,markdown
 from bs4 import BeautifulSoup
 from wechat import save_json
-from templates import render,BUILTINS,validate
+from templates import render,BUILTINS,validate,PAGE_RATIOS,DEFAULT_PAGE_RATIO,LONGFORM_FONT_MIN
 from palette import validate_palette
 from xhs_longform_templates import catalog as longform_catalog
 
@@ -92,9 +92,9 @@ def illustrations(value):
   out.append({'slot':slot,'concept':concept,'prompt':prompt,'image':image})
  return out
 def longform_template(ws,value,edition):
- if value:return validate(value)
+ if value:return validate(value,LONGFORM_FONT_MIN)
  current=edition.get('template') if edition.get('format')=='longform' else None
- return validate(current or longform_catalog(ws.root)[0])
+ return validate(current or longform_catalog(ws.root)[0],LONGFORM_FONT_MIN)
 def dispatch(ws,route,data):
  if route.startswith('/api/channels/templates/') and data.get('format')=='longform':
   from xhs_longform_templates import dispatch as templates_dispatch
@@ -171,7 +171,7 @@ def dispatch(ws,route,data):
     from PIL import Image
     for ref in refs:
      with Image.open(ws.image_path(ref)) as img:
-      expected_size={'3:4':(1080,1440),'3:5':(1080,1800),'1:1':(1080,1080),'9:16':(1080,1920)}.get(template.get('page_ratio','3:4'))
+      expected_size=PAGE_RATIOS[template.get('page_ratio',DEFAULT_PAGE_RATIO)]
       if img.format!='PNG' or img.size!=expected_size:raise ValueError('分页图片尺寸与所选比例不一致')
     edition['page_images']=refs
    elif changed:edition['page_images']=[]
