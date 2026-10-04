@@ -31,14 +31,15 @@ test('unrecognised Markdown is passed through instead of dropped',()=>{
 });
 
 const condensed=readFileSync(new URL('../../examples/xhs-longform-agent-self-evolution/xiaohongshu-condensed.md',import.meta.url),'utf8');
-test('agent-authored page breaks become break blocks and the condensed edition keeps all references',()=>{
+test('agent-authored page breaks become break blocks and the condensed edition may omit citations',()=>{
  assert.deepEqual(articleBlocks('一段\n\n<!-- page -->\n\n二段').map(b=>b.role),['lead','break','p']);
  const blocks=articleBlocks(condensed);
  assert.equal(count(blocks,'figure'),5);
  assert.ok(count(blocks,'break')>=5);
- const refs=blocks.filter(b=>b.role==='ref');
- assert.equal(refs.length,21);
- assert.ok(refs.every(r=>r.name&&r.url),'short-form references keep a name and a link');
+ assert.equal(count(blocks,'ref')+count(blocks,'refs-heading'),0);
+ assert.doesNotMatch(condensed,/〔\d+〕/);
+ const order=blocks.find(b=>b.role==='figure'&&b.src.includes('81cd4c47'));
+ assert.equal(order.caption,'','a figure that already carries its own caption gets none below it');
 });
 
 test('bare-domain links are recognised as reference URLs',()=>{

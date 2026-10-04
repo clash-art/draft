@@ -8,8 +8,8 @@
   "layout": "blueprint",
   "page_ratio": "3:4"
  },
- "compact": 1,
- "page_count": 9,
+ "compact": 0,
+ "page_count": 10,
  "sections": [
   {
    "number": "01",
@@ -24,17 +24,17 @@
   {
    "number": "03",
    "title": "挖问题：Braintrust 与 Adaline",
-   "page": 5
+   "page": 6
   },
   {
    "number": "04",
    "title": "改权重：Trajectory 的 SDPO++",
-   "page": 7
+   "page": 8
   },
   {
    "number": "05",
    "title": "下一轮：让真实数据接着转",
-   "page": 8
+   "page": 10
   }
  ],
  "pages": [
@@ -56,7 +56,7 @@
     "images/b760b5ddc4594589b32b2f6774f67ac3.png"
    ],
    "references": 0,
-   "fill": 0.97,
+   "fill": 0.95,
    "starts": "Braintrust、Adali"
   },
   {
@@ -70,7 +70,7 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.95,
+   "fill": 0.9,
    "starts": "01先验证：改完有没有用Herm"
   },
   {
@@ -86,10 +86,22 @@
    ],
    "references": 0,
    "fill": 0.96,
-   "starts": "02上线：真实世界更复杂让订单A"
+   "starts": "02上线：真实世界更复杂从ben"
   },
   {
    "page": 5,
+   "section": "02",
+   "roles": [
+    "label",
+    "p"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.89,
+   "starts": "评测要看实际结果Anthropi"
+  },
+  {
+   "page": 6,
    "section": "03",
    "roles": [
     "section",
@@ -104,22 +116,21 @@
    "starts": "03挖问题：Braintrust"
   },
   {
-   "page": 6,
+   "page": 7,
    "section": "03",
    "roles": [
     "figure",
-    "label",
-    "pair"
+    "p"
    ],
    "figures": [
     "images/de83e70759b94858b41d14803ae35ee3.png"
    ],
    "references": 0,
    "fill": 0.95,
-   "starts": "Braintrust与Adali"
+   "starts": "Braintrust的Patte"
   },
   {
-   "page": 7,
+   "page": 8,
    "section": "04",
    "roles": [
     "section",
@@ -130,11 +141,23 @@
     "images/e462c30c54124b5aa65e58e51b87f7b8.png"
    ],
    "references": 0,
-   "fill": 0.96,
+   "fill": 0.93,
    "starts": "04改权重：Trajectory"
   },
   {
-   "page": 8,
+   "page": 9,
+   "section": "04",
+   "roles": [
+    "label",
+    "p"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.88,
+   "starts": "一条失败轨迹也能训练教师看到“取"
+  },
+  {
+   "page": 10,
    "section": "05",
    "roles": [
     "section",
@@ -144,20 +167,8 @@
    ],
    "figures": [],
    "references": 0,
-   "fill": 0.89,
-   "starts": "05下一轮：让真实数据接着转同一"
-  },
-  {
-   "page": 9,
-   "section": "05",
-   "roles": [
-    "refs-heading",
-    "ref"
-   ],
-   "figures": [],
-   "references": 21,
-   "fill": 0.99,
-   "starts": "参考资料〔1〕Hermesgit"
+   "fill": 0.9,
+   "starts": "05下一轮：让真实数据接着转修好"
   }
  ]
 }

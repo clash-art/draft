@@ -46,7 +46,7 @@ class LongformMcpTests(unittest.TestCase):
   self.assertEqual(len(figures),5)
   self.assertTrue(all((EXAMPLE/ref).is_file() for ref in figures))
   self.assertGreaterEqual(len(set(figures)&{a['ref'] for a in EDITOR['assets']}),5)
-  self.assertEqual(len(re.findall(r'^〔\d+〕',CONDENSED,re.M)),21)
+  self.assertNotRegex(CONDENSED,r'〔\d+〕|参考资料')
   self.assertEqual((edition['cover_page']['title'],edition['cover_page']['subtitle']),('工业界如何做 Agent 自进化','从真实反馈到持续改进'))
   for path in sorted((EXAMPLE/'layouts').glob('*.json')):
    layout=json.loads(path.read_text(encoding='utf-8'))
@@ -54,7 +54,7 @@ class LongformMcpTests(unittest.TestCase):
    self.assertEqual(layout['page_count'],len(pages),path.name)
    self.assertLessEqual(layout['page_count'],10,path.name)
    self.assertEqual(sum(len(p.get('figures',[])) for p in pages),5,path.name)
-   self.assertEqual(sum(p.get('references',0) for p in pages),21,path.name)
+   self.assertEqual(sum(p.get('references',0) for p in pages),0,path.name)
    self.assertEqual(pages[0].get('figures',[]),[],path.name)
    self.assertNotIn('cover_image',layout,path.name)
 

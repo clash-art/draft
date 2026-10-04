@@ -2,7 +2,9 @@
 
 Braintrust、Adaline 与 Trajectory 如何利用真实任务和反馈推进改进
 
-Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，Braintrust 让 Agent 调查生产记录，Adaline 把问题接进 prompt 搜索，Trajectory 用轨迹和反馈更新权重。
+Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent 有没有进步。到了工业界，团队每天还要处理评测之外的新请求。
+
+Braintrust 让 Agent 调查生产记录，带着证据提出修复建议；Adaline 把问题接进 prompt 搜索与评测；Trajectory 关联执行轨迹和事后反馈，用来更新权重。
 
 下面按验证、上线、挖问题、改权重的顺序拆开讲。
 
@@ -12,17 +14,17 @@ Hermes、ECC 会把任务经验写成 skill，论文用 benchmark 检验 Agent �
 
 ### 先验证：改完有没有用
 
-Hermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 instincts，再聚合成 skills。风险是把一次偶然成功写成通用规则，文件变多了，新任务做得怎样还得单独测。
+Hermes 保存记忆、从复杂任务中创建和修改 skill；ECC 从会话中提炼 instincts，再聚合成 skills。风险是把一次偶然成功写成通用规则；文件变多了，新任务做得怎样还得单独测。
 
 **学术界：至少拿出分数**
 
 看实验先看三点：底座和预算是否相同，测试题是否参与过优化，有没有留出任务和消融。
 
-改执行框架：SICA〔3〕修改自身代码；Self-Harness〔4〕按失败轨迹改 harness；Meta-Harness〔5〕给优化 Agent 看原始轨迹。
+**改执行框架**：SICA 修改自身代码；Self-Harness 按失败轨迹改 harness，过回归检查才接受；Meta-Harness 让优化 Agent 看原始轨迹。
 
-改模型权重：SDPO〔6〕让模型当“事后教师”再蒸馏；SDFT〔7〕用示范减少旧能力遗忘。
+**改模型权重**：SDPO 让模型当“事后教师”再蒸馏；SDFT 借示范减少旧能力遗忘。
 
-第一方工具：skill-creator〔8〕支持有无 skill 对照；Codex 指南〔9〕建议随真实失败扩充测试集。
+**第一方工具**：skill-creator 支持有无 skill 对照；Codex 指南建议随真实失败扩充测试集。
 
 <!-- page -->
 
@@ -30,13 +32,29 @@ Hermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 insti
 
 ### 上线：真实世界更复杂
 
+从 benchmark 到生产也有落差：用户会说含糊的话、临时改需求，线上操作还可能无法撤销。
+
 让订单 Agent“取消昨天那单”，接口返回成功，用户却说：“不是这一单。”
 
 ![关联执行轨迹与事后反馈，定位订单处理失败](images/81cd4c47a812405da5f75b7857cb92ad.png)
 
-关联执行轨迹与事后反馈，定位订单处理失败
+只看接口会记成成功；对照纠正和执行记录，才知道是没澄清多笔订单，还是算错了时区。
 
-只看接口会记成成功；对照纠正和执行记录，才知道是没澄清多笔订单，还是算错了时区〔10〕。
+<!-- page -->
+
+**评测要看实际结果**
+
+Anthropic 的评测指南用退款举例，既检查回复是否依据查到的政策，也检查工单和退款的实际状态。离线评测能验证这些结果，上线后还要从真实反馈里找出评测漏掉的目标与约束。
+
+**反馈也要筛选**
+
+真实任务能暴露事先没想到的问题，执行记录帮助定位出错步骤，用户纠正补上模型反思时不知道的信息。但用户没投诉不代表做对了，服务中断也不能算到 Agent 策略头上。
+
+**再补回离线测试**
+
+团队据此补充离线测试，再用后续请求检查修复。模拟任务能扩大覆盖，可模拟环境漏掉关键约束时，多生成题也补不上这个缺口。
+
+除了任务完成率，还得算等待时间、费用，以及用户被反复追问的次数。
 
 <!-- page -->
 
@@ -44,25 +62,23 @@ Hermes〔1〕从复杂任务中创建 skill；ECC〔2〕从会话中提炼 insti
 
 ### 挖问题：Braintrust 与 Adaline
 
-一万条 trace 先看哪条？Running Coach 案例〔11〕把 19,372 段会话聚成 133 类行为，7 类是问题。
+一万条 trace 先看哪条？Adaline 的 Running Coach 案例先提取会话意图再聚类、命名：19,372 段会话整理成 133 类行为，其中 7 类是问题。
 
 ![Adaline 从会话中聚类行为并识别问题](images/32ef028eb07f41fab37eab71364534bf.png)
 
-Adaline 从会话中聚类行为并识别问题
-
-Braintrust 的 Topics〔12〕按任务、情绪、问题聚类 trace；Patterns〔13〕让 Loop 深挖轨迹、记录证据。
+行为目录里也有正常任务，不能把每个簇都当 bug。Braintrust 的 Topics 从任务、情绪、问题等角度给每条 trace 写摘要再聚类，能交叉筛出“退款请求里，用户不满且发生工具错误”的记录。
 
 <!-- page -->
 
 ![Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复](images/de83e70759b94858b41d14803ae35ee3.png "full")
 
-Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修复
+Braintrust 的 Patterns 让 Loop 查询日志、深挖部分轨迹，记下有证据的发现和修复建议。
 
-**两条路径**
+**查原因**：Braintrust 保存带证据的 Pattern；Adaline 的行为分析给出诊断和具体执行步骤的证据链接。
 
-查原因：Braintrust 用 Loop 保存带证据的 Pattern；Adaline 的行为分析〔14〕关联具体执行证据。
+**留检查**：Braintrust 把发现转成 scorer、分类器或监控；Adaline 把生产和合成案例纳入评测集。
 
-去修复：Braintrust 交给 coding agent；Adaline 用 Improve〔15〕在应用层〔16〕搜索候选 prompt。
+**去修复**：Braintrust 交给 coding agent；Adaline 用 Improve 搜索候选 prompt，评测后审阅发布。
 
 <!-- page -->
 
@@ -70,13 +86,25 @@ Braintrust 与 Adaline：从生产记录发现问题、积累评测并推进修�
 
 ### 改权重：Trajectory 的 SDPO++
 
-Trajectory 的 SDK〔17〕把消息、工具调用和奖励连成轨迹，用 trace\_id 接上用户反馈。
+Trajectory 的 SDK 把消息、工具调用和奖励连成轨迹，用 trace\_id 接上用户反馈：收到“取消错了”，能找回当时的候选订单和工具调用。
 
 ![SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重](images/e462c30c54124b5aa65e58e51b87f7b8.png "full")
 
-SDPO++ 沿用自蒸馏：教师读取反馈，学生通过逐 token 损失更新权重
+同一模型当学生和教师：两者都看任务和轨迹前缀，教师多看到用户纠正。训练逐 token 把学生的分布拉向教师，教师侧停止梯度。
 
-SDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，学生逐 token 向它靠近。APEX-Agents 上通过率从 5% 升到 25%。
+<!-- page -->
+
+**一条失败轨迹也能训练**
+
+教师看到“取消错了”，会降低直接取消的概率、更倾向澄清；训练让学生在没有这条提示的新任务里也这么选。它不需要像 GRPO 那样为同一题采样多条答案。
+
+**旧数据要修正**
+
+反馈回来时模型可能已更新。SDPO++ 用新旧策略的概率比修正差异，再裁剪重要性比率和逐 token 优势，防止少数极端值主导训练。轨迹生成和训练分开调度，训练器不用等最慢的长任务。
+
+**结果**：APEX-Agents 上，GPT-OSS-120B 通过率从 5% 升到 25%，比原版 SDPO 高 9 个百分点。
+
+**改哪一层**：Trajectory 的路线图主张联合优化权重、harness 和 prompt。同一种失败有不同修法：工具缺参数就改接口，指令漏规则就补 prompt，模型反复做错才考虑更新权重。先沿轨迹定位再改。
 
 <!-- page -->
 
@@ -84,60 +112,14 @@ SDPO++〔18〕让同一模型当学生和教师：教师多看到用户纠正，
 
 ### 下一轮：让真实数据接着转
 
-同一种失败有不同修法：工具缺参数就改接口，指令漏了规则就补 prompt，模型反复做错才考虑更新权重。路线图〔19〕主张三层联合优化。
+修好多订单澄清，还会冒出时区、部分退款、订单状态变化等新失败。团队要判断该补评测、改配置，还是加训练数据。
 
-修好多订单澄清，还会冒出时区、部分退款等新失败；日志要能关联结果与纠正。
+重复一万次相同请求，和收集一万种不同约束下的请求，学到的东西不一样。日志要能关联结果与纠正，否则只知道 Agent 做了什么，不知道做得对不对。
 
 **上线怎么验证**
 
-A/B：Adaline Labs〔20〕建议把用户分给不同 prompt 版本；有足够流量时随机分组做实验〔21〕，比较完成率、纠正率、成本和延迟。
+A/B：把用户随机分组，比较完成率、纠正率、成本和延迟；新版本要少取消错单，也别过度追问。
 
-灰度：逐步放量；有记忆的 Agent 要隔离状态。
+灰度：逐步放量；有记忆的 Agent 要隔离两组状态。只比上线前后的分数，可能把流量变化误当成进步。
 
 Demo 演示一次修改，论文测出一次提升；生产系统要靠真实任务不断提供新的失败、约束和纠正。
-
-<!-- page -->
-
-### 参考资料
-
-〔1〕Hermes github.com/NousResearch/hermes-agent
-
-〔2〕ECC github.com/affaan-m/ECC/blob/main/skills/continuous-learning-v2/SKILL.md
-
-〔3〕SICA arxiv.org/abs/2504.15228
-
-〔4〕Self-Harness arxiv.org/html/2606.09498v1
-
-〔5〕Meta-Harness arxiv.org/html/2603.28052v1
-
-〔6〕SDPO arxiv.org/abs/2601.20802
-
-〔7〕SDFT arxiv.org/abs/2601.19897
-
-〔8〕skill-creator claude.com/blog/improving-skill-creator-test-measure-and-refine-agent-skills
-
-〔9〕Codex 指南 developers.openai.com/blog/eval-skills
-
-〔10〕评测指南 anthropic.com/engineering/demystifying-evals-for-ai-agents
-
-〔11〕Running Coach adaline.ai/blog/agent-metabolism-ai-agent-continuous-improvement
-
-〔12〕Topics braintrust.dev/docs/observe/topics
-
-〔13〕Patterns braintrust.dev/docs/observe/patterns
-
-〔14〕编程 Agent 行为分析 adaline.ai/docs/behaviors/coding-agent-behaviors
-
-〔15〕Improve adaline.ai/docs/improve/overview
-
-〔16〕应用层优化 adaline.ai/agent-self-improvement
-
-〔17〕SDK docs.trajectory.ai/introduction
-
-〔18〕Scaling SDPO trajectory.ai/field-notes/scaling-sdpo
-
-〔19〕路线图 trajectory.ai/field-notes/manifesto
-
-〔20〕Adaline Labs labs.adaline.ai/p/prompt-engineering-as-product-strategy
-
-〔21〕A/B 实验 microsoft.com/en-us/research/publication/the-benefits-of-controlled-experimentation-at-scale/
