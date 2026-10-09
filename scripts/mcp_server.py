@@ -185,9 +185,11 @@ def save_article_template(template:dict)->dict:
  return route('save_article_template','/api/templates/save',{'template':template})
 
 @mcp.tool(annotations=LOCAL)
-def apply_article_template(template:dict,article_id:str,expected_revision:str)->dict:
- """Apply typography locally after user asks to format the current article. Does not sync to WeChat."""
- return route('apply_article_template','/api/templates/apply',{'template':template,'current':True,'id':article_id,'expected_revision':expected_revision})
+def apply_article_template(template:dict,article_id:str,expected_revision:str,palette:Optional[dict]=None)->dict:
+ """Apply typography locally after user asks to format the current article. Does not sync to WeChat. Templates are style only. palette (optional) holds the colours of the project the article is about (paper, surface, ink, text, muted, primary, on_primary, accent, rule as #rrggbb, plus name and source describing where the colours came from); it is stored on the WeChat edition and overrides the template colours."""
+ data={'template':template,'current':True,'id':article_id,'expected_revision':expected_revision}
+ if palette is not None:data['palette']=palette
+ return route('apply_article_template','/api/templates/apply',data)
 
 APP_HTML=Path(__file__).resolve().parent.parent/'assets/mcp-app/mcp-app.html'
 APP_URI='ui://wechat-drafts/content-workbench-'+hashlib.sha256(APP_HTML.read_bytes()).hexdigest()[:12]+'.html'
@@ -224,9 +226,30 @@ def get_channel_edition(content_id:str,channel:str)->dict:
  return route('get_channel_edition','/api/channels/get',{'id':content_id,'channel':channel})
 
 @mcp.tool(annotations=LOCAL)
-def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None)->dict:
- """Save local channel copy with optimistic revision checks; never publishes. Read edition first. Wechat template is a template object. XHS defaults to full longform: preserve original title, body, images and references, change typography only. Never summarize or split into cards unless explicitly requested."""
- return route('save_channel_edition','/api/channels/save',{'id':content_id,'channel':channel,'title':title,'body':body,'images':images,'source_revision':source_revision,'expected_revision':expected_revision,'template':template,**({'cards':cards} if cards is not None else {})})
+def save_channel_edition(content_id:str,channel:str,title:str,body:str,images:list[str],source_revision:str,expected_revision:Optional[str]=None,template:Optional[dict]=None,cards:Optional[list[dict]]=None,format:Optional[str]=None,page_images:Optional[list[str]]=None,page_count:Optional[int]=None,rendered_for_revision:Optional[str]=None,cover_page:Optional[dict]=None,condensed:Optional[bool]=None,palette:Optional[dict]=None,illustrations:Optional[list[dict]]=None)->dict:
+ """Save local channel copy with optimistic revision checks; never publishes. Read get_channel_brief first. Wechat template is a template object. XHS is full longform (layout_protocol longform-v1) unless cards are explicitly passed: preserve original title, full body, every image (including the cover) and all references; pick a template from list_channel_templates and change typography only. Never summarize, truncate or split into cards unless explicitly requested. When the user asks for a condensed image note (e.g. at most 10 pages), you author the content: condensed body following figure order, `<!-- page -->` lines as page breaks, cover_page {title, subtitle, points (<=5), optional image ref}, and condensed=true. XHS editions are at most 10 images including the cover. Templates only style; they never choose content. palette is optional and normally omitted: each template has its own palette. Pass it only when the user asks, with near-neutral paper/text tokens and a restrained, non-neon primary/accent (#rrggbb); never brand colours. XHS templates compose parts: cover_layout, palette_from, figure_tone. Images are the article's own body figures (crops allowed), except illustrations: for the 手绘 template only, plan up to 4 abstract concept illustrations [{slot: 'cover'|'section:NN', concept, prompt, image?}] following the skill's style guide, generate each image, import_image it, then save again with image set; until then the slot renders as a marked placeholder. page_images/page_count/rendered_for_revision are set only by the workbench or MCP App after rendering pages; check completeness in the result."""
+ if format not in (None,'longform','cards'):raise ValueError('format must be longform or cards')
+ if format is None and channel=='xiaohongshu':format='cards' if cards is not None else 'longform'
+ data={'id':content_id,'channel':channel,'title':title,'body':body,'images':images,'source_revision':source_revision,'expected_revision':expected_revision,'template':template}
+ if format:data['format']=format
+ if cards is not None:data['cards']=cards
+ if cover_page is not None:data['cover_page']=cover_page
+ if illustrations is not None:data['illustrations']=illustrations
+ if condensed is not None:data['condensed']=condensed
+ if palette is not None:data['palette']=palette
+ if rendered_for_revision:data.update(page_images=page_images or [],page_count=page_count,rendered_for_revision=rendered_for_revision)
+ return route('save_channel_edition','/api/channels/save',data)
+
+@mcp.tool(annotations=READ)
+def list_channel_templates(channel:str='xiaohongshu')->dict:
+ """List Xiaohongshu longform page templates (layout_protocol longform-v1): built-ins and saved local templates. Pass one as template to save_channel_edition."""
+ if channel!='xiaohongshu':raise ValueError('公众号模板请使用 list_article_templates')
+ return {'layout_protocol':'longform-v1',**route('list_channel_templates','/api/channels/templates/list',{'format':'longform'})}
+
+@mcp.tool(annotations=LOCAL)
+def save_channel_template(template:dict)->dict:
+ """Save a reusable Xiaohongshu longform template (font_size, line_height, paragraph_gap, reference_size, reference_gap, accent, layout, page_ratio). Built-ins are copied, never overwritten. Templates change typography only, never content."""
+ return route('save_channel_template','/api/channels/templates/save',{'template':template,'format':'longform'})
 
 @mcp.tool(annotations=LOCAL,meta={'ui':{'visibility':['app']},'openai/widgetAccessible':True})
 def content_app_channel(path:str,data:dict)->dict:
@@ -239,13 +262,13 @@ def content_app_channel(path:str,data:dict)->dict:
                 'requested_mode':data.get('requestedMode') if data.get('requestedMode') in ('inline','fullscreen','pip') else None,
                 'actual_mode':data.get('actualMode') if data.get('actualMode') in ('inline','fullscreen','pip') else 'unknown'})
   save_json(root/'app-host.json',state);return state
- allowed={'/api/channels/get','/api/channels/save','/api/channels/brief','/api/channels/preview','/api/templates/list','/api/image/preview'}
+ allowed={'/api/channels/get','/api/channels/save','/api/channels/brief','/api/channels/preview','/api/templates/list','/api/image/preview','/api/font'}
  if path not in allowed:raise ValueError('此操作请在本机工作台的关联与发布区完成')
  return route('content_app_channel',path,data)
 
 # Explicit app-only routes: local edits and external mutations use separate tools.
 WORKBENCH_LOCAL_ROUTES={
- '/api/editor/load','/api/editor/save','/api/editor/markdown','/api/image/preview','/api/upload',
+ '/api/editor/load','/api/editor/save','/api/editor/markdown','/api/image/preview','/api/font','/api/upload',
  '/api/pending/list','/api/pending/new','/api/pending/open','/api/pending/unlink','/api/pending/import','/api/pending/link',
  '/api/audit','/api/comments/add','/api/comments/list','/api/comments/resolve','/api/review/latest',
  '/api/publication/manual','/api/publication/analytics-link','/api/publication/link','/api/publication/metric',

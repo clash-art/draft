@@ -4,7 +4,7 @@ from unittest.mock import patch,Mock
 from PIL import Image
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from workspace import Workspace
-from templates import BUILTINS
+from templates import BUILTINS,PAGE_RATIOS,DEFAULT_PAGE_RATIO
 from wechat import save_json
 class ChannelsTests(unittest.TestCase):
  def setUp(self):
@@ -18,8 +18,8 @@ class ChannelsTests(unittest.TestCase):
  def test_longform_template_catalog_isolated_and_snapshot_survives_delete(self):
   listing=self.call('templates/list',format='longform')
   self.assertEqual(listing['format'],'longform')
-  self.assertEqual(len(listing['items']),7)
-  self.assertEqual(self.call('get')['template']['id'],'lieflat-editorial')
+  self.assertEqual([t['id'] for t in listing['items']],['xhs-blueprint','xhs-tweet','xhs-wireframe','xhs-photo','xhs-xstyle','xhs-canvas','xhs-doodle','xhs-devlog','xhs-plain','xhs-parts','xhs-bigtype','xhs-combo-photo-plain','xhs-combo-wireframe-tweet','xhs-combo-bigtype-devlog'])
+  self.assertEqual(self.call('get')['template']['id'],'xhs-blueprint')
   template=self.call('templates/save',format='longform',template={**listing['items'][0],'name':'我的长文'})
   self.assertNotIn(template['id'],[t['id'] for t in self.call('templates/list')['items']])
   saved=self.save(template=template)
@@ -123,7 +123,7 @@ class ChannelsTests(unittest.TestCase):
 
  def test_longform_export_is_separate_and_invalidated(self):
   saved=self.save()
-  stream=io.BytesIO();Image.new('RGB',(1080,1440),'white').save(stream,format='PNG')
+  stream=io.BytesIO();Image.new('RGB',PAGE_RATIOS[DEFAULT_PAGE_RATIO],'white').save(stream,format='PNG')
   ref=self.w.upload({'data':base64.b64encode(stream.getvalue()).decode()})['ref']
   result=self.save(page_images=[ref],page_count=1,rendered_for_revision=saved['revision'])
   self.assertEqual(result['body'],self.e['body'])

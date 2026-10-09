@@ -1,0 +1,164 @@
+{
+ "max_pages": 10,
+ "font_fallback": "",
+ "over_limit": false,
+ "template": {
+  "id": "xhs-tweet",
+  "name": "推文",
+  "layout": "tweet",
+  "page_ratio": "3:5"
+ },
+ "compact": 0,
+ "page_count": 9,
+ "sections": [
+  {
+   "number": "01",
+   "title": "先验证改完有没有用",
+   "page": 2
+  },
+  {
+   "number": "02",
+   "title": "离线验证之后，还有真实世界",
+   "page": 4
+  },
+  {
+   "number": "03",
+   "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
+   "page": 5
+  },
+  {
+   "number": "04",
+   "title": "Trajectory：用轨迹和反馈更新权重",
+   "page": 7
+  },
+  {
+   "number": "05",
+   "title": "真实数据怎样支持下一轮改进",
+   "page": 9
+  }
+ ],
+ "pages": [
+  {
+   "page": 1,
+   "roles": [
+    "cover"
+   ]
+  },
+  {
+   "page": 2,
+   "section": null,
+   "roles": [
+    "figure",
+    "lead",
+    "p",
+    "section"
+   ],
+   "figures": [
+    "images/b760b5ddc4594589b32b2f6774f67ac3.png"
+   ],
+   "references": 0,
+   "fill": 0.87,
+   "starts": "下图从左到右对应Braintru"
+  },
+  {
+   "page": 3,
+   "section": "01",
+   "roles": [
+    "figure",
+    "p"
+   ],
+   "figures": [
+    "images/b88e98237d11484fa8ccffa36b05b23f.png"
+   ],
+   "references": 0,
+   "fill": 0.92,
+   "starts": "Hermes自称self-imp"
+  },
+  {
+   "page": 4,
+   "section": "01",
+   "roles": [
+    "p",
+    "section",
+    "figure"
+   ],
+   "figures": [
+    "images/81cd4c47a812405da5f75b7857cb92ad.png"
+   ],
+   "references": 0,
+   "fill": 0.98,
+   "starts": "第一方工具也在补离线验证：Ant"
+  },
+  {
+   "page": 5,
+   "section": "02",
+   "roles": [
+    "p",
+    "section",
+    "figure"
+   ],
+   "figures": [
+    "images/32ef028eb07f41fab37eab71364534bf.png"
+   ],
+   "references": 0,
+   "fill": 0.96,
+   "starts": "更多真实任务能暴露事先没想到的问"
+  },
+  {
+   "page": 6,
+   "section": "03",
+   "roles": [
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/de83e70759b94858b41d14803ae35ee3.png"
+   ],
+   "references": 0,
+   "fill": 1,
+   "starts": "以把发现连同证据复制给codin"
+  },
+  {
+   "page": 7,
+   "section": "03",
+   "roles": [
+    "p",
+    "figure",
+    "section"
+   ],
+   "figures": [
+    "images/a62d300f0c864992a5e1933586fbffb5.png"
+   ],
+   "references": 0,
+   "fill": 0.91,
+   "starts": "评测仍要写具体：多笔订单时应澄清"
+  },
+  {
+   "page": 8,
+   "section": "04",
+   "roles": [
+    "figure",
+    "p"
+   ],
+   "figures": [
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png",
+    "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
+   ],
+   "references": 0,
+   "fill": 0.95,
+   "starts": "因此，一条失败轨迹也能用于训练，"
+  },
+  {
+   "page": 9,
+   "section": "04",
+   "roles": [
+    "p",
+    "section"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.9,
+   "starts": "在APEX-Agents上，他们"
+  }
+ ]
+}

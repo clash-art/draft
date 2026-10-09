@@ -5,12 +5,34 @@ import markdown
 from bs4 import BeautifulSoup
 from wechat import save_json
 
+from palette import validate_palette,resolve
+from article_styles import PALETTES,spec
+
+# WeChat article layouts plus the Xiaohongshu longform page themes.
+ARTICLE_LAYOUTS=tuple(PALETTES)
+XHS_THEMES=('blueprint','tweet','wireframe','photo','xstyle','canvas','doodle','devlog','plain','parts','bigtype')
+# Retired page themes stay accepted; the renderer maps them onto current ones.
+LAYOUTS=ARTICLE_LAYOUTS+XHS_THEMES+('folio','brief','note','poster','swiss','press','marker')
+# Xiaohongshu longform page sizes; the default is the tallest ratio the note viewer shows whole.
+EXPORT_WIDTH=1440
+CSS_PAGE_WIDTH=360
+_EXPORT_SCALE=EXPORT_WIDTH//CSS_PAGE_WIDTH
+PAGE_RATIOS={'3:4':(1440,1920),'3:5':(1440,2400),'1:1':(1440,1440),'9:16':(1440,2560)}
+DEFAULT_PAGE_RATIO='3:5'
+# Longform pages are 360 CSS px wide, so dense note text sits below the article minimum.
+LONGFORM_FONT_MIN=9
 BASE={'font_size':16,'line_height':1.85,'paragraph_gap':18,'reference_size':13,'reference_gap':8,'accent':'#333333'}
-BUILTINS=[dict(BASE,id='graphite',name='石墨简报',description='细线章节 · 悬挂文献 · 技术长文',layout='graphite'),dict(BASE,id='wechat',name='微信清读',description='轻盈标题 · 浅底引文 · 知识分享',layout='wechat',accent='#07883f'),dict(BASE,id='essay',name='人文札记',description='宋体标题 · 留白段落 · 观点随笔',layout='essay',accent='#795548',line_height=2,paragraph_gap=22)]
-BUILTINS += [
- dict(BASE,id='journal',name='纸上专题',description='居中章节 · 大图叙事 · 杂志专题',layout='journal',accent='#8c4b35',font_size=16,line_height=1.95,paragraph_gap=22),
- dict(BASE,id='lab',name='研究手记',description='左标章节 · 代码表格 · 研究解读',layout='lab',accent='#365b76',font_size=15.5,line_height=1.9),
- dict(BASE,id='letter',name='周末来信',description='宋体章节 · 轻图注 · 个人表达',layout='letter',accent='#686446',font_size=17,line_height=2,paragraph_gap=24),
+def builtin(id,name,description,**values):return dict(BASE,id=id,name=name,description=description,layout=id,accent=PALETTES[id]['primary'],**values)
+BUILTINS=[
+ builtin('graphite','石墨简报','细线分节 · 等宽编号 · 石板灰点缀',font_size=15.5,line_height=1.85,paragraph_gap=18),
+ builtin('blueprint','蓝图','白底点阵感 · 宋体标题 · 虚线图框 · 雾霾蓝点缀',font_size=15.5,line_height=1.85,paragraph_gap=18),
+ builtin('wechat','微信清读','清爽白底 · 等宽编号 · 灰绿点缀',font_size=16,line_height=1.85,paragraph_gap=18),
+ builtin('column','专栏','淡玫瑰纸面 · 大号编号 · 灰粉点缀',font_size=16,line_height=1.85,paragraph_gap=20),
+ builtin('journal','纸上专题','报刊式居中章节 · 双线引文 · 陶土红点缀',font_size=16,line_height=1.95,paragraph_gap=22),
+ builtin('lab','研究手记','冷灰纸面 · 左标章节 · 灰青点缀',font_size=15.5,line_height=1.9,paragraph_gap=18),
+ builtin('essay','人文札记','暖米色纸 · 宋体居中 · 暖灰褐点缀',font_size=16,line_height=2,paragraph_gap=22),
+ builtin('letter','周末来信','淡卡其纸面 · 宋体章节 · 橄榄灰点缀',font_size=16.5,line_height=2,paragraph_gap=24),
+ builtin('spark','火花','纯白留白 · 宋体章节配强调色编号 · 强调色加粗金句',font_size=14,line_height=1.8,paragraph_gap=25,reference_size=12,reference_gap=6,figure_tone='original'),
 ]
 
 def sample_image(name):
@@ -27,10 +49,10 @@ SAMPLE=f'''<p>一篇好的文章，让文字讲清观点，让图片帮助理解
 <h2>把信息组织成可读的层次</h2><ul><li>用段落解释一个观点。</li><li>用列表给出并列的建议。</li><li>用表格比较真正需要比较的内容。</li></ul><table><thead><tr><th>内容</th><th>呈现方式</th></tr></thead><tbody><tr><td>流程与关系</td><td>配图与图注</td></tr><tr><td>方法与操作</td><td>步骤与代码</td></tr></tbody></table><pre><code>article.preview()
 article.save_draft()</code></pre><h3>参考资料</h3><p>〔1〕排版示例 · 研究与方法<br/>https://example.org/research/a-long-reference-address-that-needs-to-wrap-on-a-mobile-screen</p><p>〔2〕排版示例 · 项目文档<br/><a href="https://example.org/docs">https://example.org/docs</a></p>'''
 
-def validate(value):
+def validate(value,font_min=12):
     out={'id':str(value.get('id','')),'name':str(value.get('name','')).strip()[:40],'description':str(value.get('description','')).strip()[:120]}
     if not out['name']:raise ValueError('请填写模板名称')
-    for key,low,high in [('font_size',14,20),('line_height',1.5,2.4),('paragraph_gap',10,32),('reference_size',11,15),('reference_gap',4,24)]:
+    for key,low,high in [('font_size',font_min,20),('line_height',1.5,2.4),('paragraph_gap',4,32),('reference_size',8,15),('reference_gap',1,24)]:
         try:n=float(value.get(key,BASE[key]))
         except (ValueError,TypeError):raise ValueError('模板数值无效') from None
         if not low<=n<=high:raise ValueError('模板数值超出范围：'+key)
@@ -38,10 +60,14 @@ def validate(value):
     accent=str(value.get('accent',BASE['accent']))
     if not re.fullmatch(r'#[0-9a-fA-F]{6}',accent):raise ValueError('主题色应为六位十六进制颜色')
     layout=value.get('layout',value.get('id','graphite'))
-    out['layout']=layout if layout in ('graphite','wechat','essay','journal','lab','letter') else 'graphite'
+    out['layout']=layout if layout in LAYOUTS else 'graphite'
     out['accent']=accent
+    if value.get('palette'):out['palette']=validate_palette(value['palette'])
     if value.get('cover_style') in ('editorial','geek-report','consulting-report','clean-review'):out['cover_style']=value['cover_style']
-    if value.get('page_ratio') in ('3:4','3:5','1:1','9:16'):out['page_ratio']=value['page_ratio']
+    if value.get('page_ratio') in PAGE_RATIOS:out['page_ratio']=value['page_ratio']
+    if value.get('figure_tone') in ('muted','duotone','original'):out['figure_tone']=value['figure_tone']
+    for key in ('cover_layout','palette_from'):
+        if value.get(key) in XHS_THEMES:out[key]=value[key]
     return out
 
 def list_templates(root):
@@ -53,104 +79,113 @@ def save_template(root,value):
     if not re.fullmatch(r'[a-f0-9]{32}',identifier):identifier=uuid.uuid4().hex
     t['id']=identifier;folder=root/'templates';folder.mkdir(exist_ok=True);save_json(folder/(identifier+'.json'),t);return t
 
-def render(body,template):
-    t=validate(template);soup=BeautifulSoup(body if re.match(r'\s*<',body) else markdown.markdown(body,extensions=['tables','fenced_code']),'html.parser')
-    for node in list(soup.find_all('span',attrs={'data-template-url':'true'}))+list(soup.find_all('span',attrs={'data-template-number':'true'})):node.unwrap()
-    def style(node,css):
-        node['style']=css
-    # Replace typography left by earlier templates, keeping content and semantic marks.
-    for node in soup.find_all(['span','a','strong','em','b','i','u']):
-        declarations=[x for x in node.get('style','').split(';') if x.partition(':')[0].strip().lower() not in ('font-size','line-height','color','font-family')]
-        if declarations:node['style']=';'.join(declarations)
-        else:node.attrs.pop('style',None)
-    for p in soup.find_all('p'):style(p,f"font-size:{t['font_size']:g}px;line-height:{t['line_height']:g};margin:{t['paragraph_gap']:g}px 0;color:#333333;overflow-wrap:anywhere;")
-    for h in soup.find_all(['h1','h2','h3','h4']):style(h,f"font-size:{22 if h.name in ('h1','h2') else 18}px;line-height:1.5;margin:32px 0 14px;color:{t['accent']};font-weight:600;")
-    for q in soup.find_all('blockquote'):style(q,f"margin:22px 0;padding:2px 16px;border-left:3px solid {t['accent']};background:#f7f7f7;")
-    for img in soup.find_all('img'):style(img,'display:block;max-width:100%;height:auto;margin:20px auto;')
-    for figure in soup.find_all('figure'):style(figure,'margin:26px 0;padding:0;')
-    for caption in soup.find_all('figcaption'):style(caption,'font-size:12px;line-height:1.65;color:#888888;text-align:center;margin:10px 8px 0;')
-    for a in soup.find_all('a'):style(a,f"color:{t['accent']};text-decoration:underline;word-break:break-all;")
-    layout=t['layout']
-    serif="font-family:'Songti SC','STSong','SimSun',serif;" if layout=='essay' else ''
-    for h in soup.find_all(['h1','h2','h3','h4']):
-        style(h,f"font-size:{24 if layout=='essay' else 21}px;line-height:1.5;margin:38px 0 16px;color:{t['accent']};font-weight:600;"+serif+('padding-top:18px;border-top:1px solid #d8d8d8;' if layout=='graphite' else 'padding-bottom:10px;border-bottom:1px solid #dce8df;' if layout=='wechat' else ''))
-    first=soup.find('p')
-    if first and not re.match(r'[〔\[（(]?\d',first.get_text(strip=True)):
-        style(first,f"font-size:{18 if layout=='graphite' else 17}px;line-height:1.9;margin:0 0 28px;color:#444444;"+('padding-bottom:24px;border-bottom:1px solid #e1e7e2;' if layout=='wechat' else ''))
+REFERENCE_HEADING=re.compile(r'(参考资料|参考文献|参考链接|引用来源|References|Sources)[:：]?',re.I)
+MARKERS=('data-template-root','data-template-wrap','data-template-frame','data-template-url','data-template-number')
+
+def render(body,template,palette=None,ws=None):
+    """Restyle an article with a layout. Text, links and images are kept exactly; earlier
+    template markup is unwrapped first, so rendering again with another layout is lossless.
+    With a workspace, local figures are swapped for copies toned to the layout palette; the
+    original ref is kept in data-template-src so a later render starts from the original."""
+    t=validate(template);layout=t['layout'] if t['layout'] in ARTICLE_LAYOUTS else 'graphite'
+    c=resolve(PALETTES[layout],t,palette);css=spec(layout,c,t)
+    soup=BeautifulSoup(body if re.match(r'\s*<',body) else markdown.markdown(body,extensions=['tables','fenced_code']),'html.parser')
+    for marker in MARKERS:
+        for node in soup.find_all(attrs={marker:True}):node.unwrap()
+    for node in soup.find_all(True):node.attrs.pop('style',None)
+    for img in soup.find_all('img',attrs={'data-template-src':True}):img['src']=img.attrs.pop('data-template-src')
+    def style(node,key,extra=''):node['style']=css[key]+extra
+    def text_of(node):return node.get_text(strip=True)
+    def element_siblings(node):
+        n=node.next_sibling
+        while n is not None and not getattr(n,'name',None):n=n.next_sibling
+        return n
+    blocks=[n for n in soup.contents if getattr(n,'name',None)]
+    refs_at=next((i for i,n in enumerate(blocks) if n.name in ('h1','h2','h3','h4','p') and REFERENCE_HEADING.fullmatch(text_of(n))),None)
+    body_blocks=blocks if refs_at is None else blocks[:refs_at]
+    lead_done=False;kickers=[]
+    for i,node in enumerate(body_blocks):
+        name=node.name;nxt=body_blocks[i+1] if i+1<len(body_blocks) else None
+        if name=='p':
+            only_img=node.find('img') and not text_of(node) and all(getattr(k,'name',None) in ('img','br',None) for k in node.contents)
+            if only_img:
+                img=node.find('img');node.name='figure';style(node,'figure')
+                frame=soup.new_tag('section');frame['data-template-frame']='true';frame['style']=css['frame'];img.wrap(frame)
+                if nxt is not None and nxt.name=='p' and text_of(nxt) and (text_of(nxt)==(img.get('alt') or '').strip() or re.match(r'^图\s*\d',text_of(nxt))):
+                    nxt['data-caption']='true'
+                lead_done=True;continue
+            if node.get('data-caption'):
+                del node['data-caption'];node.name='figcaption';style(node,'caption');node.extract();body_blocks[i-1].append(node);continue
+            if re.fullmatch(r'\d{1,2}',text_of(node)) and nxt is not None and nxt.name in ('h2','h3','h4'):style(node,'kicker');kickers.append((node,nxt));continue
+            if not lead_done and not re.match(r'[〔\[（(]?\d',text_of(node)):style(node,'lead');lead_done=True;continue
+            style(node,'p')
+        elif name in ('h1','h2'):style(node,'h2')
+        elif name=='h3':style(node,'h3')
+        elif name=='h4':style(node,'h4')
+        elif name=='figure':
+            style(node,'figure')
+            img=node.find('img')
+            if img:
+                frame=soup.new_tag('section');frame['data-template-frame']='true';frame['style']=css['frame'];img.wrap(frame)
+        lead_done=lead_done or name in ('h2','h3','figure')
+    if css.get('heading_row'):
+        for number,heading in kickers:
+            row=soup.new_tag('section');row['data-template-wrap']='true';row['style']=css['heading_row']
+            number.insert_before(row);row.append(number.extract());row.append(heading.extract())
+            heading['style']=css['heading_inline']
+    for h in soup.find_all(['h2','h3']):
+        if css.get('h3_wrap') and h.contents:
+            span=soup.new_tag('span');span['data-template-wrap']='true';span['style']=css['h3_wrap']
+            for child in list(h.contents):span.append(child.extract())
+            h.append(span)
     for q in soup.find_all('blockquote'):
-        style(q,('margin:26px 0;padding:18px 0;border-top:1px solid #bcbcbc;border-bottom:1px solid #e2e2e2;' if layout=='graphite' else 'margin:24px 0;padding:16px 18px;background:#f2f6f3;' if layout=='wechat' else 'margin:30px 12px;padding:0;color:#685a50;font-size:19px;line-height:1.9;'+serif))
-    # Structural treatments, using inline styles that can travel with the article.
-    if layout in ('journal','lab','letter'):
-        for h in soup.find_all(['h1','h2','h3','h4']):
-            size=23 if h.name in ('h1','h2') else 18
-            base=f"font-size:{size}px;line-height:1.5;font-weight:600;color:{t['accent']};"
-            treatment={
-                'journal':"text-align:center;margin:42px 0 22px;padding:14px 0;border-top:1px solid #dcd4cd;border-bottom:1px solid #dcd4cd;letter-spacing:1px;",
-                'lab':f"margin:32px 0 16px;padding:3px 0 3px 12px;border-left:3px solid {t['accent']};",
-                'letter':"font-family:'Songti SC','STSong',serif;margin:40px 0 20px;font-weight:500;",
-            }[layout]
-            style(h,base+treatment)
-        for q in soup.find_all('blockquote'):
-            style(q,{
-                'journal':f"margin:32px 14px;padding:18px 0;border-top:1px solid {t['accent']};border-bottom:1px solid {t['accent']};text-align:center;",
-                'lab':"margin:24px 0;padding:16px 18px;background:#f2f5f7;border-radius:4px;",
-                'letter':"margin:30px 6px;padding:0 16px;border-left:1px solid #c8c4b5;font-family:'Songti SC','STSong',serif;",
-            }[layout])
-        for caption in soup.find_all('figcaption'):
-            style(caption,"font-size:12px;line-height:1.7;color:#888888;"+{
-                'journal':"text-align:center;margin:12px 12px 0;letter-spacing:.4px;",
-                'lab':"text-align:left;margin:10px 0 0;padding-left:10px;border-left:2px solid #ccd7df;",
-                'letter':"text-align:center;margin:14px 12px 0;font-family:'Songti SC','STSong',serif;",
-            }[layout])
-        for figure in soup.find_all('figure'):style(figure,'margin:32px 0;padding:0;')
-        if first:
-            style(first,f"font-size:{18 if layout=='journal' else t['font_size']:g}px;line-height:1.95;margin:0 0 28px;color:#555555;"+('font-family:Songti SC,STSong,serif;' if layout=='letter' else ''))
-    for listing in soup.find_all(['ul','ol']):style(listing,f"margin:18px 0;padding-left:24px;font-size:{t['font_size']:g}px;line-height:{t['line_height']:g};color:#333333;")
-    for li in soup.find_all('li'):style(li,'margin:8px 0;padding-left:3px;')
-    for pre in soup.find_all('pre'):style(pre,'margin:24px 0;padding:16px;background:#f4f5f6;border:1px solid #e8eaec;border-radius:4px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.75;')
-    for code in soup.find_all('code'):style(code,'font-family:ui-monospace,Menlo,monospace;font-size:13px;'+('' if code.parent.name=='pre' else 'padding:2px 4px;background:#f2f3f4;color:#4c5966;'))
-    for table in soup.find_all('table'):style(table,'width:100%;table-layout:fixed;border-collapse:collapse;margin:24px 0;font-size:13px;line-height:1.7;')
-    for cell in soup.find_all(['th','td']):style(cell,'padding:10px 8px;border-bottom:1px solid #e1e4e6;text-align:left;overflow-wrap:anywhere;'+('background:#f3f5f6;font-weight:600;' if cell.name=='th' else ''))
-    reference_headers=[h for h in soup.find_all(['h1','h2','h3','h4','p']) if re.fullmatch(r'(参考资料|参考文献|参考链接|引用来源|References|Sources)[:：]?',h.get_text(strip=True),re.I)]
-    for heading in reference_headers:
-        style(heading,'font-size:16px;line-height:1.5;margin:30px 0 12px;padding-top:12px;border-top:1px solid #bcbcbc;color:#333333;font-weight:600;')
-        for sibling in heading.next_siblings:
-            if not getattr(sibling,'name',None):continue
+        style(q,'quote')
+        for p in q.find_all('p'):p['style']=f"margin:0;font-size:inherit;line-height:inherit;color:inherit;"
+    for img in soup.find_all('img'):style(img,'img')
+    for caption in soup.find_all('figcaption'):style(caption,'caption')
+    for listing in soup.find_all(['ul','ol']):style(listing,'ul')
+    for li in soup.find_all('li'):style(li,'li')
+    for pre in soup.find_all('pre'):style(pre,'pre')
+    for code in soup.find_all('code'):style(code,'code' if code.parent.name=='pre' else 'code_inline')
+    for table in soup.find_all('table'):style(table,'table')
+    for cell in soup.find_all(['th','td']):style(cell,cell.name)
+    for hr in soup.find_all('hr'):style(hr,'hr')
+    for node in soup.find_all(['strong','b']):style(node,'strong')
+    for node in soup.find_all(['em','i']):style(node,'em')
+    for a in soup.find_all('a'):style(a,'a')
+    if refs_at is not None:
+        heading=blocks[refs_at];style(heading,'ref_heading')
+        for sibling in blocks[refs_at+1:]:
             if sibling.name in ('h1','h2','h3','h4'):break
-            nodes=[sibling]+list(sibling.find_all(['p','li','span','a','strong']))
-            for n in nodes:
-                style(n,f"font-size:{t['reference_size']:g}px;line-height:1.7;color:#666666;overflow-wrap:anywhere;word-break:break-word;"+(f"margin:0 0 {t['reference_gap']:g}px;" if n.name in ('p','li') else ''))
             # A full URL stays visible and copyable, but has its own quieter line.
             for node in list(sibling.find_all(string=True)):
-                if node.parent.name in ('script','style','code'):continue
-                if not re.search(r'https?://\S+',str(node)):continue
-                parts=re.split(r'(https?://[^\s<>]+)',str(node))
-                for part in parts:
+                if node.parent.name in ('script','style','code') or not re.search(r'https?://\S+',str(node)):continue
+                for part in re.split(r'(https?://[^\s<>]+)',str(node)):
                     if not part:continue
                     if re.match(r'https?://',part):
-                        span=soup.new_tag('span');span['data-template-url']='true';span['style']=f'display:block;font-size:{t["reference_size"]:g}px;line-height:1.6;color:#666666;word-break:break-all;overflow-wrap:anywhere;';span.string=part;node.insert_before(span)
+                        span=soup.new_tag('span');span['data-template-url']='true';span['style']=css['ref_url'];span.string=part;node.insert_before(span)
                     else:node.insert_before(part)
                 node.extract()
-            for p in ([sibling] if sibling.name in ('p','li') else sibling.find_all(['p','li'])):
-                p['style']=f"font-size:{t['reference_size']:g}px;line-height:1.5;color:#333333;margin:0 0 {t['reference_gap']:g}px;padding:0 0 0 24px;border-bottom:none;text-indent:-24px;overflow-wrap:anywhere;"
-                for text in p.find_all(string=True):
+            for entry in ([sibling] if sibling.name in ('p','li') else sibling.find_all(['p','li'])):
+                style(entry,'ref')
+                for text in entry.find_all(string=True):
                     match=re.match(r'^(\s*[〔\[（(]?\d+[〕\]）).、]?)(.*)$',str(text),re.S)
                     if match:
-                        label=soup.new_tag('span');label['data-template-number']='true';label['style']=f"display:inline-block;min-width:24px;text-indent:0;font-size:11px;color:{t['accent']};font-weight:600;";label.string=match.group(1);text.insert_before(label);text.replace_with(match.group(2))
+                        label=soup.new_tag('span');label['data-template-number']='true';label['style']=css['ref_num'];label.string=match.group(1);text.insert_before(label);text.replace_with(match.group(2))
                     break
-                for url in p.find_all('span',attrs={'data-template-url':'true'}):
+                for url in entry.find_all('span',attrs={'data-template-url':'true'}):
                     if getattr(url.previous_sibling,'name',None)=='br':url.previous_sibling.extract()
-                    url['style']+='text-indent:0;margin-top:1px;font-size:11px;line-height:1.4;'
-    # References stay complete; the surrounding rhythm follows the selected layout.
-    if layout in ('journal','lab','letter'):
-        for heading in reference_headers:
-            if layout=='journal':heading['style']+='text-align:center;color:#8c4b35;letter-spacing:2px;'
-            elif layout=='lab':heading['style']+='color:#365b76;border-top:2px solid #d7e0e7;'
-            else:heading['style']+="font-family:'Songti SC','STSong',serif;font-weight:500;color:#686446;"
-            for sibling in heading.next_siblings:
-                if not getattr(sibling,'name',None):continue
-                if sibling.name in ('h1','h2','h3','h4'):break
-                for entry in ([sibling] if sibling.name in ('p','li') else sibling.find_all(['p','li'])):
-                    if layout=='letter':entry['style']+='border-bottom:none;padding-bottom:0;'
-                    elif layout=='lab':entry['style']+='border-bottom:none;'
+                for a in entry.find_all('a'):a['style']=f"color:{c['muted']};text-decoration:none;word-break:break-all;"
+    mode=t.get('figure_tone','muted')
+    if ws is not None and mode!='original':
+        from image_tone import toned_ref
+        for img in soup.find_all('img'):
+            ref=img.get('src','')
+            if not re.fullmatch(r'images/[a-f0-9]{32}\.png',ref):continue
+            try:img['src']=toned_ref(ws,ref,c,mode)
+            except (ValueError,OSError):continue
+            img['data-template-src']=ref
+    root=soup.new_tag('section');root['data-template-root']='true';root['style']=css['root']
+    for child in list(soup.contents):root.append(child.extract())
+    soup.append(root)
     return str(soup)

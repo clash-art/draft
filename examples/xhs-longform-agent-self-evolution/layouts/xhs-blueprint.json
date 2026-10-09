@@ -1,0 +1,177 @@
+{
+ "max_pages": 10,
+ "font_fallback": "",
+ "over_limit": false,
+ "template": {
+  "id": "xhs-blueprint",
+  "name": "蓝图",
+  "layout": "blueprint",
+  "page_ratio": "3:5"
+ },
+ "compact": 0,
+ "page_count": 10,
+ "sections": [
+  {
+   "number": "01",
+   "title": "先验证改完有没有用",
+   "page": 3
+  },
+  {
+   "number": "02",
+   "title": "离线验证之后，还有真实世界",
+   "page": 4
+  },
+  {
+   "number": "03",
+   "title": "Braintrust 与 Adaline：挖出问题，交给谁改",
+   "page": 5
+  },
+  {
+   "number": "04",
+   "title": "Trajectory：用轨迹和反馈更新权重",
+   "page": 7
+  },
+  {
+   "number": "05",
+   "title": "真实数据怎样支持下一轮改进",
+   "page": 9
+  }
+ ],
+ "pages": [
+  {
+   "page": 1,
+   "roles": [
+    "cover"
+   ]
+  },
+  {
+   "page": 2,
+   "section": null,
+   "roles": [
+    "figure",
+    "lead",
+    "p"
+   ],
+   "figures": [
+    "images/b760b5ddc4594589b32b2f6774f67ac3.png"
+   ],
+   "references": 0,
+   "fill": 0.86,
+   "starts": "下图从左到右对应Braintru"
+  },
+  {
+   "page": 3,
+   "section": "01",
+   "roles": [
+    "section",
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/b88e98237d11484fa8ccffa36b05b23f.png"
+   ],
+   "references": 0,
+   "fill": 0.98,
+   "starts": "先验证改完有没有用Hermes自"
+  },
+  {
+   "page": 4,
+   "section": "01",
+   "roles": [
+    "p",
+    "section",
+    "figure"
+   ],
+   "figures": [
+    "images/81cd4c47a812405da5f75b7857cb92ad.png"
+   ],
+   "references": 0,
+   "fill": 0.97,
+   "starts": "第一方工具也在补离线验证：Ant"
+  },
+  {
+   "page": 5,
+   "section": "02",
+   "roles": [
+    "p",
+    "section",
+    "figure"
+   ],
+   "figures": [
+    "images/32ef028eb07f41fab37eab71364534bf.png"
+   ],
+   "references": 0,
+   "fill": 0.98,
+   "starts": "更多真实任务能暴露事先没想到的问"
+  },
+  {
+   "page": 6,
+   "section": "03",
+   "roles": [
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/de83e70759b94858b41d14803ae35ee3.png"
+   ],
+   "references": 0,
+   "fill": 0.96,
+   "starts": "以把发现连同证据复制给codin"
+  },
+  {
+   "page": 7,
+   "section": "03",
+   "roles": [
+    "p",
+    "figure",
+    "section"
+   ],
+   "figures": [
+    "images/a62d300f0c864992a5e1933586fbffb5.png"
+   ],
+   "references": 0,
+   "fill": 0.91,
+   "starts": "决定发布，公司报告完成了30多轮"
+  },
+  {
+   "page": 8,
+   "section": "04",
+   "roles": [
+    "p",
+    "figure"
+   ],
+   "figures": [
+    "images/e462c30c54124b5aa65e58e51b87f7b8.png"
+   ],
+   "references": 0,
+   "fill": 0.67,
+   "starts": "沿用订单例子，教师看到“取消错了"
+  },
+  {
+   "page": 9,
+   "section": "04",
+   "roles": [
+    "figure",
+    "p",
+    "section"
+   ],
+   "figures": [
+    "images/1c0bf9ebe00c4feabdbbe1d115051ab4.png"
+   ],
+   "references": 0,
+   "fill": 0.97,
+   "starts": "长任务会拖慢同步训练，团队把轨迹"
+  },
+  {
+   "page": 10,
+   "section": "05",
+   "roles": [
+    "p"
+   ],
+   "figures": [],
+   "references": 0,
+   "fill": 0.38,
+   "starts": "有足够流量时，团队可以做线上A/"
+  }
+ ]
+}

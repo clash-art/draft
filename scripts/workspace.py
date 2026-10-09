@@ -6,7 +6,15 @@ from pathlib import Path
 from urllib.parse import urlparse,unquote,parse_qs
 from bs4 import BeautifulSoup
 import markdown
+from functools import lru_cache
 from wechat import prepare,build_article,image_bytes,save_json,analyze_rows,ALIASES,date_windows
+
+FONTS=Path(__file__).resolve().parents[1]/'assets/fonts'
+@lru_cache(maxsize=1)
+def font_files():
+ """Bundled page-font files listed in the manifest (built by scripts/build_fonts.py)."""
+ manifest=FONTS/'manifest.json'
+ return frozenset(f for face in json.loads(manifest.read_text())['faces'] for f,_ in face['files']) if manifest.exists() else frozenset()
 
 class Workspace:
  def __init__(self,root,client_factory,account_identity=lambda: "default"):
@@ -273,7 +281,7 @@ class Workspace:
    edition=load(self,e,'wechat');channel_revision=edition.get('revision')
    if channel_revision:
     from templates import render
-    e={**e,'title':edition['title'],'body':render(edition['body'],edition['template'])}
+    e={**e,'title':edition['title'],'body':render(edition['body'],edition['template'],edition.get('palette'),self)}
    sync=self.sync_state(e);state_path=self.sync_path(e['id'])
    if data.get('intent')=='create' and sync:raise ValueError('已有微信关联，请刷新后更新草稿，或先解除关联')
    if data.get('intent')=='update' and not sync:raise ValueError('微信关联已解除，请重新选择关联或创建草稿')
@@ -321,13 +329,15 @@ class Workspace:
    e=self._dispatch('/api/editor/load',{})
    body=e.get('body','') if data.get('current') else SAMPLE
    if not body.strip():raise ValueError('当前文章还没有正文，请先使用示例预览')
-   html=render(body,data.get('template',{}))
+   from channels import load
+   from palette import validate_palette
+   palette=validate_palette(data['palette']) if 'palette' in data else (load(self,e,'wechat').get('palette') if e.get('id') and data.get('current') else None)
+   html=render(body,data.get('template',{}),palette,self)
    if route=='/api/templates/apply':
     if data.get('expected_revision')!=e.get('revision') or data.get('id')!=e.get('id'):raise ValueError('文章版本已变化，请重新预览后应用')
     if not data.get('current'):raise ValueError('请先预览当前文章')
-    from channels import load
     edition=load(self,e,'wechat')
-    self._dispatch('/api/channels/save',{**edition,'id':e['id'],'channel':'wechat','source_revision':e['revision'],'expected_revision':edition['revision'],'template':data.get('template',{})})
+    self._dispatch('/api/channels/save',{**edition,'id':e['id'],'channel':'wechat','source_revision':e['revision'],'expected_revision':edition['revision'],'template':data.get('template',{}),'palette':palette})
     return e
    if route=='/api/templates/preview':
     soup=BeautifulSoup(html,'html.parser')
@@ -381,6 +391,12 @@ class Workspace:
   if route=='/api/image/preview':
    binary,mime,_=image_bytes(self.image_path(data.get('ref','')))
    return {'preview':'data:'+mime+';base64,'+base64.b64encode(binary).decode()}
+  if route=='/api/font':
+   files=data.get('files')
+   if not isinstance(files,list) or not 0<len(files)<=48:raise ValueError('字体文件列表无效')
+   known=font_files()
+   if any(f not in known for f in files):raise ValueError('未知字体文件')
+   return {'fonts':{f:'data:font/woff2;base64,'+base64.b64encode((FONTS/f).read_bytes()).decode() for f in files}}
   if route=='/api/bridge/status':
    p=self.root/'mcp-status.json'
    return {'transport':'stdio','tools':20,'last_call':json.loads(p.read_text()) if p.exists() else None}
