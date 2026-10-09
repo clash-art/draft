@@ -1,0 +1,17 @@
+{
+  "name": "wechat-drafts",
+  "owner": {
+    "name": "Local developer"
+  },
+  "metadata": {
+    "description": "微信公众号与小红书草稿助手（Codex / Cursor 共用）",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "wechat-drafts",
+      "source": ".",
+      "description": "Markdown/HTML → 公众号草稿；正文与排版审核；图文数据分析；小红书渠道改编"
+    }
+  ]
+}
