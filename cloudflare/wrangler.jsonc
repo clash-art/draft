@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "clash-art-draft",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-04",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../assets",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": true
+  },
+  "rules": [
+    { "type": "Text", "globs": ["**/token-gate.js"], "fallthrough": true }
+  ],
+  "r2_buckets": [
+    { "binding": "DRAFT_BUCKET", "bucket_name": "clash-art-draft" }
+  ]
+}

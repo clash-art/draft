@@ -5,6 +5,12 @@ PLUGIN_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 VENV_PY="$PLUGIN_ROOT/.venv/bin/python"
 REQ="$PLUGIN_ROOT/requirements.txt"
 
+# Plugins stay on the local MCP server, including offline.
+# Set DRAFT_MCP=remote only as an explicit fallback to a hosted endpoint.
+if [ "${DRAFT_MCP:-local}" = "remote" ]; then
+  exec python3 "$SCRIPT_DIR/mcp_remote.py"
+fi
+
 if command -v uv >/dev/null 2>&1; then
   exec uv run --quiet --script "$SCRIPT_DIR/mcp_server.py"
 fi

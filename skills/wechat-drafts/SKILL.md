@@ -33,7 +33,9 @@ description: 创建和更新微信公众号图文草稿，自动上传正文配�
 
 ## 凭据与错误
 
-用户要求页面配置时，运行 `scripts/config_ui.py --no-browser`，通过 Codex 浏览器打开输出的本机地址，让用户直接在页面输入凭据，不代填或读取真实密钥。服务仅绑定本机；页面可保存和测试连接。默认配置位于 `~/.config/wechat-drafts/credentials.json`（0600，未加密），不要将其打包分享。优先环境变量 WECHAT_ACCESS_TOKEN，否则使用成对的 WECHAT_APP_ID 和 WECHAT_APP_SECRET，最后读取页面配置。凭据只在本机配置，不要求用户粘贴到聊天；不回显令牌、完整请求 URL 或密钥文件。遇到 40164 提示检查出口 IP 白名单；48001 说明当前接口无权限。此版本不实现远程代理和浏览器自动填充。
+用户要求页面配置时，运行 `scripts/config_ui.py --no-browser`，通过 Codex 浏览器打开输出的本机地址，让用户直接在页面输入凭据，不代填或读取真实密钥。服务仅绑定本机；页面可保存和测试连接。默认配置位于 `~/.config/wechat-drafts/credentials.json`（0600，未加密），不要将其打包分享。优先环境变量 WECHAT_ACCESS_TOKEN，否则使用成对的 WECHAT_APP_ID 和 WECHAT_APP_SECRET，最后读取页面配置。凭据只在本机配置，不要求用户粘贴到聊天；不回显令牌、完整请求 URL 或密钥文件。遇到 40164 提示检查出口 IP 白名单；48001 说明当前接口无权限。浏览器不会自动填充密钥。
+
+Cloudflare 是可选同步，不配置也能完整使用本机工作台和 MCP。用户要求多设备同步或打开云端页面时，阅读仓库 README「本地优先与可选云同步」。未配置时运行 `python3 scripts/sync_client.py status` 会说明未配置并正常结束。公众号密钥**默认不会**进 R2；只有用户明确要求且设置 `DRAFT_SYNC_SECRETS=1` 时才同步。不要为了同步修改 `.mcp.json`。只有用户明确要求远程 MCP 回退时才设置 `DRAFT_MCP=remote`。
 
 ## IP 白名单与代理诊断
 

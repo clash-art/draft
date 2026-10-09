@@ -1,0 +1,4 @@
+# Copy to cloudflare/.dev.vars for `wrangler dev`. Do not commit the copy.
+# The token is the app password, not a Cloudflare API token.
+DRAFT_ACCESS_TOKEN=replace-with-at-least-32-characters
+DRAFT_DEV_ORIGIN=http://127.0.0.1:8788
