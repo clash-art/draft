@@ -40,8 +40,6 @@ Kevin Rose 在和 Tim Ferriss 的公开访谈〔1〕里，讲过两次 Instinct 
 | Muse/Hatch | 符合条件时，旧请求重新入队，和新输入一起处理 | 每次最多选一项，也可不选；对照最近对话、记忆和送达记录 | 旧请求还在，但不从停下的位置接着跑 | 定时任务到点触发；monitor 先用低成本脚本看变化 |
 | dots / Codex | InstantInterrupt 相关路径可取消当前采样，已启动的普通工具仍会完成 | — | 用原来的进程会话或 cell 标识继续查 | — |
 
-这几个案例的材料来源不太一样：Muse/Hatch 来自官方设计文〔4〕和非官方二进制归档〔5〕，Grok Bot 来自非官方重建代码〔2〕，Codex 则是固定版本的源码阅读〔6〕。这些材料我都没有实际运行验证过，Codex 源码也不等于 dots 线上的全部实现。
-
 ### Grok Bot：用户优先，也有不能随便打断的工作
 
 助手找到线索以后，另一个问题马上就来了。用户的新消息、别的 agent 交回的结果、后台发现的事，可能同时到达。先处理谁？
@@ -111,6 +109,8 @@ codemode 的代码执行单元 cell 也可以独立继续运行。相关路径�
 想看怎么做，可以关注一下。
 
 ## 来源
+
+以下材料均未经线上运行验证。
 
 〔1〕The Tim Ferriss Show Transcripts: The Random Show — AI Super Assistants, Boner Pills, Dream Engineering, Wizards, Supplements, Books, and More (#886)，Tim Ferriss × Kevin Rose，2026-10-11。
 https://tim.blog/2026/10/11/the-random-show-ai-super-assistants-boner-pills-dream-engineering-wizards-supplements-books-and-more-transcript/
