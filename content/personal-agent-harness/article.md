@@ -30,13 +30,13 @@ personal agent 要做的有两类。一类是改已有机制的默认做法。�
 
 ## 02 三个案例怎么补上这四个要求
 
-先把三个案例放在一起看。四列按第一节的四个要求排：持续在场看抢占、调度和后台，快速响应看执行中的新输入怎么处理，少让用户操心看交出去的事能不能自己做完、该问时怎么回来找用户，主动发现看怎么决定提醒。“—”只是说本文没有分析这部分实现。Grok Bot 这一行来自非官方重建代码，Muse/Hatch 这一行来自非官方二进制归档，最后一行写的是 dots 底层的开源 Codex harness，dots 自己的线上实现可能另有做法。表格只写结论，细节在后面各节。
+先把三个案例放在一起看。四列按第一节的四个要求排：持续在场看抢占、调度和后台，快速响应看执行中的新输入怎么处理，少让用户操心看交出去的事能不能自己做完、该问时怎么回来找用户，主动发现看怎么决定提醒。Grok Bot 这一行来自非官方重建代码，Muse/Hatch 这一行来自非官方二进制归档，dots 这一行的前三格来自它底层的开源 Codex harness，最后一格来自泄露的 dots 提示词。表格只写结论，细节在后面各节。
 
 | | 持续在场：抢占、调度与后台 | 快速响应：执行中的新输入 | 少让用户操心：自己做完，该问再问 | 主动发现：提醒 |
 |---|---|---|---|---|
 | Grok Bot | 用户的消息最先处理，其次是其他 agent，最后是后台任务。工作可以交给 work agent session 去跑 | work agent session 跑到一半，可以给它换指令 | 交出去的工作跑完自动交回，要授权时仍会来问用户 | 事情做完不一定告诉用户，要说得专门发一条消息 |
 | Muse/Hatch | 定时任务到点就跑，事件靠轮询检查，有变化才叫醒 agent | 还没动手时，新旧消息合成一个请求重跑，动手了就排到后面 | 用户关了 app 也照常跑，花钱和对外发送要用户批准 | 每次最多挑一件事提醒，也可以不提醒 |
-| Codex harness（dots 的底层） | 长命令和子任务都能放出去跑，聊天不用停 | 新消息可以插进当前这一轮，默认会马上停下推理，带上新消息重来 | 子任务跑完会通知主线，但它卡在审批时，主线不知道 | — |
+| dots（底层是 Codex harness） | 长命令和子任务都能放出去跑，聊天不用停 | 新消息可以插进当前这一轮，默认会马上停下推理，带上新消息重来 | 子任务跑完会通知主线，但它卡在审批时，主线不知道 | 后台的 Dreamer 定时调研，有新发现只报给主助手，由主助手决定告不告诉用户 |
 
 ### Grok Bot：用户优先，也有不能随便抢占的工作
 
@@ -66,9 +66,11 @@ Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持�
 
 交出去的事，Muse/Hatch 也尽量让它自己做完。按归档里的文档，定时任务在用户关掉 app 时照常运行，结果作为消息发到对话里。对外发送、付款这类操作，每次都要用户批准，审批会推送到手机上〔19〕。有些 worker 在报告完成前，要先验证做出来的东西确实能用。归档里也有对不上的地方。文档说后台任务可以停在审批卡片上等用户，二进制里给脱离对话运行的 worker 的提示词却说，审批可能永远等不来，要当作失败换别的办法。实际运行时按哪一种来，光看归档判断不了。
 
-### dots 底层的 Codex harness：聊天继续了，工具可能还在跑
+### dots：上层有 Dreamer 找事，底层 Codex 的工具可能还在跑
 
-OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。这些是怎么实现的，本文不分析，所以表格最后一行只写 Codex harness 能看到的部分，提醒一格是“—”。下面从 Codex 的测试定义和相关源码，看执行中的新消息和工具怎么处理。这些材料只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
+OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。主动跟进靠的是 dots 自己加的一层。按泄露的 dots 提示词〔29〕，主助手会派出叫 Dreamer 的后台调研 agent，按心跳定时运行。它先读最近的对话、用户笔记和待办，再去已连接的应用里找新情况。Dreamer 不能联系用户，也不能替用户做事，只有发现有用的新东西，或者碰到要主助手处理的阻碍时，才通知主助手一次，告不告诉用户由主助手决定。每天凌晨还有一次复盘，回顾当天的对话，更新用户的偏好和优先级。Muse/Hatch 让一个 agent 自己挑一件事提醒，dots 则把“发现”和“决定说不说”分给了两个 agent。开源 Codex 里找不到 Dreamer，只能看到它把定时心跳触发的消息和用户亲自发的消息分开记录〔30〕。
+
+下面再从 Codex 的测试定义和相关源码，看执行中的新消息和工具怎么处理。这些材料只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
 
 Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中按 Enter，新指令就会插进当前 turn（steer），按 Tab 则排到下一轮〔9〕。插进当前 turn 的新指令，现在默认会直接中止当前推理，已经启动的工具还是会跑完〔6〕〔12〕〔28〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。工具没做完，下一次推理也可能要等。
 
@@ -245,3 +247,9 @@ https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8
 https://github.com/openai/codex/pull/51812
 https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/features/src/lib.rs#L1207-L1212
 https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/session/input_queue.rs#L293-L313
+
+〔29〕dots 的 Dreamer 提示词（泄露的系统提示词，非官方），asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/dreamer.md。
+https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc/OpenAI/dots/dreamer.md
+
+〔30〕Codex 区分定时心跳触发的输入（automation_heartbeat_scheduled），固定版本 ce0323f 的 codex-rs/history/src/heartbeat.rs。同一版本中未见 Dreamer 相关代码。
+https://github.com/openai/codex/blob/ce0323f2f2/codex-rs/history/src/heartbeat.rs
