@@ -89,7 +89,7 @@ codemode 的代码执行单元 cell 也能独立继续跑。有些路径能提�
 
 摘要和压缩解决的是这部分容量问题。它们能留下当前对话的重要线索，却不能代替所有长期记忆，也不能成为任务完成与否的唯一凭据。Grok Bot 的重建代码在复用摘要前会核对历史前缀〔3〕，Muse/Hatch 会检查版本、保留快照后的新消息〔5〕，都是因为摘要准备期间，事情还在继续变化。压缩做得再及时，只要漏掉后来发生的变化，接下来的判断就可能建立在旧状态上。
 
-摘要可以趁对话还在进行时提前准备，代价是多花一些模型调用，有时主线还是得等。Codex 目前的上下文压缩〔7〕就会让主线停下来，等压缩做完再继续。背景留多少、摘要多早开始准备、什么时候必须停下来整理，要看这件任务能接受多少等待和成本。
+摘要可以趁对话还在进行时提前准备，代价是多花一些模型调用。Codex 默认的上下文压缩〔7〕会让主线停下来，等压缩做完再继续。它最近加了后台压缩〔13〕，目前还在开发中，默认关闭。上下文用到窗口的 65% 时，它先拿一份历史快照，在后台生成摘要，turn 照常往下跑。之后到了检查点再看摘要好了没有，只有这期间历史没变，才把它换进上下文。主线只在换入时停一下。要是后台摘要还没出来，上下文就先满了，主线还是得等它做完。背景留多少、摘要多早开始准备、什么时候必须停下来整理，要看这件任务能接受多少等待和成本。
 
 ### 新消息来了：拆出去的工作怎么收尾
 
@@ -154,3 +154,7 @@ https://code.claude.com/docs/en/sub-agents
 〔12〕Codex 功能开关与后台进程，同一固定版本（806d973）的 codex-rs/features/src/lib.rs（InstantInterrupt、CodeModeInterrupt）与 codex-rs/core/src/unified_exec/process_manager.rs（打断 turn 不会结束后台进程）。
 https://github.com/openai/codex/blob/806d9732c974bc8a51b8317c1bd8985544fe627c/codex-rs/features/src/lib.rs
 https://github.com/openai/codex/blob/806d9732c974bc8a51b8317c1bd8985544fe627c/codex-rs/core/src/unified_exec/process_manager.rs#L597-L598
+
+〔13〕Codex 后台压缩（async_compaction，开发中、默认关闭，首见于 rust-v0.163.0-alpha.11），固定版本 ce0323f 的 codex-rs/core/src/session/async_compaction.rs 与 codex-rs/core/src/session/turn.rs，功能开关见 codex-rs/features/src/lib.rs L2082–2086。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/async_compaction.rs
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L2082-L2086
