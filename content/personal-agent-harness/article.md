@@ -91,7 +91,7 @@ codemode 的代码执行单元 cell 也能独立继续跑。有些路径能提�
 
 摘要可以趁对话还在进行时提前准备，代价是多花一些模型调用。Codex 默认的上下文压缩〔7〕会让主线停下来，等压缩做完再继续。它最近加了后台压缩〔13〕，目前还在开发中，默认关闭。上下文用到窗口的 65% 时，它先拿一份历史快照，在后台生成摘要，turn 照常往下跑。之后到了检查点再看摘要好了没有，只有这期间历史没变，才把它换进上下文。主线只在换入时停一下。要是后台摘要还没出来，上下文就先满了，主线还是得等它做完。
 
-Codex 还有一种由模型主动发起的方式〔14〕，也在开发中，默认关闭。开启后，Codex 会让模型知道上下文还剩多少，快用完时再提醒一次。模型可以自己调用 new_context 工具，换到一个新的上下文窗口。这一步不生成摘要，旧历史留在记录里，模型需要时再用工具按窗口查回来。换窗口仍在主线上完成，但主线不用等模型写摘要。
+Codex 还有一种由模型主动发起的方式〔14〕，也在开发中，默认关闭。开启后，Codex 会让模型知道上下文还剩多少，快用完时再提醒一次。模型可以自己调用 new_context 工具，换到一个新的上下文窗口。这一步不生成摘要。工作过程中，模型会用 notes 工具把之后还要用的信息记进自己的笔记，换了窗口，笔记还在。新窗口开头会带上一段笔记提示，模型可以接着读笔记，也能用工具按窗口查回旧历史。换窗口仍在主线上完成，但主线不用等模型写摘要。
 
 背景留多少、摘要多早开始准备、什么时候必须停下来整理，要看这件任务能接受多少等待和成本。
 
@@ -163,6 +163,7 @@ https://github.com/openai/codex/blob/806d9732c974bc8a51b8317c1bd8985544fe627c/co
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/async_compaction.rs
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L2082-L2086
 
-〔14〕Codex 由模型主动换上下文窗口（token_budget，开发中、默认关闭），固定版本 ce0323f 的 codex-rs/core/src/tools/handlers/new_context_window_spec.rs、codex-rs/core/src/compact_token_budget.rs L34–69 与 codex-rs/ext/history-notes/src/tools.rs，功能开关见 codex-rs/features/src/lib.rs L1925–1930。
+〔14〕Codex 由模型主动换上下文窗口（token_budget，开发中、默认关闭），固定版本 ce0323f 的 codex-rs/core/src/tools/handlers/new_context_window_spec.rs、codex-rs/core/src/compact_token_budget.rs L34–69 、codex-rs/ext/history-notes/src/tools.rs（notes 工具，L28 说明笔记跨窗口保留）与 extension.rs L101–155（新窗口带上笔记提示），功能开关见 codex-rs/features/src/lib.rs L1925–1930。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/compact_token_budget.rs#L34-L69
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1925-L1930
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/ext/history-notes/src/tools.rs#L28
