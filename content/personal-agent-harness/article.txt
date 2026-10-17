@@ -201,8 +201,7 @@ https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs#L11-L70
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/protocol/src/protocol.rs#L1937-L1953
 
-〔19〕Muse/Hatch 归档文档：定时任务在 app 关闭时运行（scheduling-and-watching.md L33–47），审批推送与每次购买需批准（calls-texts-notifications.md L93–120），后台任务停在审批卡片（payments-and-purchases.md L17）。脱离对话运行时把审批当失败的提示词，见同一归档 opt/hatch/bin/hatch 内嵌的 tool_rules_detached_approvals 字符串。
-https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/scheduling-and-watching.md#L33-L47
+〔19〕Muse/Hatch 归档文档：审批推送与每次购买需批准（calls-texts-notifications.md L93–120），后台任务停在审批卡片（payments-and-purchases.md L17）。脱离对话运行时把审批当失败的提示词，见同一归档 opt/hatch/bin/hatch 内嵌的 tool_rules_detached_approvals 字符串。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/calls-texts-notifications.md#L93-L120
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/payments-and-purchases.md#L17
 
