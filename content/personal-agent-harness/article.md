@@ -32,7 +32,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 | | 持续在场：抢占、调度与后台 | 快速响应：执行中的新输入 | 少让用户操心：中断后接着做 | 主动发现：提醒 |
 |---|---|---|---|---|
-| Grok Bot | 三类队列：先用户，再 agent，最后后台任务。直接发给目标的 priority 消息可抢占非用户工作（群发不算），正在处理的用户任务受保护 | — | — | 后台任务可静默运行，要发消息得明确调用 SendMessage |
+| Grok Bot | 三类队列：先用户，再 agent，最后后台任务。直接发给目标的 priority 消息可抢占非用户工作（群发不算），正在处理的用户任务受保护。Task 工具可把工作交给专门的 work agent session 在后台跑，完成后发通知 | 后台的 work agent session 还在跑时，可以打断它这一轮，立刻换上新指令 | work agent session 跑完后，可以带着原来的执行记录接着做 | 后台任务可静默运行，要发消息得明确调用 SendMessage |
 | Muse/Hatch | 定时任务到点触发，事件 hook 用轮询脚本检查条件，满足才唤醒 agent | 条件允许时，旧请求重新入队，和新输入合成一个请求，再处理一遍 | 被新消息打断后重新处理，回复重新生成。之前调用过的工具是沿用结果还是再调一遍，归档资料里看不出来 | 对照最近对话、记忆和送达记录，每次最多选一项，也可以不选 |
 | Codex（dots 的 harness 层） | 长命令可以留在后台进程里跑，打断 turn 也不会结束它 | Enter 把新输入插进当前 turn（steer），Tab 排到下一轮。InstantInterrupt 可取消正在进行的采样，已启动的普通工具仍会跑完 | 主线不再等时，命令照样跑，之后凭进程 ID 把结果取回来 | — |
 
@@ -43,7 +43,9 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 据 Grok Bot 的非官方重建代码〔2〕，用户、其他 agent 和后台任务会进入不同队列，取下一项工作时，先看用户，再看 agent，最后才是后台任务。
 
-但排在前面，不代表随时能抢占。普通 bot 消息要等当前这轮工作结束，直接发给目标的 priority 消息才能抢占非用户工作。正在处理的用户任务受保护，群发也拿不到这份优先权。所以，一条消息多久能生效，还得看它有没有抢占权限，以及当前在忙什么。优先级消息能影响调度，但不能替用户批准对外动作。
+排在前面，也还要看能不能抢占。普通 bot 消息要等当前这轮工作结束，直接发给目标的 priority 消息才能抢占非用户工作。正在处理的用户任务受保护，群发也拿不到这份优先权。所以，一条消息多久能生效，还得看它有没有抢占权限，以及当前在忙什么。优先级消息能影响调度，但不能替用户批准对外动作。
+
+工作也可以交出去。Task 工具会把一块工作交给专门的 work agent session，可以让它在后台运行，跑完发一条通知回来〔15〕。它还在跑时，用户改了主意，主线可以打断它这一轮，立刻换上新指令。它跑完以后，主线还能接着用同一个 session，让它带着上一次的执行记录继续做。这几项都由开关控制，重建代码里看不出线上默认开了哪些。
 
 后台任务做完后，Grok Bot 也不会自己联系用户。它可以静默运行，要发消息，得明确调用 SendMessage。“事情做完了”和“把这件事告诉用户”，在这份重建代码里是分开的动作。
 
@@ -169,3 +171,6 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/compact_token_budget.rs#L34-L69
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1925-L1930
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/ext/history-notes/src/tools.rs#L28
+
+〔15〕Grok Bot 的 Task 工具（后台运行、完成通知、interrupt、resume），同一固定版本的 source/packages/agent/tools/task.ts 与 task-tool-schema.ts（L107–137）。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/task-tool-schema.ts#L107-L137
