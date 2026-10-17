@@ -80,19 +80,21 @@ Codex 也能把子任务交给专门的 work agent session。这项功能是稳�
 
 03 自己搭 harness 时，我会先想清楚什么
 
-前两节讲了长期助手要满足的四个要求，也看了三个案例各自怎么做。轮到自己搭，我会按下面几件事来想。先是留住哪些背景和进度，再是怎么把它们放进有限的上下文。然后是新消息来了，已经交出去的事怎么处理，交出去以后怎么少让用户盯着。最后是什么时候提醒用户，由谁按时把任务叫起来。
+前两节讲了长期助手要满足的四个要求，也看了三个案例各自怎么做。轮到自己搭，先要看清它和常见的 coding agent harness 差在哪。常见的 harness 以 thread 为单位。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史，跨 thread 的记忆功能默认关闭〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
 
-记住什么：背景和进度
+记住什么：跨 thread 留住背景和进度
 
-前面说过，过几天回来，手里的项目不该从头讲起。要做到这一点，助手得留住两类东西。一类是用户的背景、偏好和已经定下的事，往后会反复用到。另一类是任务做到哪一步、在等什么、还有什么要确认，这些随时在变。只记住前者，就找不到上次做到哪，用户还是得再讲一遍。
+在 thread 里，背景和进度都在这个 thread 的历史里，thread 结束，这件事通常也结束了。personal agent 的一件事会跨好几次对话、拖好几天，中间还穿插着别的事。要过几天回来不用从头讲，助手得在单个 thread 之外留住两类东西。一类是用户的背景、偏好和已经定下的事，往后会反复用到。另一类是任务做到哪一步、在等什么、还有什么要确认，这些随时在变。只记住前者，就找不到上次做到哪，用户还是得再讲一遍。
 
 记住的东西也会过时。上个月的偏好可能早就变了，定好的事也可能被推翻。助手要是照着旧信息办事，用户反而得多操一份心。
 
-放进上下文：摘要和压缩
+放进上下文：一条不结束的对话流
 
-这些信息还得进入当前上下文，模型才能用它们处理眼前的工作。上下文容量有限，不必一直塞着全部历史。需要时找回相关背景，再带上最新进度，隔一段时间回来也能接着做。
+摘要和压缩，thread 驱动的 harness 也有。差别在于 thread 迟早会结束，personal agent 的对话没有终点，用户消息、定时任务、交出去的工作跑完的通知，会一直接进来。
 
-摘要和压缩解决的是这部分容量问题。它们留下的是当前对话的重要线索。长期背景还是要靠记忆，任务做完没有，还要看任务记录和工具结果。Grok Bot 的重建代码〔3〕和 Muse/Hatch〔5〕在复用摘要前，都会先确认摘要之后又发生了什么，因为摘要准备期间，事情还在继续变化。压缩做得再及时，只要漏掉后来发生的变化，接下来的判断就可能建立在旧状态上。
+三个案例里能看到两种接法。Grok Bot 的重建代码里，每个 agent 只有一条对话流，用户消息、定时任务和工作完成的通知都进这一条。历史长了，就在原地压成摘要，记忆每轮放进系统提示〔20〕。Muse/Hatch 的主对话也是一条持续、会压缩的对话。定时任务和事件触发的检查，则交给脱离对话运行的 worker。按二进制里的提示词，worker 只拿到任务说明和记忆文件这类工作区文件，跑完把结果交回主 agent，由主 agent 决定怎么处理〔21〕。
+
+对话流不结束，压缩进行时，新事件也照样在进来。Grok Bot〔3〕和 Muse/Hatch〔5〕在复用摘要前，都会先确认摘要之后又发生了什么。压缩做得再及时，只要漏掉后来的变化，接下来的判断就可能建立在旧状态上。长期背景还是要靠记忆，任务做完没有，要看任务记录和工具结果。
 
 摘要可以趁对话还在进行时提前准备，代价是多花一些模型调用。Codex 默认的上下文压缩〔7〕会让主线停下来，等压缩做完再继续。它最近加了后台压缩〔13〕，目前还在开发中，默认关闭。上下文快满之前，它先在后台生成摘要，turn 照常往下跑，主线只在把摘要换进来时停一下。要是摘要还没出来，上下文就先满了，主线还是得等。
 
@@ -100,21 +102,21 @@ Codex 还有一种由模型主动发起的方式〔14〕，也在开发中，默
 
 背景留多少、摘要多早开始准备、什么时候必须停下来整理，要看这件任务能接受多少等待和成本。
 
-新消息来了：交出去的事怎么办
+新消息来了：先分清改的是哪件事
 
-工作做到一半，用户发来新消息，这时助手手上往往还有交出去没做完的事，比如一条还在跑的长命令，或者一个正在处理子任务的 work agent session。新消息可能让其中某件事变得多余，也可能改变它该做的内容。举个例子，用户让助手比较三家酒店，比到一半说只看第二家。还在查另外两家的 session 就该停掉。如果已经替用户给第一家发了询价邮件，邮件收不回，就补一封说明不用了。各个 session 的结果陆续回来，助手要分清哪个结果属于哪件事，再整理成一个回答告诉用户。
+thread 里的新消息，基本都在说同一件事。personal agent 收到新消息时，手上可能同时挂着几件不相干的事，比如一条还在跑的长命令，或者一个正在处理子任务的 work agent session。它得先判断这条消息改的是哪一件。新消息可能让其中某件事变得多余，也可能改变它该做的内容。举个例子，用户让助手比较三家酒店，比到一半说只看第二家。还在查另外两家的 session 就该停掉。如果已经替用户给第一家发了询价邮件，邮件收不回，就补一封说明不用了。各个 session 的结果陆续回来，助手要分清哪个结果属于哪件事，再整理成一个回答告诉用户。
 
 三个案例在这一步各有做法。Grok Bot 和 Codex 都能给还在跑的 work agent session 发新指令，必要时打断它这一轮，酒店例子里停掉多余的查询，靠的就是这个〔15〕〔16〕。Codex 的长命令有自己的进程 ID，新消息来了，对话可以照常往下走，但默认的压缩和普通工具调用进行时，主线还是得等。Muse/Hatch 会把新旧消息合成一个请求重新跑，能不能重跑，要看之前已经做到哪一步。
 
-交出去以后：自己做完，该问再问
+交出去以后：用户不在，也能做完
 
-交出去的事，要能在没人盯着的时候自己做完。做完先核对，再交回结果。碰到授权和需要用户拿主意的地方，请求得真正送到用户面前，主线也得知道这件事卡在等用户。Codex 的例子说明这一步容易漏：子任务在等审批，主线 agent 看到的还是“在运行”，它跟用户说进度时，就可能说错。
+在 thread 里需要审批时，用户就在旁边。personal agent 交出去的事，往往在用户不在的时候跑，要能自己做完，做完先核对，再交回结果。碰到授权和需要用户拿主意的地方，请求得送到用户真能看到的地方，比如手机，可能要等上几个小时，这段时间别的事也不该跟着停。主线也得知道这件事卡在等用户。Codex 的审批是按 thread 设计的，子任务在等审批，主线 agent 看到的还是“在运行”，它跟用户说进度时，就可能说错。
 
 中断以后，有了进度记录，恢复也更有依据。先要分清是哪种中断。主线不再等某条命令了，那条命令可能还在后台进程里跑，接着等它的结果就行。进程真正中断以后，则要先核实哪些步骤已经完成、有没有对外产生影响，再决定怎么继续。尤其是结果不确定的动作，直接重跑可能造成重复。记忆能帮它理解原来的目标，但实际做到哪一步，还得看任务记录和工具结果。
 
-提醒和调度：主动但别打扰
+提醒和调度：thread 里没有的部分
 
-通知也要按最新情况来定。用户曾经收到过一条提醒，后面就不该因为重新发现同一件事再发一次。有新结果的时候，要结合最新情况判断现在值不值得说。需要用户拿主意的时候，带着已有进度回来问。助手越主动，这些判断就越影响用户愿不愿意继续把事情交给它。
+thread 驱动的 harness 没有这一步，用户不开口，它就不动。personal agent 得自己决定什么时候开口。通知也要按最新情况来定。用户曾经收到过一条提醒，后面就不该因为重新发现同一件事再发一次。有新结果的时候，要结合最新情况判断现在值不值得说。需要用户拿主意的时候，带着已有进度回来问。助手越主动，这些判断就越影响用户愿不愿意继续把事情交给它。
 
 最后还有调度。记住了要跟进，还得有东西到点把任务叫起来，再把结果送回负责处理的助手。记住背景、留住进度、按时推进、交回结果，少了哪一环，用户都可能重新变成那个追问和收尾的人。
 
@@ -195,3 +197,16 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/scheduling-and-watching.md#L33-L47
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/calls-texts-notifications.md#L93-L120
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/payments-and-purchases.md#L17
+
+〔20〕Grok Bot 每个 agent 一条对话流，定时任务、工作完成通知和用户消息进同一个 session，摘要在原地压缩，记忆每轮放进系统提示。同一固定版本的 extensions/transcript/session-runtime.ts L390–397、automation-run-path.ts L175–236、completion-revivals.ts L163–191、runner/system-prompt-assembly.ts L155–193。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/session-runtime.ts#L390-L397
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/automation-run-path.ts#L175-L236
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/completion-revivals.ts#L163-L191
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt-assembly.ts#L155-L193
+
+〔21〕Muse/Hatch 定时任务和事件检查交给脱离对话运行的 worker，结果交回主 agent，主对话从最近的压缩点恢复。见归档 opt/hatch/bin/hatch 内嵌的调度 worker 与 hook worker 提示词字符串，以及 home/hatch/docs/channel-availability.md L52–60。
+https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/channel-availability.md#L52-L60
+
+〔22〕Codex 恢复 thread 时读回该 thread 自己的记录，跨 thread 的记忆功能默认关闭。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187、codex-rs/features/src/lib.rs L1291–1296。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/rollout/src/recorder.rs#L1172-L1187
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1291-L1296
