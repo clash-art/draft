@@ -34,7 +34,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 |---|---|---|---|---|
 | Grok Bot | 三类队列：先用户，再 agent，最后后台任务。直接发给目标的 priority 消息可抢占非用户工作（群发不算），正在处理的用户任务受保护。Task 工具可把工作交给专门的 work agent session 在后台跑，完成后发通知 | 后台的 work agent session 还在跑时，可以打断它这一轮，立刻换上新指令 | work agent session 跑完后，可以带着原来的执行记录接着做 | 后台任务可静默运行，要发消息得明确调用 SendMessage |
 | Muse/Hatch | 定时任务到点触发，事件 hook 用轮询脚本检查条件，满足才唤醒 agent | 条件允许时，旧请求重新入队，和新输入合成一个请求，再处理一遍 | 被新消息打断后重新处理，回复重新生成。之前调用过的工具是沿用结果还是再调一遍，归档资料里看不出来 | 对照最近对话、记忆和送达记录，每次最多选一项，也可以不选 |
-| Codex（dots 的 harness 层） | 长命令可以留在后台进程里跑，打断 turn 也不会结束它 | Enter 把新输入插进当前 turn（steer），Tab 排到下一轮。InstantInterrupt 可取消正在进行的采样，已启动的普通工具仍会跑完 | 主线不再等时，命令照样跑，之后凭进程 ID 把结果取回来 | — |
+| dots（看底层的 Codex harness） | 长命令可以留在后台进程里跑，打断 turn 也不会结束它。子任务可以交给专门的 work agent session，跑完发通知 | Enter 把新输入插进当前 turn（steer），Tab 排到下一轮。InstantInterrupt 可取消正在进行的采样，已启动的普通工具仍会跑完。也可以给还在跑的 work agent session 发新指令，必要时立刻打断 | 主线不再等时，命令照样跑，之后凭进程 ID 把结果取回来。关掉的 work agent session 还能恢复 | — |
 
 
 ### Grok Bot：用户优先，也有不能随便抢占的工作
@@ -63,15 +63,17 @@ Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持�
 
 执行中的新消息，又是另一件事。符合条件时，Muse/Hatch 会把旧请求重新入队，和新输入合成一个请求，再处理一遍。重新处理时，模型会重新生成回复。这一轮之前已经调用过的工具，是沿用原来的结果，还是再调用一遍，归档资料里看不出来。二进制里还能看到一些和工具阶段、压缩、最终回答之前的门控有关的状态名，看起来重启会在这些阶段受限，但光看字符串说不准。
 
-### Codex（dots 的 harness 层）：聊天继续了，工具可能还在跑
+### dots 底层的 Codex harness：聊天继续了，工具可能还在跑
 
-OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。这些是怎么实现的，本文不分析，所以表格里 Codex 这一行的提醒是“—”，持续在场那一格也只写了后台进程。下面从 Codex 的测试定义和相关源码，看执行中的新消息和工具怎么处理。这些材料只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
+OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。这些是怎么实现的，本文不分析，所以表格里 dots 这一行只写 Codex harness 能看到的部分，提醒一格是“—”。下面从 Codex 的测试定义和相关源码，看执行中的新消息和工具怎么处理。这些材料只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
 
 Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中按 Enter，新指令就会插进当前 turn（steer），按 Tab 则排到下一轮〔9〕。这次看的这个版本里，InstantInterrupt 已经默认开启，但仍标为开发中〔12〕。在这种模式下，新输入可以中止当前采样。已经启动的普通工具还是会跑完，调用和结果也保持配对〔6〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。普通工具没做完，下一次推理也仍可能要等。
 
-对耗时更长的工作，工具自己也有等待的办法。exec_command 先等一段可配置的时间：命令结束了就交回结果，没结束就交回进程 ID（session_id），之后接着看同一个进程。一次等待结束，不代表命令已经结束，更不用为此重跑一遍。
+对耗时更长的工作，工具自己也有等待的办法。exec_command 先等一段可配置的时间：命令结束了就交回结果，没结束就交回进程 ID（session_id），之后接着看同一个进程。一次等待结束了，命令可能还在跑，不用为此重跑一遍。
 
 codemode 的代码执行单元 cell 也能独立继续跑。有些路径能提前结束这次等待，交回同一个 cell 标识，cell 本身继续执行。能不能这样，要看具体工具和功能路径，不是所有工具都能随时转入后台。用户 steer 时，cell 会接着跑。要是直接打断这个 turn，正在跑的 cell 和它嵌套的工具调用会被终止，exec 的后台进程则会留下来〔12〕。
+
+Codex 也能把子任务交给专门的 work agent session。这项功能是稳定版，默认开启〔16〕。主线可以开一个 session 让它自己跑，跑完会收到通知。它还在跑时，主线能给它发新指令，必要时立刻打断，让它改方向。关掉的 session 之后还能恢复，接着收指令。
 
 于是，助手得同时跟住两边：用户已经聊到新的事情，原来的进程或 cell 可能还在跑。它要用原来的标识继续查，等结果回来后，弄清这是哪件事的结果、现在还有没有用，以及是否已经对外部系统产生了影响。
 
@@ -174,3 +176,7 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 
 〔15〕Grok Bot 的 Task 工具（后台运行、完成通知、interrupt、resume），同一固定版本的 source/packages/agent/tools/task.ts 与 task-tool-schema.ts（L107–137）。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/task-tool-schema.ts#L107-L137
+
+〔16〕Codex 的 multi_agent 功能（spawn_agent、send_input 的 interrupt、wait_agent 完成通知、resume_agent），固定版本 ce0323f 的 codex-rs/features/src/lib.rs L1481–1486（Stable，默认开启）与 codex-rs/core/src/tools/handlers/multi_agents_spec.rs L192–300。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1481-L1486
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L192-L300
