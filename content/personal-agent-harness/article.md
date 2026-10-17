@@ -82,7 +82,7 @@ Codex 也能把子任务交给专门的 work agent session。这项功能是稳�
 
 ## 03 自己搭 harness 时，我会先想清楚什么
 
-自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。它们大多以 thread 为单位。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史，跨 thread 的记忆功能默认关闭〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
+自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史，跨 thread 的记忆功能默认关闭〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
 
 ### 记住什么：更勤、更宽，也看得更多
 
