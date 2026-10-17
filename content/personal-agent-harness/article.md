@@ -22,7 +22,11 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 主动发现下一步（proactive）：围绕已有目标，从新信息里找出值得接着做的事。发现线索后，先确认它仍然相关、还没有被处理，再判断是否已经获准行动。就算能做，也要判断值不值得现在打扰用户：例行进度可以先记下，涉及用户决定或时间上拖不得的变化，再判断要不要立刻提醒。发现了、可以做、现在该说，是三个不同的判断。
 
-这四个要求里，有一部分编程 agent 已经有现成做法。Codex 和 Claude Code 都能把用户的新消息排到下一轮、插进当前这一轮，或者直接打断，也能把长命令放进后台进程，把子任务交给专门的 work agent session〔9〕〔10〕〔11〕〔12〕〔16〕。快速响应的基础，和持续在场里“交出去”这个动作，都有了。personal agent 要补的是剩下几处。持续在场，还要有东西按时把任务叫起来，完成后有人接住结果。少让用户操心，用户多半不在场，助手得自己做完，该问时把请求送到用户面前。主动发现，该提醒什么、什么时候说，都得它自己判断。下面看三个案例各自怎么补。
+这四个要求里，有一部分编程 agent 已经有现成做法。Codex 和 Claude Code 都能把用户的新消息排到下一轮，或者插进当前这一轮，也能把长命令放进后台进程，把子任务交给专门的 work agent session〔9〕〔10〕〔11〕〔16〕。
+
+personal agent 要做的有两类。一类是改已有机制的默认做法。编程 agent 插进当前这一轮的新消息，原本要等这次模型输出或工具调用结束才交给模型，Claude Code 现在还是这样〔10〕。personal agent 让用户照常发消息，harness 负责让这条消息尽快影响正在做的事，效果接近抢占。Codex 从 10 月发布的 0.163.0 正式版开始，也把这一点改成了默认做法。插进当前这一轮的新消息会立刻停下模型当前的输出，带着新消息重新开始，已经启动的工具照样跑完，排到下一轮的消息照旧等着〔12〕〔28〕。我认为这是在往 personal agent 的方向走。
+
+另一类是补上编程 agent 没有的部分。持续在场，还要有东西按时把任务叫起来，完成后有人接住结果。少让用户操心，用户多半不在场，助手得自己做完，该问时把请求送到用户面前。主动发现，该提醒什么、什么时候说，都得它自己判断。下面看三个案例各自怎么补。
 
 ## 02 三个案例怎么补上这四个要求
 
@@ -32,7 +36,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 |---|---|---|---|---|
 | Grok Bot | 三类队列：先用户，再 agent，最后后台任务。直接发给目标的 priority 消息可抢占非用户工作，正在处理的用户任务受保护。Task 工具可把工作交给专门的 work agent session 在后台跑，完成后发通知 | 后台的 work agent session 还在跑时，可以打断它这一轮，立刻换上新指令 | work agent session 在后台自己跑，结果自动交回主线。它不能直接问用户，碰到需要授权的操作，审批请求仍会送到用户面前 | 后台任务可静默运行，要告诉用户得专门发一条消息 |
 | Muse/Hatch | 定时任务到点触发，事件 hook 用轮询脚本检查条件，满足才唤醒 agent | 条件允许时，旧请求重新入队，和新输入合成一个请求，再处理一遍 | 定时任务在用户关掉 app 时也照常跑，结果发到对话里。对外发送、付款要用户批准。部分 worker 报告完成前要先验证做出来的东西能用 | 对照最近对话、记忆和送达记录，每次最多选一项，也可以不选 |
-| dots（看底层的 Codex harness） | 长命令可以留在后台进程里跑，打断 turn 也不会结束它。子任务可以交给专门的 work agent session，跑完发通知 | Enter 把新输入插进当前 turn（steer），Tab 排到下一轮。新输入可以中止当前推理，已启动的工具仍会跑完。也可以给还在跑的 work agent session 发新指令，必要时立刻打断 | work agent session 跑完会通知主线。它碰到需要授权的操作，审批出现在它自己的线程里，主线 agent 不知道它在等 | — |
+| dots（看底层的 Codex harness） | 长命令可以留在后台进程里跑，打断 turn 也不会结束它。子任务可以交给专门的 work agent session，跑完发通知 | Enter 把新输入插进当前 turn（steer），Tab 排到下一轮。插进来的新输入默认会中止当前推理，已启动的工具仍会跑完。也可以给还在跑的 work agent session 发新指令，必要时立刻打断 | work agent session 跑完会通知主线。它碰到需要授权的操作，审批出现在它自己的线程里，主线 agent 不知道它在等 | — |
 
 ### Grok Bot：用户优先，也有不能随便抢占的工作
 
@@ -66,7 +70,7 @@ Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持�
 
 OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。这些是怎么实现的，本文不分析，所以表格里 dots 这一行只写 Codex harness 能看到的部分，提醒一格是“—”。下面从 Codex 的测试定义和相关源码，看执行中的新消息和工具怎么处理。这些材料只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
 
-Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中按 Enter，新指令就会插进当前 turn（steer），按 Tab 则排到下一轮〔9〕。新输入还可以直接中止当前推理，已经启动的工具还是会跑完〔6〕〔12〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。工具没做完，下一次推理也可能要等。
+Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中按 Enter，新指令就会插进当前 turn（steer），按 Tab 则排到下一轮〔9〕。插进当前 turn 的新指令，现在默认会直接中止当前推理，已经启动的工具还是会跑完〔6〕〔12〕〔28〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。工具没做完，下一次推理也可能要等。
 
 耗时长的命令，会先等一会儿。跑完了就交回结果，没跑完就交回一个进程 ID，之后接着查同一个进程，不用重跑一遍。
 
@@ -236,3 +240,8 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 〔27〕Grok Bot 查看还在跑的 work agent session 的状态和实时运行记录，系统提示要求主动查。同一固定版本的 runner/tools/sand-subagent-management-tools.ts L26、L89–99，runner/system-prompt.ts L179。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/tools/sand-subagent-management-tools.ts#L26-L99
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt.ts#L179
+
+〔28〕Codex 把“插进当前 turn 的新消息立即停下当前推理”改为默认：功能加入于 PR #48135（2026-09-25），默认开启于 PR #51812（2026-10-07），首个包含它的正式版为 rust-v0.163.0（2026-10-15 发布）。触发条件见该版本的 codex-rs/core/src/session/input_queue.rs L293–313，排队消息在 turn 进行中不进入核心（codex-rs/tui/src/chatwidget/input_flow.rs L258–262），IDE 与桌面 app 使用的 app-server 插入请求走同一路径（codex-rs/app-server/src/request_processors/turn_processor.rs L1044–1095）。
+https://github.com/openai/codex/pull/51812
+https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/features/src/lib.rs#L1207-L1212
+https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/session/input_queue.rs#L293-L313
