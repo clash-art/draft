@@ -8,3 +8,8 @@
 - editorial-context.md：结构、写作约定、证据边界与后续事项。
 
 本轻量包不含图片、旧稿或渲染器。旧图片尚未同步 v3，不能当作当前终稿。
+
+## 封面建议
+
+- 副标题：拆了三个实现，附带 commit 的源码出处
+- 封面简介仍按 editorial-context.md，保留“以 Instinct、Grok Bot、Muse 和 dots 为例”。
