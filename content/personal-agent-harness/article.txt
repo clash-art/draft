@@ -82,11 +82,19 @@ Codex 也能把子任务交给专门的 work agent session。这项功能是稳�
 
 前两节讲了长期助手要满足的四个要求，也看了三个案例各自怎么做。轮到自己搭，先要看清它和常见的 coding agent harness 差在哪。常见的 harness 以 thread 为单位。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史，跨 thread 的记忆功能默认关闭〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
 
-记住什么：跨 thread 留住背景和进度
+记住什么：更勤、更宽，也看得更多
 
-在 thread 里，背景和进度都在这个 thread 的历史里，thread 结束，这件事通常也结束了。personal agent 的一件事会跨好几次对话、拖好几天，中间还穿插着别的事。要过几天回来不用从头讲，助手得在单个 thread 之外留住两类东西。一类是用户的背景、偏好和已经定下的事，往后会反复用到。另一类是任务做到哪一步、在等什么、还有什么要确认，这些随时在变。只记住前者，就找不到上次做到哪，用户还是得再讲一遍。
+编程 agent 也有记忆，personal agent 在这件事上更激进。
 
-记住的东西也会过时。上个月的偏好可能早就变了，定好的事也可能被推翻。助手要是照着旧信息办事，用户反而得多操一份心。
+先是记得更勤。Grok Bot 的重建代码里，每轮对话结束都会再跑一遍模型，从这一轮里提取该记的事，隔几轮还会写一条经过记录〔23〕。Muse/Hatch 有定时整理记忆的任务，每小时把新对话并进记忆文件，每晚再回看一遍最近的对话〔24〕。Claude Code 的自动记忆由模型自己判断要不要写，官方文档也说它不会每次都记〔25〕。Codex 的记忆功能默认关闭，打开后也只在新会话开始时，回头整理以前的会话〔26〕。
+
+记的范围也更宽。Grok Bot 除了用户档案，还记经过日志，以及同一用户所有助手共享的用户事实。Muse/Hatch 给每个人、每个群单独建档。编程 agent 记的主要是项目相关的东西。
+
+记忆也跟着压缩更新。Grok Bot 每轮都把记忆放进系统提示，压缩时顺带换上最新的记忆。Muse/Hatch 的二进制里有压缩前先写一次记忆的字样，文档里没有对应说明。Claude Code 压缩以后，会重新读一遍用户写的记忆文件〔25〕。
+
+最明显的差别，是 personal agent 会主动去看自己派出去的 session 做了什么。Grok Bot 能看到每个还在跑的 work agent session 最近调用了哪些工具，也能读它的实时运行记录。系统提示要求它主动去查，告诉用户「还在跑」之前尤其要查一遍〔27〕。Muse/Hatch 的回看主要交给定时任务，每晚回看最近的对话。编程 agent 默认只拿结果。Codex 的主线等子任务结束，拿到的是它最后一条消息。Claude Code 的子任务只交回一份总结，运行记录虽然存在磁盘上，却没有工具或提示让它去读。Codex 要打开记忆功能，才会回头整理以前的会话。
+
+记得多，代价是记住的东西也会过时。上个月的偏好可能早就变了，定好的事也可能被推翻。Grok Bot 和 Muse/Hatch 都会用新的说法覆盖旧的，Grok Bot 还会让旧记忆慢慢淡出〔23〕〔24〕。助手要是照着旧信息办事，用户反而得多操一份心。
 
 放进上下文：一条不结束的对话流
 
@@ -94,7 +102,7 @@ Codex 也能把子任务交给专门的 work agent session。这项功能是稳�
 
 三个案例里能看到两种接法。Grok Bot 的重建代码里，每个 agent 只有一条对话流，用户消息、定时任务和工作完成的通知都进这一条。历史长了，就在原地压成摘要，记忆每轮放进系统提示〔20〕。Muse/Hatch 的主对话也是一条持续、会压缩的对话。定时任务和事件触发的检查，则交给脱离对话运行的 worker。按二进制里的提示词，worker 只拿到任务说明和记忆文件这类工作区文件，跑完把结果交回主 agent，由主 agent 决定怎么处理〔21〕。
 
-对话流不结束，压缩进行时，新事件也照样在进来。Grok Bot〔3〕和 Muse/Hatch〔5〕在复用摘要前，都会先确认摘要之后又发生了什么。压缩做得再及时，只要漏掉后来的变化，接下来的判断就可能建立在旧状态上。长期背景还是要靠记忆，任务做完没有，要看任务记录和工具结果。
+Grok Bot〔3〕和 Muse/Hatch〔5〕的压缩是异步进行的，摘要在后台生成的同时，agent 还在接着处理新消息和通知。所以两家在换上摘要前，都会先补上摘要之后发生的事。压缩做得再及时，只要漏掉后来的变化，接下来的判断就可能建立在旧状态上。长期背景还是要靠记忆，任务做完没有，要看任务记录和工具结果。
 
 摘要可以趁对话还在进行时提前准备，代价是多花一些模型调用。Codex 默认的上下文压缩〔7〕会让主线停下来，等压缩做完再继续。它最近加了后台压缩〔13〕，目前还在开发中，默认关闭。上下文快满之前，它先在后台生成摘要，turn 照常往下跑，主线只在把摘要换进来时停一下。要是摘要还没出来，上下文就先满了，主线还是得等。
 
@@ -210,3 +218,23 @@ https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad
 〔22〕Codex 恢复 thread 时读回该 thread 自己的记录，跨 thread 的记忆功能默认关闭。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187、codex-rs/features/src/lib.rs L1291–1296。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/rollout/src/recorder.rs#L1172-L1187
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1291-L1296
+
+〔23〕Grok Bot 每轮提取记忆、定期写经过记录、用新事实覆盖旧事实并让旧记忆淡出。同一固定版本的 runner/turn-settle.ts L364、runner/turn-memory.ts L42–113、runner/sand-memory.ts L1–18、L206–229。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/turn-memory.ts#L42-L113
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/sand-memory.ts#L1-L229
+
+〔24〕Muse/Hatch 每小时整理记忆、每晚回看最近对话、给人和群建档、新说法覆盖旧说法。归档 home/hatch/docs/self_improvement.md L7–28。压缩前写记忆的说法来自 opt/hatch/bin/hatch 内嵌字符串。
+https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/self_improvement.md#L7-L28
+
+〔25〕Claude Code 官方记忆文档：CLAUDE.md 与自动记忆。
+https://code.claude.com/docs/en/memory
+Claude Code 子任务只交回最终报告：
+https://code.claude.com/docs/en/sub-agents
+
+〔26〕Codex 记忆功能默认关闭，开启后在新会话开始时整理以前的会话。固定版本 ce0323f 的 codex-rs/features/src/lib.rs L1291–1296、codex-rs/memories/README.md L29–41。主线等待子任务时只拿到最后一条消息：codex-rs/core/src/tools/handlers/multi_agents_spec.rs L293。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/memories/README.md#L29-L41
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L293
+
+〔27〕Grok Bot 查看还在跑的 work agent session 的状态和实时运行记录，系统提示要求主动查。同一固定版本的 runner/tools/sand-subagent-management-tools.ts L26、L89–99，runner/system-prompt.ts L179。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/tools/sand-subagent-management-tools.ts#L26-L99
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt.ts#L179
