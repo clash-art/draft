@@ -268,9 +268,8 @@ https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/core/todo/schema.ts#L9-L11
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-kv/agent-store.ts#L245-L250
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-summarization/durable-blocks.ts#L131-L136
-https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/shared/node/experiments/experiment-config.gen.ts#L124-L138
 
-〔33〕Grok Bot 待叫醒标记（存于 host-pending-wakes.json，重启后重新盯上长命令和云端 agent，丢失的 session 以结果不明通知主线，超过 48 小时丢弃），同一固定版本的 source/host/extensions/transcript/pending-wake-rearm.ts L6、L112–127、L171–262，文件名见 source/host/durable-file-policy.ts L3。两份磁盘记录（待叫醒标记与欠用户回复）在 source/host/extensions/transcript/extension.ts L60–66 直接创建，未经 sand_multitask 判断。
+〔33〕Grok Bot 待叫醒标记（存于 host-pending-wakes.json，重启后重新盯上长命令和云端 agent，丢失的 session 以结果不明通知主线，超过 48 小时丢弃），同一固定版本的 source/host/extensions/transcript/pending-wake-rearm.ts L6、L112–127、L171–262，文件名见 source/host/durable-file-policy.ts L3。两份磁盘记录（待叫醒标记与欠用户回复）在 source/host/extensions/transcript/extension.ts L60–66 创建。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/extension.ts#L60-L66
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/pending-wake-rearm.ts#L6-L262
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/durable-file-policy.ts#L2-L3
