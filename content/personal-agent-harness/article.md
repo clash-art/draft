@@ -48,11 +48,13 @@ Grok Bot 用一份待办清单记着用户交代的事。按重建代码，主�
 
 ### Muse/Hatch
 
-Muse/Hatch 下功夫最多的是proactive。Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持续做事，这些工作有了结果，再判断要不要提醒。下面的具体流程出自归档〔5〕。
+Muse/Hatch 下功夫最多的是 proactive。Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持续做事，这些工作有了结果，再判断要不要提醒。下面的具体流程出自归档〔5〕。
 
-它会先收集可能值得提醒的事，判断紧急程度，最后整理成消息。每次最多选一件，也可以一件都不选。候选要和最近对话、记忆、历史送达记录对一遍，再决定发出去、缓一缓，还是静默处理。
+Muse 主动找用户有三个入口。一是主动推送，每条只带一件值得打扰的事，可能是记忆里值得一提的事、需要关注的目标、一封待读的信，或者最近对话的后续，每条都写明来自哪里。二是 Feed，系统按自己定的时间表在后台生成帖子，每篇都是专门为这个用户写的。三是 Ideas，助手自己想出可以替用户做的事，用户点一下，它就去做〔38〕。
 
-这一步不能省。从发现到送达，中间可能已经过了一段时间：用户自己办完了，或者已经收到同一提醒。归档是一个编译后的二进制文件，去重、过期和送达记录这些规则，都能在里面看到。
+推送会自己控制节奏。普通的事等用户醒着、手头不忙时再送，一天最多一次，时间要紧的放宽一些，真正紧急的马上送。用户想多听什么、不想听什么、什么时段、用什么格式，都记在一个偏好文件里，Muse 每次写推送前都会把它从头读一遍〔38〕。我认为这一层决定的是什么时候说，跟说什么同样要紧。
+
+每次挑选，最多选一件，也可以一件都不选，候选要先和最近对话、记忆、历史送达记录对一遍，避免用户已经办完或已经收到同一提醒〔5〕。
 
 持续发现，也不必每次都启动完整推理。定时任务负责到点触发。要看有没有变化，归档里还有一种事件 hook（event hook）：用一个 Bash 轮询脚本检查条件，条件成立时才唤醒负责这件事的 agent〔5〕。Claude Code 的 Monitor 工具思路类似，也是让一个脚本在后台盯着，有输出才通知模型。不过 Monitor 的每次监视都有期限，默认 5 分钟，最长 30 分钟，到期就结束，会话结束也会停〔37〕。Hatch 的事件 hook 跟定时任务一样属于自动化，按固定间隔轮询，没有这个期限。我认为这让 Hatch 的 proactive 粒度更细：它可以盯住一个具体条件，条件一变就叫醒负责的 agent，用不着等下一次定时任务，用户不在场时也能一直挂着。
 
@@ -278,6 +280,8 @@ https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9
 〔36〕Codex 后台压缩的启动阈值默认 65%，作废的请求已用的 token 照样计费，固定版本 ce0323f 的 codex-rs/core/src/config/mod.rs L226、codex-rs/core/src/session/async_compaction.rs L1–2，摘要就绪即换上见 codex-rs/core/src/session/turn.rs L1385。
 
 〔37〕Claude Code 官方工具文档 Monitor tool 一节：脚本在后台运行，每行输出通知模型，每次监视默认 5 分钟、最长 30 分钟到期，会话结束即停止，https://code.claude.com/docs/en/tools-reference
+
+〔38〕Muse/Hatch 归档文档：home/hatch/docs/calls-texts-notifications.md「Proactive editions」一节（单条推送、来源、节奏、偏好文件），docs/feed.md L1–10，docs/ideas.md L1–8，home/hatch/PROACTIVE_PREFERENCES.md。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/config/mod.rs#L226
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/async_compaction.rs#L1-L2
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/turn.rs#L1385
