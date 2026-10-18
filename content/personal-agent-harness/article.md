@@ -50,11 +50,9 @@ personal agent 要做的有两类。一类是改已有机制的默认做法。th
 
 交出去的工作或命令跑完，主线会被叫醒看结果，但不会自动告诉用户。按重建代码里叫醒主线时附带的指令，结果是新的、跟用户有关，或者用户说过要等它，才发一条消息告诉用户。过时、重复或已经处理过的，就静默结束〔20〕。在这份重建代码里，做完事和告诉用户是两个分开的动作。
 
-Grok Bot 用一份待办清单记着用户交代的事。重建代码里有一个多任务模式，开启后主线只负责回话和派活，成块的工作交给 work agent session，再用 TodoWrite 工具维护一份待办清单〔32〕。用户提了要求，先记成一条待办，再派出去。每条待办有四种状态：还没开始、进行中、已完成、已取消。几个 session 同时在跑，就有几条待办同时处在进行中。已完成指的是结果已经交到用户手上，session 跑完还不算。主线每次被叫醒，都要先对一遍清单，看哪些在跑、哪些有了结果、下一步派什么。清单存在对话状态里，压缩上下文时，最新的清单会原样带进摘要。
+Grok Bot 用一份待办清单记着用户交代的事。按重建代码，主线只负责回话和派活，成块的工作交给 work agent session，再用 TodoWrite 工具维护一份待办清单〔32〕。用户提了要求，先记成一条待办，再派出去。每条待办有四种状态：还没开始、进行中、已完成、已取消。几个 session 同时在跑，就有几条待办同时处在进行中。已完成指的是结果已经交到用户手上，session 跑完还不算。主线每次被叫醒，都要先对一遍清单，看哪些在跑、哪些有了结果、下一步派什么。清单存在对话状态里，压缩上下文时，最新的清单会原样带进摘要。
 
-这个模式由 sand_multitask 开关控制。重建代码里，这个开关填的默认值是打开，旁边的注释写的却是默认关闭〔32〕。
-
-程序重启这件事，另有两份存在磁盘上的记录来管，它们不受 sand_multitask 开关控制。第一份是待叫醒的标记。派出去的 session、长命令和云端 agent 开始跑时记一条，跑完删掉〔33〕。重启后，Grok Bot 逐条检查这些标记。长命令和云端 agent 能重新盯上，就接着等结果。session 是在进程里跑的，重启后就没了，主线会收到一条通知，说这件事被重启打断、结果不明，让它看运行记录再决定要不要重派。超过 48 小时的标记直接丢掉。第二份记的是欠用户的回复。用户发来的消息要是一直没得到看得见的回复，比如处理到一半被打断，或者程序重启了，系统会再叫醒主线，最多三次。这时主线要先弄清用户最后说了什么，看不到的工作不许说已经做完〔34〕。
+程序重启这件事，另有两份存在磁盘上的记录来管。第一份是待叫醒的标记。派出去的 session、长命令和云端 agent 开始跑时记一条，跑完删掉〔33〕。重启后，Grok Bot 逐条检查这些标记。长命令和云端 agent 能重新盯上，就接着等结果。session 是在进程里跑的，重启后就没了，主线会收到一条通知，说这件事被重启打断、结果不明，让它看运行记录再决定要不要重派。超过 48 小时的标记直接丢掉。第二份记的是欠用户的回复。用户发来的消息要是一直没得到看得见的回复，比如处理到一半被打断，或者程序重启了，系统会再叫醒主线，最多三次。这时主线要先弄清用户最后说了什么，看不到的工作不许说已经做完〔34〕。
 
 ### Muse/Hatch：每次最多提醒一件事，新消息来了合并重跑
 
@@ -265,7 +263,7 @@ https://github.com/openai/codex/blob/ce0323f2f2/codex-rs/history/src/heartbeat.r
 〔31〕Grok Bot 的 agent 间消息：priority 只在一对一发送时生效，会打断对方当前的非用户工作并立刻叫醒它，同一固定版本的 source/host/extensions/transcript/agent-to-agent-messaging.ts L38–121。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/agent-to-agent-messaging.ts#L38-L121
 
-〔32〕Grok Bot 多任务模式的 TodoWrite 待办清单（四种状态、记录后再派活、结果交到用户手上才算完成、每次被叫醒先对清单），同一固定版本的 source/host/sand-multitask.ts L55–81、packages/agent/tools/core/todo/schema.ts L9–11。清单存进对话状态见 packages/agent-kv/agent-store.ts L245–250，压缩时带进摘要见 packages/agent-summarization/durable-blocks.ts L131–136。开关 sand_multitask 见 host/extensions/experiments/extension.ts L23，注释说默认关闭、值为 true 见 shared/node/experiments/experiment-config.gen.ts L124–138。
+〔32〕Grok Bot 的 TodoWrite 待办清单（四种状态、记录后再派活、结果交到用户手上才算完成、每次被叫醒先对清单），同一固定版本的 source/host/sand-multitask.ts L55–81、packages/agent/tools/core/todo/schema.ts L9–11。清单存进对话状态见 packages/agent-kv/agent-store.ts L245–250，压缩时带进摘要见 packages/agent-summarization/durable-blocks.ts L131–136。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/sand-multitask.ts#L55-L81
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/core/todo/schema.ts#L9-L11
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-kv/agent-store.ts#L245-L250
