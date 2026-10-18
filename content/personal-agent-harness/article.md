@@ -28,7 +28,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 另一类是 thread 驱动的 harness 很少碰到的情况。要少让用户操心，用户多半就不在场，助手得自己把事做完，该问时再把请求送到用户面前。要主动发现下一步，该提醒什么、什么时候说，也都得它自己判断。
 
-## 02 Grok Bot、Muse/Hatch、dots/Codex 怎么补上这四个要求
+## 02 Grok Bot、Muse、dots 怎么补上这四个要求
 
 三个案例的材料来源各不相同。Grok Bot 的来自非官方重建代码，Muse/Hatch 的来自非官方二进制归档，dots 的来自它底层的开源 Codex harness 和泄露的 dots 提示词。
 
