@@ -54,9 +54,9 @@ Muse/Hatch 下功夫最多的是proactive。Muse 的官方设计文章〔4〕里
 
 这一步不能省。从发现到送达，中间可能已经过了一段时间：用户自己办完了，或者已经收到同一提醒。归档是一个编译后的二进制文件，去重、过期和送达记录这些规则，都能在里面看到。
 
-持续发现，也不必每次都启动完整推理。定时任务负责到点触发。要看有没有变化，归档里还有一种事件 hook（event hook）：用一个 Bash 轮询脚本检查条件，条件成立时才唤醒负责这件事的 agent〔5〕。Claude Code 的 Monitor 工具思路类似，也是让一个脚本在后台盯着，有输出才通知模型。不过 Monitor 的每次监视都有期限，默认 5 分钟，最长 30 分钟，到期就结束，会话结束也会停〔37〕。Hatch 的事件 hook 跟定时任务一样属于自动化，按固定间隔轮询，没有这个期限。我认为这是 Hatch 比较特别的地方：用户不在场时，盯着变化的事也能一直挂着。
+持续发现，也不必每次都启动完整推理。定时任务负责到点触发。要看有没有变化，归档里还有一种事件 hook（event hook）：用一个 Bash 轮询脚本检查条件，条件成立时才唤醒负责这件事的 agent〔5〕。Claude Code 的 Monitor 工具思路类似，也是让一个脚本在后台盯着，有输出才通知模型。不过 Monitor 的每次监视都有期限，默认 5 分钟，最长 30 分钟，到期就结束，会话结束也会停〔37〕。Hatch 的事件 hook 跟定时任务一样属于自动化，按固定间隔轮询，没有这个期限。我认为这让 Hatch 的 proactive 粒度更细：它可以盯住一个具体条件，条件一变就叫醒负责的 agent，用不着等下一次定时任务，用户不在场时也能一直挂着。
 
-Muse/Hatch 把答应过的事建成跟踪项。这部分来自二进制里的工具说明和提示词字符串，归档文档里没有讲跟踪项〔34〕。预订、快递、提醒、出行这类超出当前对话的事，用户没说要跟，助手也要建一个跟踪项。订好了、付完款，只要后续的事还没完，跟踪项就一直开着。设定时任务或安排电话之前，要先把它挂到对应的跟踪项上。
+Muse/Hatch 把答应过的事建成跟踪项。拿机票举例，邮箱里来了一封航班确认，助手不用问用户，先查有没有同一趟行程的跟踪项，没有就建一个，再把比价和航班动态两个定时任务挂上去。跟踪项结束，这两个任务一起删掉〔34〕。跟踪项和用户自己设的目标分开存。预订、快递、提醒、出行这类超出当前对话的事，用户没说要跟，助手也要建一个跟踪项。订好了、付完款，只要后续的事还没完，跟踪项就一直开着。设定时任务或安排电话之前，要先把它挂到对应的跟踪项上。
 
 每个跟踪项有一行当前状态，写最新的结果、在等什么，或者卡在哪里。助手每记一条进展，系统都会看这一行要不要跟着更新。用户说过某天前没回音就提醒我，这个条件可以记成一条升级规则，到期时告诉用户，或者请用户决定。每个跟踪项还配一个笔记文件，记助手自己的工作笔记，接着做之前要先读它。跟踪项只分进行中和已完成两种状态。工具说明要求，有证据表明事情已经结束，就主动关掉，比如快递签收、活动结束、用户取消。光是一直没动静，或者只做完其中一步，都不算结束。
 
@@ -267,7 +267,7 @@ https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/ack-obligations.ts#L6-L9
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/sand-ack-obligation-store.ts
 
-〔34〕Muse/Hatch 跟踪项（tracking.create / set_status / create_entry 等工具说明：用户没要求也要跟踪、当前状态行由系统按进展更新、escalation 升级规则、只有 active 和 completed、按证据主动关闭、每项配 workspace/goals/<slug>/GOAL.md 工作笔记），以及 goals.goals 与 goals.updates 两张表的 SQL，均为归档 opt/hatch/bin/hatch 内嵌字符串，未对照线上运行。归档文档里的用户目标见 home/hatch/docs/goals.md L1–45。
+〔34〕Muse/Hatch 跟踪项：归档 opt/hatch/skills/duffel/SKILL.md L246–346（航班确认建一个跟踪项、比价与航班动态任务挂在跟踪项下、跟踪项结束即删任务）及 duffel/eval/tracked-flight-scenarios.yaml。另见（tracking.create / set_status / create_entry 等工具说明：用户没要求也要跟踪、当前状态行由系统按进展更新、escalation 升级规则、只有 active 和 completed、按证据主动关闭、每项配 workspace/goals/<slug>/GOAL.md 工作笔记），以及 goals.goals 与 goals.updates 两张表的 SQL，均为归档 opt/hatch/bin/hatch 内嵌字符串，未对照线上运行。归档文档里的用户目标见 home/hatch/docs/goals.md L1–45。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/opt/hatch/bin/hatch
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/goals.md#L1-L45
 
