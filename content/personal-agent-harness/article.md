@@ -18,7 +18,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 快速响应：事情做到一半，用户提了新要求，助手得接住，还要让它影响接下来的动作。还没做的步骤，得重新看要不要继续。已经发出的消息、提交的操作，不能当作没发生，需要改的再补一条更正。助手得弄清实际进度，说明哪些已完成、哪些能停、哪些还要用户决定。所以看响应快不快，要看新要求进来后，它多久停下已经不需要的事。
 
-少让用户操心（hands-off）：事情交出去以后，用户不用盯着每一轮推理和工具调用。助手自己往下推进，做完先核对结果，再交回来。该问的时候仍然要问：超出授权、目标对不上，或需要用户拿主意的选择，要带着进度和选项回来请用户决定。碰到权限边界，不能自动放行。中途中断或暂时失败，也要保留原来的目标和已完成进度，能接着做就接着做，结果不确定时先核对，避免重复执行。
+少让用户操心（hands-off）：事情交出去以后，用户不用盯着每一轮推理和工具调用。助手自己往下推进，做完先核对结果，再交回来。该问的时候仍然要问：超出授权、目标对不上，或需要用户拿主意的选择，要带着进度和选项回来请用户决定。碰到权限边界，不能自动放行。中途中断或暂时失败，也要保留原来的目标和已完成进度，能接着做就接着做，结果不确定时先核对，避免重复执行。交出去的事得有地方记着，哪些还没办完、各自在等什么，助手要随时说得清。
 
 主动发现下一步（proactive）：围绕已有目标，从新信息里找出值得接着做的事。发现线索后，先确认它仍然相关、还没有被处理，再判断是否已经获准行动。就算能做，也要判断值不值得现在打扰用户：例行进度可以先记下，涉及用户决定或时间上拖不得的变化，再判断要不要立刻提醒。发现了、可以做、现在该说，是三个不同的判断。
 
@@ -30,13 +30,13 @@ personal agent 要做的有两类。一类是改已有机制的默认做法。th
 
 ## 02 三个案例怎么补上这四个要求
 
-下表四列对应第一节的四个要求。Grok Bot 这一行来自非官方重建代码，Muse/Hatch 这一行来自非官方二进制归档，dots 这一行的前三格来自它底层的开源 Codex harness，最后一格来自泄露的 dots 提示词。
+下表四列对应第一节的四个要求。Grok Bot 这一行来自非官方重建代码，Muse/Hatch 这一行来自非官方二进制归档，dots 这一行的前两格来自它底层的开源 Codex harness，后两格来自泄露的 dots 提示词。
 
-| | 持续在场：同时有好几件事时怎么办 | 快速响应：执行中的新输入 | 少让用户操心：自己做完，该问再问 | 主动发现：提醒 |
+| | 持续在场：同时有好几件事时怎么办 | 快速响应：执行中的新输入 | 少让用户操心：用一份任务清单记着没办完的事 | 主动发现：提醒 |
 |---|---|---|---|---|
-| Grok Bot | 先处理用户消息，再处理其他 agent 的消息，最后处理定时任务和完成通知。优先级高的消息可以打断非用户的工作 | 用户的新消息排在最前，但不打断正在处理的用户任务。还在跑的 work agent session 可以中途换指令 | 交出去的工作跑完自动交回，要授权时仍会来问用户 | 做完和告诉用户是两步，要不要发消息由主线自己判断 |
-| Muse/Hatch | 定时任务和事件检查交给脱离主对话的 worker 去跑，跑完把结果交回主 agent | 还没调用工具时，新旧消息合成一个请求重跑，调用了就排到这一轮之后 | 部分 worker 报告完成前要先验证结果能用，花钱和对外发送要用户批准 | 每次最多挑一件事提醒，也可以不提醒 |
-| dots（底层是 Codex harness） | 长命令转成后台进程，子任务交给 work agent session，主对话可以继续聊 | 新消息可以插进当前这一轮，默认会马上停下推理，带上新消息重来 | 子任务跑完会通知主线，但它卡在审批时，主线不知道 | Dreamer 按心跳定时调研，有新发现只报给主助手，由主助手决定告不告诉用户 |
+| Grok Bot | 先处理用户消息，再处理其他 agent 的消息，最后处理定时任务和完成通知。优先级高的消息可以打断非用户的工作 | 用户的新消息排在最前，但不打断正在处理的用户任务。还在跑的 work agent session 可以中途换指令 | 用户提的事先记进待办清单，结果交到用户手上才算完成，程序重启后中断的事会重新叫醒主线 | 做完和告诉用户是两步，要不要发消息由主线自己判断 |
+| Muse/Hatch | 定时任务和事件检查交给脱离主对话的 worker 去跑，跑完把结果交回主 agent | 还没调用工具时，新旧消息合成一个请求重跑，调用了就排到这一轮之后 | 答应过的事建成用户看得到的跟踪项，有证据表明办完才关掉 | 每次最多挑一件事提醒，也可以不提醒 |
+| dots（底层是 Codex harness） | 长命令转成后台进程，子任务交给 work agent session，主对话可以继续聊 | 新消息可以插进当前这一轮，默认会马上停下推理，带上新消息重来 | 待办写进共享记忆里的一份文件，记着每件事在等谁，Dreamer 定期翻看 | Dreamer 按心跳定时调研，有新发现只报给主助手，由主助手决定告不告诉用户 |
 
 ### Grok Bot：用户优先，也有不能随便抢占的工作
 
@@ -50,6 +50,12 @@ personal agent 要做的有两类。一类是改已有机制的默认做法。th
 
 交出去的工作或命令跑完，主线会被叫醒看结果，但不会自动告诉用户。按重建代码里叫醒主线时附带的指令，结果是新的、跟用户有关，或者用户说过要等它，才发一条消息告诉用户。过时、重复或已经处理过的，就静默结束〔20〕。在这份重建代码里，做完事和告诉用户是两个分开的动作。
 
+Grok Bot 用一份待办清单记着用户交代的事。重建代码里有一个多任务模式，开启后主线只负责回话和派活，成块的工作交给 work agent session，再用 TodoWrite 工具维护一份待办清单〔32〕。用户提了要求，先记成一条待办，再派出去。每条待办有四种状态：还没开始、进行中、已完成、已取消。几个 session 同时在跑，就有几条待办同时处在进行中。已完成指的是结果已经交到用户手上，session 跑完还不算。主线每次被叫醒，都要先对一遍清单，看哪些在跑、哪些有了结果、下一步派什么。清单存在对话状态里，压缩上下文时，最新的清单会原样带进摘要。
+
+这个模式由 sand_multitask 开关控制。配置文件里的注释写着默认关闭，实际填的默认值却是打开〔32〕。线上有没有打开，重建代码里看不出来。
+
+程序重启这件事，另有两份存在磁盘上的记录来管。第一份是待叫醒的标记。派出去的 session、长命令和云端 agent 开始跑时记一条，跑完删掉〔33〕。重启后，Grok Bot 逐条检查这些标记。长命令和云端 agent 能重新盯上，就接着等结果。session 是在进程里跑的，重启后就没了，主线会收到一条通知，说这件事被重启打断、结果不明，让它看运行记录再决定要不要重派。超过 48 小时的标记直接丢掉。第二份记的是欠用户的回复。用户发来的消息要是一直没得到看得见的回复，比如处理到一半被打断，或者程序重启了，系统会再叫醒主线，最多三次。这时主线要先弄清用户最后说了什么，看不到的工作不许说已经做完〔34〕。
+
 ### Muse/Hatch：每次最多提醒一件事，新消息来了合并重跑
 
 Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持续做事，这些工作有了结果，再判断要不要提醒。下面的具体流程出自归档〔5〕。
@@ -62,11 +68,17 @@ Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持�
 
 执行中来了新消息时，如果模型还在推理、没开始输出最终回复，Muse/Hatch 会把旧请求重新入队，和新消息合成一个请求，再处理一遍，模型会重新生成回复。工具调用已经发出去、最终回复已经开始输出、正在压缩上下文，或者新消息和当前请求来自不同的来源，就不会重跑，新消息排到这一轮之后。中途输出过说明文字，也不一定就失去重跑的机会。这一轮之前已经调用过的工具，是沿用原来的结果，还是再调用一遍，归档资料里看不出来。
 
-交出去的事，Muse/Hatch 也尽量让它自己做完。按归档里的文档，定时任务的结果作为消息发到对话里。对外发送、付款这类操作，每次都要用户批准，审批会推送到手机上〔19〕。有些 worker 在报告完成前，要先验证做出来的东西确实能用。归档里也有对不上的地方。文档说定时任务这类没人在旁边的任务，可以停在审批卡片上等用户，二进制里给脱离对话运行的 worker 的提示词却说，审批可能永远等不来，要当作失败换别的办法。实际运行时按哪一种来，光看归档判断不了。
+Muse/Hatch 把答应过的事建成跟踪项。这部分来自二进制里的工具说明和提示词字符串，归档文档只讲了用户自己设的目标〔35〕。预订、快递、提醒、出行这类超出当前对话的事，用户没说要跟，助手也要建一个跟踪项。订好了、付完款，只要后续的事还没完，跟踪项就一直开着。设定时任务或安排电话之前，要先把它挂到对应的跟踪项上。
+
+每个跟踪项有一行当前状态，写最新的结果、在等什么，或者卡在哪里。助手每记一条进展，系统都会看这一行要不要跟着更新。用户说过某天前没回音就提醒我，这个条件可以记成一条升级规则，到期时告诉用户，或者请用户决定。每个跟踪项还配一个笔记文件，记助手自己的工作笔记，接着做之前要先读它。跟踪项只分进行中和已完成两种状态。工具说明要求，有证据表明事情已经结束，就主动关掉，比如快递签收、活动结束、用户取消。光是一直没动静，或者只做完其中一步，都不算结束。标题和状态行都按用户会看到的样子来写。
+
+对外发送、付款这类操作，每次都要用户批准，审批会推送到手机上〔19〕。归档里也有对不上的地方。文档说定时任务这类没人在旁边的任务，可以停在审批卡片上等用户，二进制里给脱离对话运行的 worker 的提示词却说，审批可能永远等不来，要当作失败换别的办法。实际运行时按哪一种来，光看归档判断不了。
 
 ### dots：上层有 Dreamer 找事，底层 Codex 的工具可能还在跑
 
 OpenAI 的 Dominik Kundel 在公开文章〔8〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。主动跟进靠的是 dots 自己加的一层。按泄露的 dots 提示词〔29〕，主助手会派出叫 Dreamer 的调研 agent，按心跳定时运行。它先读最近的对话、用户笔记和待办，再去已连接的应用里找新情况。Dreamer 不能联系用户，也不能替用户做事，只有发现有用的新东西，或者碰到要主助手处理的阻碍时，才通知主助手一次，告不告诉用户由主助手决定。每天凌晨还有一次复盘，回顾当天的对话，更新用户的偏好和优先级。Muse/Hatch 让一个 agent 自己挑一件事提醒，dots 则让一个 agent 负责发现，另一个决定说不说。开源 Codex 里找不到 Dreamer，只能看到它把定时心跳触发的消息和用户亲自发的消息分开记录〔30〕。
+
+Dreamer 读的待办，是共享记忆里的一份文件。按泄露的 dots 技能说明，主助手把用户重要的待办、承诺和截止日期都记在这里〔36〕。用户没提、还没开始做的事，只要对用户重要，也要记上。每条待办有四种状态：待办、进行中、已完成、已取消。卡点另外记三栏：是不是卡住了，被清单里哪几条卡住，现在在等谁。在等谁分成等用户、等助手自己、等别人或外部服务，以及什么都不等。确认结果已经达成，才能标成已完成。截止日期过了，也要先查清发生了什么。关掉的事留七天，再挪进归档。这份文件只有主助手和负责记忆的 work agent session 能改。Dreamer 只读不改，调研完告诉主助手哪些该加、该改、该关〔29〕。
 
 执行中的新消息和工具怎么处理，要看底层的 Codex。下面几段来自 Codex 的测试定义和源码，只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
 
@@ -76,9 +88,11 @@ Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行�
 
 打开还在开发中的 Code Mode 后，模型写的代码片段也能这样转到后台继续跑。用户 steer 时，它会接着跑。直接打断这个 turn，它就会被终止，长命令的后台进程则会留下来〔12〕。
 
-Codex 也能把子任务交给专门的 work agent session。这项功能是稳定版，默认开启〔16〕。主线可以开一个 session 让它自己跑，跑完会收到通知。它还在跑时，主线能给它发新指令，必要时立刻打断，让它改方向。关掉的 session 之后还能恢复，接着收指令。子任务碰到需要授权的操作，审批会出现在它自己的线程里，终端界面会提示用户切过去处理。主线 agent 这边看到的状态仍是“在运行”，不知道它在等审批〔18〕。
+Codex 也能把子任务交给专门的 work agent session。这项功能是稳定版，默认开启〔16〕。主线可以开一个 session 让它自己跑，跑完会收到通知。它还在跑时，主线能给它发新指令，必要时立刻打断，让它改方向。关掉的 session 之后还能恢复，接着收指令。子任务碰到需要授权的操作，审批会出现在它自己的线程里，终端界面会提示用户切过去处理〔18〕。
 
 于是，助手得同时跟住两边：用户已经聊到新的事情，原来的命令、代码执行或 work agent session 可能还在跑。它要用原来的标识继续查，等结果回来后，弄清这是哪件事的结果、现在还有没有用，以及是否已经对外部系统产生了影响。
+
+底层的 Codex 也有一套任务状态，叫 thread 目标，是稳定版功能，默认开启〔37〕。用户或系统指令明确要求时，模型才会给 thread 建一个目标。目标和状态存在本地的 SQLite 数据库里，状态有进行中、暂停、卡住、用量到上限、token 预算用完、已完成。thread 闲下来时，目标要是还在进行中，Codex 会自动开一轮接着做。模型想标已完成，得先做一次完成审核：把目标拆成具体要求，逐条找证据，证据不够就当没做完。同一个卡点连续出现三轮，才能标成卡住。泄露的 dots 提示词里没有提到这套机制，dots 有没有用它，目前不知道。
 
 ## 03 自己搭 harness 时，我会先想清楚什么
 
@@ -120,7 +134,7 @@ Grok Bot 和 Codex 都能给还在跑的 work agent session 发新指令，必�
 
 ### 交出去以后：用户不在，也能做完
 
-在 thread 里需要审批时，用户就在旁边。personal agent 交出去的事，往往在用户不在的时候跑，要能自己做完，做完先核对，再交回结果。碰到授权和需要用户拿主意的地方，请求得送到用户真能看到的地方，比如手机，可能要等上几个小时，这段时间别的事也不该跟着停。主线也得知道这件事卡在等用户。Codex 的审批是按 thread 设计的，子任务在等审批，主线 agent 还以为它在运行，它跟用户说进度时，就可能说错。
+在 thread 里需要审批时，用户就在旁边。personal agent 交出去的事，往往在用户不在的时候跑，要能自己做完，做完先核对，再交回结果。碰到授权和需要用户拿主意的地方，请求得送到用户真能看到的地方，比如手机，可能要等上几个小时，这段时间别的事也不该跟着停。主线也得记着这件事在等用户，跟用户说进度时才不会说错。dots 的待办文件专门用一栏记每件事在等谁，Muse/Hatch 跟踪项的状态行也会写明在等什么。
 
 中断以后，有了进度记录，恢复也更有依据。先要分清是哪种中断。主线不再等某条命令了，那条命令可能还在后台进程里跑，接着等它的结果就行。进程真正中断以后，则要先核实哪些步骤已经完成、有没有对外产生影响，再决定怎么继续。尤其是结果不确定的动作，直接重跑可能造成重复。记忆能帮它理解原来的目标，但实际做到哪一步，还得看任务记录和工具结果。
 
@@ -197,9 +211,8 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 〔17〕Grok Bot 交出去的 work agent session 不能直接问用户、审批请求仍送到用户面前，同一固定版本的 source/host/runner/system-prompt.ts L59–73。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt.ts#L59-L73
 
-〔18〕Codex 子任务的审批出现在它自己的线程里，主线 agent 的状态里没有“等待审批”，固定版本 ce0323f 的 codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs L11–70 与 codex-rs/protocol/src/protocol.rs L1937–1953。
+〔18〕Codex 子任务的审批出现在它自己的线程里，终端界面提示用户切过去处理，固定版本 ce0323f 的 codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs L11–70。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs#L11-L70
-https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/protocol/src/protocol.rs#L1937-L1953
 
 〔19〕Muse/Hatch 归档文档：审批推送与每次购买需批准（calls-texts-notifications.md L93–120），后台任务停在审批卡片（payments-and-purchases.md L17）。脱离对话运行时把审批当失败的提示词，见同一归档 opt/hatch/bin/hatch 内嵌的 tool_rules_detached_approvals 字符串。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/calls-texts-notifications.md#L93-L120
@@ -252,3 +265,33 @@ https://github.com/openai/codex/blob/ce0323f2f2/codex-rs/history/src/heartbeat.r
 
 〔31〕Grok Bot 的 agent 间消息：priority 只在一对一发送时生效，会打断对方当前的非用户工作并立刻叫醒它，同一固定版本的 source/host/extensions/transcript/agent-to-agent-messaging.ts L38–121。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/agent-to-agent-messaging.ts#L38-L121
+
+〔32〕Grok Bot 多任务模式的 TodoWrite 待办清单（四种状态、记录后再派活、结果交到用户手上才算完成、每次被叫醒先对清单），同一固定版本的 source/host/sand-multitask.ts L55–81、packages/agent/tools/core/todo/schema.ts L9–11。清单存进对话状态见 packages/agent-kv/agent-store.ts L245–250，压缩时带进摘要见 packages/agent-summarization/durable-blocks.ts L131–136。开关 sand_multitask 见 host/extensions/experiments/extension.ts L23，注释说默认关闭、值为 true 见 shared/node/experiments/experiment-config.gen.ts L124–138。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/sand-multitask.ts#L55-L81
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/core/todo/schema.ts#L9-L11
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-kv/agent-store.ts#L245-L250
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-summarization/durable-blocks.ts#L131-L136
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/shared/node/experiments/experiment-config.gen.ts#L124-L138
+
+〔33〕Grok Bot 待叫醒标记（存于 host-pending-wakes.json，重启后重新盯上长命令和云端 agent，丢失的 session 以结果不明通知主线，超过 48 小时丢弃），同一固定版本的 source/host/extensions/transcript/pending-wake-rearm.ts L6、L112–127、L171–262，文件名见 source/host/durable-file-policy.ts L3。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/pending-wake-rearm.ts#L6-L262
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/durable-file-policy.ts#L2-L3
+
+〔34〕Grok Bot 欠用户回复的记录（存于 ack-obligations.json，最多再叫醒三次，不许声称完成看不到的工作），同一固定版本的 source/host/extensions/transcript/ack-obligations.ts L6–9 与 sand-ack-obligation-store.ts。
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/ack-obligations.ts#L6-L9
+https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/sand-ack-obligation-store.ts
+
+〔35〕Muse/Hatch 跟踪项（tracking.create / set_status / create_entry 等工具说明：用户没要求也要跟踪、当前状态行由系统按进展更新、escalation 升级规则、只有 active 和 completed、按证据主动关闭、每项配 workspace/goals/<slug>/GOAL.md 工作笔记），以及 goals.goals 与 goals.updates 两张表的 SQL，均为归档 opt/hatch/bin/hatch 内嵌字符串，未对照线上运行。归档文档里的用户目标见 home/hatch/docs/goals.md L1–45。
+https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/opt/hatch/bin/hatch
+https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/goals.md#L1-L45
+
+〔36〕dots 的 action-items 技能（泄露的提示词，非官方）：共享记忆里的 /action_items.md，字段含 status、blocked、blocked_by、waiting_on，确认结果才标 done，关闭七天后归档，Dreamer 只读，asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/skills/action-items/SKILL.md L8–50，以及 OpenAI/dots/dreamer.md L7、L37、L62。
+https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/skills/action-items/SKILL.md#L8-L50
+https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/dreamer.md#L7
+
+〔37〕Codex 的 thread 目标（goals，Stable，默认开启），固定版本 ce0323f 的 codex-rs/features/src/lib.rs L393–394、L1919–1923。存储见 codex-rs/state/goals_migrations/0001_thread_goals.sql 与 codex-rs/state/src/sqlite.rs L42（goals_1.sqlite），工具与状态限制见 codex-rs/ext/goal/src/spec.rs L25–94，闲下来自动续做见 codex-rs/ext/goal/src/extension.rs L180–198，完成审核与三轮卡住规则见 codex-rs/ext/goal/templates/goals/continuation.md L35–56。dots 提示词中未见此机制。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1919-L1923
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/state/goals_migrations/0001_thread_goals.sql
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/ext/goal/src/spec.rs#L25-L94
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/ext/goal/src/extension.rs#L180-L198
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/ext/goal/templates/goals/continuation.md#L35-L56
