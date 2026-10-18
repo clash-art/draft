@@ -111,7 +111,7 @@ thread 驱动的 harness 也有记忆，personal agent 在这件事上更激进�
 
 ### 放进上下文：一条不结束的对话流
 
-摘要和压缩，thread 驱动的 harness 也有。它们压缩主要是为了省 token，让一件事在上下文里放得下，常见做法是让主线停下来，等压缩做完再继续，Codex 默认的上下文压缩就是这样〔7〕。thread 迟早会结束，等一下影响不大。personal agent 的对话没有终点，用户消息、定时任务、交出去的工作跑完的通知会一直接进来，压缩时停下来，就可能晾着刚发来的消息。
+摘要和压缩，thread 驱动的 harness 也有。常见做法是等上下文快满了再压，主线停下来等摘要写完，每个窗口只压一次，这样最省 token。想让用户不用等，就得在后台提前压缩，在上下文还没满时开始准备摘要。Codex 的后台压缩默认在上下文用到 65% 时开始，摘要一出来就换上，换得更早，压得也更勤，没用上或中途作废的摘要照样计费〔37〕。thread 迟早会结束，等一下影响不大。personal agent 的对话没有终点，用户消息、定时任务、交出去的工作跑完的通知会一直接进来，压缩时停下来，就可能晾着刚发来的消息。
 
 三个案例里能看到两种接法。Grok Bot 的重建代码里，每个 agent 只有一条对话流，用户消息、定时任务和工作完成的通知都进这一条。历史长了，就在原地压成摘要，记忆每轮放进系统提示〔20〕。Muse/Hatch 的主对话也是一条持续、会压缩的对话。定时任务和事件触发的检查，则交给脱离对话运行的 worker。按二进制里的提示词，worker 只拿到任务说明和记忆文件这类工作区文件，跑完把结果交回主 agent，由主 agent 决定怎么处理〔21〕。
 
@@ -284,3 +284,8 @@ https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad
 〔36〕dots 的 action-items 技能（泄露的提示词，非官方）：共享记忆里的 /action_items.md，字段含 status、blocked、blocked_by、waiting_on，确认结果才标 done，关闭七天后归档，Dreamer 只读，asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/skills/action-items/SKILL.md L8–50，以及 OpenAI/dots/dreamer.md L7、L37、L62。
 https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/skills/action-items/SKILL.md#L8-L50
 https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/dreamer.md#L7
+
+〔37〕Codex 后台压缩的启动阈值默认 65%，作废的请求已用的 token 照样计费，固定版本 ce0323f 的 codex-rs/core/src/config/mod.rs L226、codex-rs/core/src/session/async_compaction.rs L1–2，摘要就绪即换上见 codex-rs/core/src/session/turn.rs L1385。
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/config/mod.rs#L226
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/async_compaction.rs#L1-L2
+https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/turn.rs#L1385
