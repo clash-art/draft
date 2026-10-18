@@ -93,13 +93,13 @@ Codex 也能把子任务交给专门的 work agent session。这项功能是稳�
 
 ## 03 自己搭 harness 时，我会先想清楚什么
 
-自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史，跨 thread 的记忆功能默认关闭〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
+自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。Codex 就是这样，恢复一个 thread 时，读回的是这个 thread 自己的历史〔22〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
 
 ### 记住什么：更勤、更宽，也看得更多
 
 thread 驱动的 harness 也有记忆，personal agent 在这件事上更激进。
 
-先是记得更勤。Grok Bot 的重建代码里，每轮对话结束都会再跑一遍模型，从这一轮里提取该记的事，隔几轮还会写一条经过记录〔23〕。Muse/Hatch 有定时整理记忆的任务，每小时把新对话并进记忆文件，每晚再回看一遍最近的对话〔24〕。Claude Code 的自动记忆由模型自己判断要不要写，官方文档也说它不会每次都记〔25〕。Codex 的记忆功能默认关闭，打开后也只在新会话开始时，回头整理以前的会话〔26〕。
+先是记得更勤。Grok Bot 的重建代码里，每轮对话结束都会再跑一遍模型，从这一轮里提取该记的事，隔几轮还会写一条经过记录〔23〕。Muse/Hatch 有定时整理记忆的任务，每小时把新对话并进记忆文件，每晚再回看一遍最近的对话〔24〕。Claude Code 的自动记忆由模型自己判断要不要写，官方文档也说它不会每次都记〔25〕。Codex 的记忆功能只在新会话开始时，回头整理以前的会话〔26〕。
 
 记的范围也更宽。Grok Bot 除了用户档案，还记经过日志，以及同一用户所有助手共享的用户事实。Muse/Hatch 给每个人、每个群单独建档。Claude Code 的自动记忆则按代码仓库分开存，每个项目一份〔25〕。
 
@@ -225,9 +225,8 @@ https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8
 〔21〕Muse/Hatch 定时任务和事件检查交给脱离对话运行的 worker，结果交回主 agent，主对话从最近的压缩点恢复。见归档 opt/hatch/bin/hatch 内嵌的调度 worker 与 hook worker 提示词字符串，以及 home/hatch/docs/channel-availability.md L52–60。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/channel-availability.md#L52-L60
 
-〔22〕Codex 恢复 thread 时读回该 thread 自己的记录，跨 thread 的记忆功能默认关闭。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187、codex-rs/features/src/lib.rs L1291–1296。
+〔22〕Codex 恢复 thread 时读回该 thread 自己的记录。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/rollout/src/recorder.rs#L1172-L1187
-https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/features/src/lib.rs#L1291-L1296
 
 〔23〕Grok Bot 每轮提取记忆、定期写经过记录、用新事实覆盖旧事实并让旧记忆淡出。同一固定版本的 runner/turn-settle.ts L364、runner/turn-memory.ts L42–113、runner/sand-memory.ts L1–18、L206–229。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/turn-memory.ts#L42-L113
@@ -241,7 +240,7 @@ https://code.claude.com/docs/en/memory
 Claude Code 子任务只交回最终报告：
 https://code.claude.com/docs/en/sub-agents
 
-〔26〕Codex 记忆功能默认关闭，开启后在新会话开始时整理以前的会话。固定版本 ce0323f 的 codex-rs/features/src/lib.rs L1291–1296、codex-rs/memories/README.md L29–41。主线等待子任务时只拿到最后一条消息：codex-rs/core/src/tools/handlers/multi_agents_spec.rs L293。
+〔26〕Codex 记忆功能在新会话开始时整理以前的会话。固定版本 ce0323f 的 codex-rs/memories/README.md L29–41。主线等待子任务时只拿到最后一条消息：codex-rs/core/src/tools/handlers/multi_agents_spec.rs L293。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/memories/README.md#L29-L41
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L293
 
