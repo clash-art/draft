@@ -24,7 +24,7 @@ Kevin Rose 在 Tim Ferriss 的播客〔1〕里讲过两件 Instinct 帮上忙的
 
 这四个要求里，有一部分 thread 驱动的 harness 已经有现成做法。Codex 和 Claude Code 都能把用户的新消息排到下一轮或插进当前这一轮，能把长命令放进后台进程，也能把子任务交给专门的 work agent session〔8〕〔9〕〔10〕〔15〕。对 personal agent 来说，需要做的优化有两类。
 
-一类是改这些机制的默认做法。插进当前这一轮的新消息，Codex 里叫 steer，原本要等模型这次输出完或工具调用结束，才交给模型，其他大多数 harness 现在还是这样〔9〕。personal agent 需要新消息尽快影响正在做的事，效果接近抢占。Codex 最近的改动就接近这种做法。从 10 月发布的 0.163.0 正式版起，它默认打开 instant_interrupt 开关，代码里管这种做法叫 preempt。打开后 steer 消息一到，harness 就取消正在进行的模型请求，把新消息并进上下文重新请求。已经启动的工具照样跑完，排到下一轮的消息照旧等着〔11〕〔27〕。
+一类是改这些机制的默认做法。插进当前这一轮的新消息，Codex 里叫 steer，原本要等模型这次输出完或工具调用结束，才交给模型，其他大多数 harness 现在还是这样〔9〕。personal agent 需要新消息尽快影响正在做的事，效果接近抢占。Codex 最近的改动就接近这种做法。从 10 月发布的 0.163.0 正式版起，它默认打开 instant_interrupt 开关，代码里管这种做法叫 preempt。打开后 steer 消息一到，harness 就取消正在进行的模型请求，把新消息并进上下文重新请求。已经启动的工具照样跑完，排到下一轮的消息照旧等着〔11〕〔26〕。
 
 另一类是 thread 驱动的 harness 很少碰到的情况。少让用户操心，用户多半不在场，助手得自己做完，该问时把请求送到用户面前。主动发现，该提醒什么、什么时候说，都得它自己判断。
 
@@ -38,31 +38,31 @@ Grok Bot 下功夫最多的是持续在场。用户发来新消息，别的 agen
 
 据 Grok Bot 的非官方重建代码〔2〕，用户、其他 agent、定时任务这三种来源的事会进入三个不同的队列。Grok Bot 每次做完手上的事、要挑下一件时，先看用户队列里有没有消息，没有再看其他 agent 发来的，两边都空了，才处理定时任务、交出去的工作跑完的通知这类事。
 
-排在前面，也还要看能不能抢占。其他 agent 发来的普通消息，要等当前这轮工作结束。一对一发送时标成 priority 的消息，能打断对方手上非用户的工作，马上把它叫醒〔30〕。正在处理的用户任务受保护。所以，一条消息多久能生效，还得看它有没有抢占权限，以及当前在忙什么。优先级消息能影响调度，但不能替用户批准对外动作。
+排在前面，也还要看能不能抢占。其他 agent 发来的普通消息，要等当前这轮工作结束。一对一发送时标成 priority 的消息，能打断对方手上非用户的工作，马上把它叫醒〔29〕。正在处理的用户任务受保护。所以，一条消息多久能生效，还得看它有没有抢占权限，以及当前在忙什么。优先级消息能影响调度，但不能替用户批准对外动作。
 
 工作也可以交出去。Task 工具会把一块工作交给专门的 work agent session，可以让它在后台运行，跑完发一条通知回来〔14〕。它还在跑时，用户改了主意，主线可以打断它这一轮，立刻换上新指令。它跑完以后，主线还能接着用同一个 session，让它带着上一次的执行记录继续做。这几项都由开关控制，重建代码里看不出线上默认开了哪些。这个 session 不能直接跟用户说话，碰到需要授权的操作，审批请求还是会送到用户面前〔16〕。
 
-交出去的工作或命令跑完，主线会被叫醒看结果，但不会自动告诉用户。按重建代码里叫醒主线时附带的指令，结果是新的、跟用户有关，或者用户说过要等它，才发一条消息告诉用户。过时、重复或已经处理过的，就静默结束〔19〕。在这份重建代码里，做完事和告诉用户是两个分开的动作。
+交出去的工作或命令跑完，主线会被叫醒看结果，但不会自动告诉用户。按重建代码里叫醒主线时附带的指令，结果是新的、跟用户有关，或者用户说过要等它，才发一条消息告诉用户。过时、重复或已经处理过的，就静默结束〔18〕。在这份重建代码里，做完事和告诉用户是两个分开的动作。
 
-Grok Bot 用一份待办清单记着用户交代的事。按重建代码，主线只负责回话和派活，成块的工作交给 work agent session，再用 TodoWrite 工具维护一份待办清单〔31〕。用户提了要求，先记成一条待办，再派出去。每条待办有四种状态：还没开始、进行中、已完成、已取消。几个 session 同时在跑，就有几条待办同时处在进行中。已完成指的是结果已经交到用户手上，session 跑完还不算。主线每次被叫醒，都要先对一遍清单，看哪些在跑、哪些有了结果、下一步派什么。清单存在对话状态里，压缩上下文时，最新的清单会原样带进摘要。服务中途断掉的话，系统会核对没跑完的工作和没回复的消息，再叫醒主线补上〔32〕〔33〕。
+Grok Bot 用一份待办清单记着用户交代的事。按重建代码，主线只负责回话和派活，成块的工作交给 work agent session，再用 TodoWrite 工具维护一份待办清单〔30〕。用户提了要求，先记成一条待办，再派出去。每条待办有四种状态：还没开始、进行中、已完成、已取消。几个 session 同时在跑，就有几条待办同时处在进行中。已完成指的是结果已经交到用户手上，session 跑完还不算。主线每次被叫醒，都要先对一遍清单，看哪些在跑、哪些有了结果、下一步派什么。清单存在对话状态里，压缩上下文时，最新的清单会原样带进摘要。服务中途断掉的话，系统会核对没跑完的工作和没回复的消息，再叫醒主线补上〔31〕〔32〕。
 
 Muse/Hatch
 
 Muse/Hatch 下功夫最多的是 proactive。Muse 的官方设计文章〔4〕里说，助手会按时间和相关事件持续做事，这些工作有了结果，再判断要不要提醒。下面的材料出自归档。
 
-Muse 主动找用户有三个入口。一是主动推送，每条只带一件值得打扰的事，可能是记忆里值得一提的事、需要关注的目标、一封待读的信，或者最近对话的后续，每条都写明来自哪里。二是 Feed，系统按自己定的时间表生成帖子，每篇都是专门为这个用户写的。三是 Ideas，助手自己想出可以替用户做的事，用户点一下，它就去做〔38〕。
+Muse 主动找用户有三个入口。一是主动推送，每条只带一件值得打扰的事，可能是记忆里值得一提的事、需要关注的目标、一封待读的信，或者最近对话的后续，每条都写明来自哪里。二是 Feed，系统按自己定的时间表生成帖子，每篇都是专门为这个用户写的。三是 Ideas，助手自己想出可以替用户做的事，用户点一下，它就去做〔37〕。
 
-推送会自己控制节奏。普通的事等用户醒着、手头不忙时再送，一天最多一次，时间要紧的放宽一些，真正紧急的马上送。用户想多听什么、不想听什么、什么时段、用什么格式，都记在一个偏好文件里，Muse 每次写推送前都会把它从头读一遍〔38〕。我认为这一层决定的是什么时候说，跟说什么同样要紧。
+推送会自己控制节奏。普通的事等用户醒着、手头不忙时再送，一天最多一次，时间要紧的放宽一些，真正紧急的马上送。用户想多听什么、不想听什么、什么时段、用什么格式，都记在一个偏好文件里，Muse 每次写推送前都会把它从头读一遍〔37〕。我认为这一层决定的是什么时候说，跟说什么同样要紧。
 
 每次挑选，最多选一件，也可以一件都不选，候选要先和最近对话、记忆、历史送达记录对一遍，避免用户已经办完或已经收到同一提醒〔5〕。
 
-持续发现，也不必每次都启动完整推理。定时任务负责到点触发。要看有没有变化，归档里还有一种事件 hook（event hook）：用一个 Bash 轮询脚本检查条件，条件成立时才唤醒负责这件事的 agent〔5〕。Claude Code 的 Monitor 工具思路类似，也是让一个脚本一直盯着，有输出才通知模型。不过 Monitor 的每次监视都有期限，默认 5 分钟，最长 30 分钟，到期就结束，会话结束也会停〔37〕。Hatch 的事件 hook 跟定时任务一样属于自动化，按固定间隔轮询，没有这个期限。我认为这让 Hatch 的 proactive 粒度更细：它可以盯住一个具体条件，条件一变就叫醒负责的 agent，用不着等下一次定时任务，用户不在场时也能一直挂着。
+持续发现，也不必每次都启动完整推理。定时任务负责到点触发。要看有没有变化，归档里还有一种事件 hook（event hook）：用一个 Bash 轮询脚本检查条件，条件成立时才唤醒负责这件事的 agent〔5〕。Claude Code 的 Monitor 工具思路类似，也是让一个脚本一直盯着，有输出才通知模型。不过 Monitor 的每次监视都有期限，默认 5 分钟，最长 30 分钟，到期就结束，会话结束也会停〔36〕。Hatch 的事件 hook 跟定时任务一样属于自动化，按固定间隔轮询，没有这个期限。我认为这让 Hatch 的 proactive 粒度更细：它可以盯住一个具体条件，条件一变就叫醒负责的 agent，用不着等下一次定时任务，用户不在场时也能一直挂着。
 
-Muse/Hatch 把答应过的事建成跟踪项。拿机票举例，邮箱里来了一封航班确认，助手不用问用户，先查有没有同一趟行程的跟踪项，没有就建一个，再把比价和航班动态两个定时任务挂上去。跟踪项结束，这两个任务一起删掉〔34〕。预订、快递、提醒、出行这类超出当前对话的事，用户没说要跟，助手也要建一个跟踪项。订好了、付完款，只要后续的事还没完，跟踪项就一直开着。跟踪项和用户自己设的目标分开存。
+Muse/Hatch 把答应过的事建成跟踪项。拿机票举例，邮箱里来了一封航班确认，助手不用问用户，先查有没有同一趟行程的跟踪项，没有就建一个，再把比价和航班动态两个定时任务挂上去。跟踪项结束，这两个任务一起删掉〔33〕。预订、快递、提醒、出行这类超出当前对话的事，用户没说要跟，助手也要建一个跟踪项。订好了、付完款，只要后续的事还没完，跟踪项就一直开着。跟踪项和用户自己设的目标分开存。
 
 每个跟踪项有一行当前状态，写最新的结果、在等什么，或者卡在哪里。助手每记一条进展，系统都会看这一行要不要跟着更新。用户说过某天前没回音就提醒我，这个条件可以记成一条升级规则，到期时告诉用户，或者请用户决定。每个跟踪项还配一个笔记文件，记助手自己的工作笔记，接着做之前要先读它。跟踪项只分进行中和已完成两种状态。工具说明要求，有证据表明事情已经结束，就主动关掉，比如快递签收、活动结束、用户取消。光是一直没动静，或者只做完其中一步，都不算结束。
 
-对外发送、付款这类操作，每次都要用户批准，审批会推送到手机上〔18〕。归档里也有对不上的地方。文档说定时任务这类没人在旁边的任务，可以停在审批卡片上等用户，二进制里给脱离对话运行的 worker 的提示词却说，审批可能永远等不来，要当作失败换别的办法。实际运行时按哪一种来，光看归档判断不了。
+对外发送、付款这类操作，每次都要用户批准，审批会推送到手机上〔17〕。归档里也有对不上的地方。文档说定时任务这类没人在旁边的任务，可以停在审批卡片上等用户，二进制里给脱离对话运行的 worker 的提示词却说，审批可能永远等不来，要当作失败换别的办法。实际运行时按哪一种来，光看归档判断不了。
 
 执行中来了新消息，只要模型还没调用工具、没开始输出最终回复，Muse/Hatch 会把旧请求和新消息合成一个请求重跑。工具已经发出去、正在压缩上下文，或者新消息来源不同，新消息就排到这一轮之后〔5〕。
 
@@ -70,45 +70,43 @@ dots/Codex
 
 dots/Codex 这一节主要看两件事。一是 Codex 这层的快速响应。二是 dots 怎么做主动发现：Dreamer 负责找新情况，要不要告诉用户由主助手决定。
 
-OpenAI 的 Dominik Kundel 在公开文章〔7〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。主动跟进靠的是 dots 自己加的一层。按泄露的 dots 提示词〔28〕，主助手会派出叫 Dreamer 的调研 agent，按心跳定时运行。它先读最近的对话、用户笔记和待办，再去已连接的应用里找新情况。Dreamer 不能联系用户，也不能替用户做事，只有发现有用的新东西，或者碰到要主助手处理的阻碍时，才通知主助手一次，告不告诉用户由主助手决定。每天凌晨还有一次复盘，回顾当天的对话，更新用户的偏好和优先级。Muse/Hatch 让一个 agent 自己挑一件事提醒，dots 则让一个 agent 负责发现，另一个决定说不说。开源 Codex 里找不到 Dreamer，只能看到它把定时心跳触发的消息和用户亲自发的消息分开记录〔29〕。
+OpenAI 的 Dominik Kundel 在公开文章〔7〕里提到，dots 基于开源的 Codex harness。同一篇文章里也说，dots 会主动跟进工作，还能设置按时间或事件触发的自动化。主动跟进靠的是 dots 自己加的一层。按泄露的 dots 提示词〔27〕，主助手会派出叫 Dreamer 的调研 agent，按心跳定时运行。它先读最近的对话、用户笔记和待办，再去已连接的应用里找新情况。Dreamer 不能联系用户，也不能替用户做事，只有发现有用的新东西，或者碰到要主助手处理的阻碍时，才通知主助手一次，告不告诉用户由主助手决定。每天凌晨还有一次复盘，回顾当天的对话，更新用户的偏好和优先级。Muse/Hatch 让一个 agent 自己挑一件事提醒，dots 则让一个 agent 负责发现，另一个决定说不说。开源 Codex 里找不到 Dreamer，只能看到它把定时心跳触发的消息和用户亲自发的消息分开记录〔28〕。
 
-Dreamer 读的待办，是共享记忆里的一份文件。按泄露的 dots 技能说明，主助手把用户重要的待办、承诺和截止日期都记在这里〔35〕。用户没提、还没开始做的事，只要对用户重要，也要记上。每条待办有四种状态：待办、进行中、已完成、已取消。卡点另外记三栏：是不是卡住了，被清单里哪几条卡住，现在在等谁。在等谁分成等用户、等助手自己、等别人或外部服务，以及什么都不等。确认结果已经达成，才能标成已完成。截止日期过了，也要先查清发生了什么。关掉的事留七天，再挪进归档。这份文件由主助手或负责记忆的 work agent session 来改。Dreamer 只读不改，调研完告诉主助手哪些该加、该改、该关〔28〕。
+Dreamer 读的待办，是共享记忆里的一份文件。按泄露的 dots 技能说明，主助手把用户重要的待办、承诺和截止日期都记在这里〔34〕。用户没提、还没开始做的事，只要对用户重要，也要记上。每条待办有四种状态：待办、进行中、已完成、已取消。卡点另外记三栏：是不是卡住了，被清单里哪几条卡住，现在在等谁。在等谁分成等用户、等助手自己、等别人或外部服务，以及什么都不等。确认结果已经达成，才能标成已完成。截止日期过了，也要先查清发生了什么。关掉的事留七天，再挪进归档。这份文件由主助手或负责记忆的 work agent session 来改。Dreamer 只读不改，调研完告诉主助手哪些该加、该改、该关〔27〕。
 
 执行中的新消息和工具怎么处理，要看底层的 Codex。下面几段来自 Codex 的测试定义和源码，只能说明 Codex 这一层的情况，dots 的线上实现可能另有做法。
 
-Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中，用户的新指令有两种发法，steer 插进当前 turn，queue 排到下一轮〔8〕。插进当前 turn 的新指令，现在默认会直接中止当前推理，已经启动的工具还是会跑完〔6〕〔11〕〔27〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。工具没做完，下一次推理也可能要等。
+Codex 把模型推理、工具执行和整轮 turn 分开管理。任务进行中，用户的新指令有两种发法，steer 插进当前 turn，queue 排到下一轮〔8〕。插进当前 turn 的新指令，现在默认会直接中止当前推理，已经启动的工具还是会跑完〔6〕〔11〕〔26〕。推理停了，工具造成的外部影响不会自动撤销，得另外处理。工具没做完，下一次推理也可能要等。
 
 耗时长的命令，会先等一会儿。跑完了就交回结果，没跑完就交回一个进程 ID，之后接着查同一个进程，不用重跑一遍。
 
 打开还在开发中的 Code Mode 后，模型写的代码片段也能这样转到后台继续跑。用户 steer 时，它会接着跑。直接打断这个 turn，它就会被终止，长命令的后台进程则会留下来〔11〕。
 
-Codex 也能把子任务交给专门的 work agent session。这项功能是稳定版，默认开启〔15〕。主线可以开一个 session 让它自己跑，跑完会收到通知。它还在跑时，主线能给它发新指令，必要时立刻打断，让它改方向。关掉的 session 之后还能恢复，接着收指令。子任务碰到需要授权的操作，审批会出现在它自己的线程里，终端界面会提示用户切过去处理〔17〕。
-
-于是，助手得同时跟住两边：用户已经聊到新的事情，原来的命令、代码执行或 work agent session 可能还在跑。它要用原来的标识继续查，等结果回来后，弄清这是哪件事的结果、现在还有没有用，以及是否已经对外部系统产生了影响。
+于是，助手得同时跟住两边：用户已经聊到新的事情，原来的命令或代码执行可能还在跑。它要用原来的标识继续查，等结果回来后，弄清这是哪件事的结果、现在还有没有用，以及是否已经对外部系统产生了影响。
 
 03 自己搭 harness 时，我会先想清楚什么
 
-自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。以 Codex 为例，恢复一个 thread 时，读回的是这个 thread 自己的历史〔21〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
+自己搭 personal agent 的 harness，先要看清它和常见的 thread 驱动的 harness 差在哪。用户开一个 thread，交代一件事，在旁边看着它做，做完这个 thread 就告一段落。以 Codex 为例，恢复一个 thread 时，读回的是这个 thread 自己的历史〔20〕。personal agent 要连续在线好几天，手上同时挂着几件事。叫醒它的可能是用户，也可能是定时任务，或者交出去的工作跑完了，这时用户多半不在场。下面几件事，thread 里都有对应的做法，放到这种场景下，要求就变了。
 
 记住什么：更勤、更宽，也看得更多
 
 thread 驱动的 harness 也有记忆，personal agent 在这件事上更激进。
 
-先是记得更勤。Grok Bot 的重建代码里，每轮对话结束都会再跑一遍模型，从这一轮里提取该记的事，隔几轮还会写一条经过记录〔22〕。Muse/Hatch 有定时整理记忆的任务，每小时把新对话并进记忆文件，每晚再回看一遍最近的对话〔23〕。Claude Code 的自动记忆由模型自己判断要不要写，官方文档也说它不会每次都记〔24〕。Codex 要等开了新会话，才回头整理以前的会话〔25〕。
+先是记得更勤。Grok Bot 的重建代码里，每轮对话结束都会再跑一遍模型，从这一轮里提取该记的事，隔几轮还会写一条经过记录〔21〕。Muse/Hatch 有定时整理记忆的任务，每小时把新对话并进记忆文件，每晚再回看一遍最近的对话〔22〕。Claude Code 的自动记忆由模型自己判断要不要写，官方文档也说它不会每次都记〔23〕。Codex 要等开了新会话，才回头整理以前的会话〔24〕。
 
-记的范围也更宽。Grok Bot 除了用户档案，还记经过日志，以及同一用户所有助手共享的用户事实。Muse/Hatch 给每个人、每个群单独建档。Claude Code 的自动记忆则按代码仓库分开存，每个项目一份〔24〕。
+记的范围也更宽。Grok Bot 除了用户档案，还记经过日志，以及同一用户所有助手共享的用户事实。Muse/Hatch 给每个人、每个群单独建档。Claude Code 的自动记忆则按代码仓库分开存，每个项目一份〔23〕。
 
-记忆也跟着压缩更新。Grok Bot 每轮都把记忆放进系统提示，压缩时顺带换上最新的记忆。Muse/Hatch 的二进制里有压缩前先写一次记忆的字样，文档里没有对应说明。Claude Code 压缩以后，会重新读一遍用户写的记忆文件〔24〕。
+记忆也跟着压缩更新。Grok Bot 每轮都把记忆放进系统提示，压缩时顺带换上最新的记忆。Muse/Hatch 的二进制里有压缩前先写一次记忆的字样，文档里没有对应说明。Claude Code 压缩以后，会重新读一遍用户写的记忆文件〔23〕。
 
-最明显的差别，在会不会主动去看派出去的 session 做了什么。Grok Bot 能看到每个还在跑的 work agent session 最近调用了哪些工具，也能读它的实时运行记录。系统提示要求它主动去查，告诉用户任务还在跑之前尤其要查一遍〔26〕。thread 驱动的 harness 默认只拿结果。Codex 的主线等子任务结束，拿到的是它最后一条消息。Claude Code 的子任务只交回一份总结，运行记录虽然存在磁盘上，却没有工具或提示让它去读。
+最明显的差别，在会不会主动去看派出去的 session 做了什么。Grok Bot 能看到每个还在跑的 work agent session 最近调用了哪些工具，也能读它的实时运行记录。系统提示要求它主动去查，告诉用户任务还在跑之前尤其要查一遍〔25〕。thread 驱动的 harness 默认只拿结果。Codex 的主线等子任务结束，拿到的是它最后一条消息。Claude Code 的子任务只交回一份总结，运行记录虽然存在磁盘上，却没有工具或提示让它去读。
 
-记得多，代价是记住的东西也会过时。上个月的偏好可能早就变了，定好的事也可能被推翻。Grok Bot 和 Muse/Hatch 都会用新的说法覆盖旧的，Grok Bot 还会让旧记忆慢慢淡出〔22〕〔23〕。助手要是照着旧信息办事，用户反而得多操一份心。
+记得多，代价是记住的东西也会过时。上个月的偏好可能早就变了，定好的事也可能被推翻。Grok Bot 和 Muse/Hatch 都会用新的说法覆盖旧的，Grok Bot 还会让旧记忆慢慢淡出〔21〕〔22〕。助手要是照着旧信息办事，用户反而得多操一份心。
 
 放进上下文：一条不结束的对话流
 
-摘要和压缩，thread 驱动的 harness 也有。常见做法是等上下文快满了再压，主线停下来等摘要写完，每个窗口只压一次，这样最省 token。想让用户不用等，就得在后台提前压缩，在上下文还没满时开始准备摘要。Codex 的后台压缩打开后，默认在上下文用到 65% 时开始，摘要一出来就换上，换得更早，压得也更勤，没用上或中途作废的摘要照样计费〔36〕。在 thread 里，用户等一会儿还能接受。personal agent 的用户只想把事交出去，马上听到一句记下了。
+摘要和压缩，thread 驱动的 harness 也有。常见做法是等上下文快满了再压，主线停下来等摘要写完，每个窗口只压一次，这样最省 token。想让用户不用等，就得在后台提前压缩，在上下文还没满时开始准备摘要。Codex 的后台压缩打开后，默认在上下文用到 65% 时开始，摘要一出来就换上，换得更早，压得也更勤，没用上或中途作废的摘要照样计费〔35〕。在 thread 里，用户等一会儿还能接受。personal agent 的用户只想把事交出去，马上听到一句记下了。
 
-三个案例里能看到两种接法。Grok Bot 的重建代码里，每个 agent 只有一条对话流，用户消息、定时任务和工作完成的通知都进这一条。历史长了，就在原地压成摘要，记忆每轮放进系统提示〔19〕。Muse/Hatch 的主对话也是一条持续、会压缩的对话。定时任务和事件触发的检查，则交给脱离对话运行的 worker。按二进制里的提示词，worker 只拿到任务说明和记忆文件这类工作区文件，跑完把结果交回主 agent，由主 agent 决定怎么处理〔20〕。
+三个案例里能看到两种接法。Grok Bot 的重建代码里，每个 agent 只有一条对话流，用户消息、定时任务和工作完成的通知都进这一条。历史长了，就在原地压成摘要，记忆每轮放进系统提示〔18〕。Muse/Hatch 的主对话也是一条持续、会压缩的对话。定时任务和事件触发的检查，则交给脱离对话运行的 worker。按二进制里的提示词，worker 只拿到任务说明和记忆文件这类工作区文件，跑完把结果交回主 agent，由主 agent 决定怎么处理〔19〕。
 
 Grok Bot〔3〕和 Muse/Hatch〔5〕的压缩是异步进行的，摘要在后台生成的同时，agent 还在接着处理新消息和通知。所以两家在换上摘要前，都会先补上摘要之后发生的事。压缩做得再及时，只要漏掉后来的变化，接下来的判断就可能建立在旧状态上。
 
@@ -200,88 +198,85 @@ https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/co
 〔16〕Grok Bot 交出去的 work agent session 不能直接问用户、审批请求仍送到用户面前，同一固定版本的 source/host/runner/system-prompt.ts L59–73。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt.ts#L59-L73
 
-〔17〕Codex 子任务的审批出现在它自己的线程里，终端界面提示用户切过去处理，固定版本 ce0323f 的 codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs L11–70。
-https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/tui/src/bottom_pane/pending_thread_approvals.rs#L11-L70
-
-〔18〕Muse/Hatch 归档文档：审批推送与每次购买需批准（calls-texts-notifications.md L93–120），后台任务停在审批卡片（payments-and-purchases.md L17）。脱离对话运行时把审批当失败的提示词，见同一归档 opt/hatch/bin/hatch 内嵌的 tool_rules_detached_approvals 字符串。
+〔17〕Muse/Hatch 归档文档：审批推送与每次购买需批准（calls-texts-notifications.md L93–120），后台任务停在审批卡片（payments-and-purchases.md L17）。脱离对话运行时把审批当失败的提示词，见同一归档 opt/hatch/bin/hatch 内嵌的 tool_rules_detached_approvals 字符串。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/calls-texts-notifications.md#L93-L120
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/payments-and-purchases.md#L17
 
-〔19〕Grok Bot 每个 agent 一条对话流，定时任务、工作完成通知和用户消息进同一个 session，摘要在原地压缩，记忆每轮放进系统提示。同一固定版本的 extensions/transcript/session-runtime.ts L390–397、automation-run-path.ts L175–236、completion-revivals.ts L163–191（叫醒主线时附带的指令见同一文件 L13–82：结果新且相关才发消息，否则静默结束）、runner/system-prompt-assembly.ts L155–193。
+〔18〕Grok Bot 每个 agent 一条对话流，定时任务、工作完成通知和用户消息进同一个 session，摘要在原地压缩，记忆每轮放进系统提示。同一固定版本的 extensions/transcript/session-runtime.ts L390–397、automation-run-path.ts L175–236、completion-revivals.ts L163–191（叫醒主线时附带的指令见同一文件 L13–82：结果新且相关才发消息，否则静默结束）、runner/system-prompt-assembly.ts L155–193。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/session-runtime.ts#L390-L397
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/automation-run-path.ts#L175-L236
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/completion-revivals.ts#L163-L191
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/completion-revivals.ts#L13-L82
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt-assembly.ts#L155-L193
 
-〔20〕Muse/Hatch 定时任务和事件检查交给脱离对话运行的 worker，结果交回主 agent，主对话从最近的压缩点恢复。见归档 opt/hatch/bin/hatch 内嵌的调度 worker 与 hook worker 提示词字符串，以及 home/hatch/docs/channel-availability.md L52–60。
+〔19〕Muse/Hatch 定时任务和事件检查交给脱离对话运行的 worker，结果交回主 agent，主对话从最近的压缩点恢复。见归档 opt/hatch/bin/hatch 内嵌的调度 worker 与 hook worker 提示词字符串，以及 home/hatch/docs/channel-availability.md L52–60。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/channel-availability.md#L52-L60
 
-〔21〕Codex 恢复 thread 时读回该 thread 自己的记录。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187。
+〔20〕Codex 恢复 thread 时读回该 thread 自己的记录。固定版本 ce0323f 的 codex-rs/rollout/src/recorder.rs L1172–1187。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/rollout/src/recorder.rs#L1172-L1187
 
-〔22〕Grok Bot 每轮提取记忆、定期写经过记录、用新事实覆盖旧事实并让旧记忆淡出。同一固定版本的 runner/turn-settle.ts L364、runner/turn-memory.ts L42–113、runner/sand-memory.ts L1–18、L206–229。
+〔21〕Grok Bot 每轮提取记忆、定期写经过记录、用新事实覆盖旧事实并让旧记忆淡出。同一固定版本的 runner/turn-settle.ts L364、runner/turn-memory.ts L42–113、runner/sand-memory.ts L1–18、L206–229。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/turn-memory.ts#L42-L113
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/sand-memory.ts#L1-L229
 
-〔23〕Muse/Hatch 每小时整理记忆、每晚回看最近对话、给人和群建档、新说法覆盖旧说法。归档 home/hatch/docs/self_improvement.md L7–28。压缩前写记忆的说法来自 opt/hatch/bin/hatch 内嵌字符串。
+〔22〕Muse/Hatch 每小时整理记忆、每晚回看最近对话、给人和群建档、新说法覆盖旧说法。归档 home/hatch/docs/self_improvement.md L7–28。压缩前写记忆的说法来自 opt/hatch/bin/hatch 内嵌字符串。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/self_improvement.md#L7-L28
 
-〔24〕Claude Code 官方记忆文档：CLAUDE.md 与自动记忆。
+〔23〕Claude Code 官方记忆文档：CLAUDE.md 与自动记忆。
 https://code.claude.com/docs/en/memory
 Claude Code 子任务只交回最终报告：
 https://code.claude.com/docs/en/sub-agents
 
-〔25〕Codex 记忆功能在新会话开始时整理以前的会话。固定版本 ce0323f 的 codex-rs/memories/README.md L29–41。主线等待子任务时只拿到最后一条消息：codex-rs/core/src/tools/handlers/multi_agents_spec.rs L293。
+〔24〕Codex 记忆功能在新会话开始时整理以前的会话。固定版本 ce0323f 的 codex-rs/memories/README.md L29–41。主线等待子任务时只拿到最后一条消息：codex-rs/core/src/tools/handlers/multi_agents_spec.rs L293。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/memories/README.md#L29-L41
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L293
 
-〔26〕Grok Bot 查看还在跑的 work agent session 的状态和实时运行记录，系统提示要求主动查。同一固定版本的 runner/tools/sand-subagent-management-tools.ts L26、L89–99，runner/system-prompt.ts L179。
+〔25〕Grok Bot 查看还在跑的 work agent session 的状态和实时运行记录，系统提示要求主动查。同一固定版本的 runner/tools/sand-subagent-management-tools.ts L26、L89–99，runner/system-prompt.ts L179。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/tools/sand-subagent-management-tools.ts#L26-L99
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/runner/system-prompt.ts#L179
 
-〔27〕Codex 把“插进当前 turn 的新消息立即停下当前推理”改为默认：功能加入于 PR #48135（2026-09-25），默认开启于 PR #51812（2026-10-07），首个包含它的正式版为 rust-v0.163.0（2026-10-15 发布）。触发条件见该版本的 codex-rs/core/src/session/input_queue.rs L293–313，排队消息在 turn 进行中不进入核心（codex-rs/tui/src/chatwidget/input_flow.rs L258–262），IDE 与桌面 app 使用的 app-server 插入请求走同一路径（codex-rs/app-server/src/request_processors/turn_processor.rs L1044–1095）。
+〔26〕Codex 把“插进当前 turn 的新消息立即停下当前推理”改为默认：功能加入于 PR #48135（2026-09-25），默认开启于 PR #51812（2026-10-07），首个包含它的正式版为 rust-v0.163.0（2026-10-15 发布）。触发条件见该版本的 codex-rs/core/src/session/input_queue.rs L293–313，排队消息在 turn 进行中不进入核心（codex-rs/tui/src/chatwidget/input_flow.rs L258–262），IDE 与桌面 app 使用的 app-server 插入请求走同一路径（codex-rs/app-server/src/request_processors/turn_processor.rs L1044–1095）。
 https://github.com/openai/codex/pull/51812
 https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/features/src/lib.rs#L1207-L1212
 https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/session/input_queue.rs#L293-L313
 
-〔28〕dots 的 Dreamer 提示词（泄露的系统提示词，非官方），asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/dreamer.md。
+〔27〕dots 的 Dreamer 提示词（泄露的系统提示词，非官方），asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/dreamer.md。
 https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc/OpenAI/dots/dreamer.md
 
-〔29〕Codex 区分定时心跳触发的输入（automation_heartbeat_scheduled），固定版本 ce0323f 的 codex-rs/history/src/heartbeat.rs。同一版本中未见 Dreamer 相关代码。
+〔28〕Codex 区分定时心跳触发的输入（automation_heartbeat_scheduled），固定版本 ce0323f 的 codex-rs/history/src/heartbeat.rs。同一版本中未见 Dreamer 相关代码。
 https://github.com/openai/codex/blob/ce0323f2f2/codex-rs/history/src/heartbeat.rs
 
-〔30〕Grok Bot 的 agent 间消息：priority 只在一对一发送时生效，会打断对方当前的非用户工作并立刻叫醒它，同一固定版本的 source/host/extensions/transcript/agent-to-agent-messaging.ts L38–121。
+〔29〕Grok Bot 的 agent 间消息：priority 只在一对一发送时生效，会打断对方当前的非用户工作并立刻叫醒它，同一固定版本的 source/host/extensions/transcript/agent-to-agent-messaging.ts L38–121。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/agent-to-agent-messaging.ts#L38-L121
 
-〔31〕Grok Bot 的 TodoWrite 待办清单（四种状态、记录后再派活、结果交到用户手上才算完成、每次被叫醒先对清单），同一固定版本的 source/host/sand-multitask.ts L55–81、packages/agent/tools/core/todo/schema.ts L9–11。清单存进对话状态见 packages/agent-kv/agent-store.ts L245–250，压缩时带进摘要见 packages/agent-summarization/durable-blocks.ts L131–136。
+〔30〕Grok Bot 的 TodoWrite 待办清单（四种状态、记录后再派活、结果交到用户手上才算完成、每次被叫醒先对清单），同一固定版本的 source/host/sand-multitask.ts L55–81、packages/agent/tools/core/todo/schema.ts L9–11。清单存进对话状态见 packages/agent-kv/agent-store.ts L245–250，压缩时带进摘要见 packages/agent-summarization/durable-blocks.ts L131–136。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/sand-multitask.ts#L55-L81
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent/tools/core/todo/schema.ts#L9-L11
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-kv/agent-store.ts#L245-L250
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/packages/agent-summarization/durable-blocks.ts#L131-L136
 
-〔32〕Grok Bot 待叫醒标记（存于 host-pending-wakes.json，重启后重新盯上长命令和云端 agent，丢失的 session 以结果不明通知主线，超过 48 小时丢弃），同一固定版本的 source/host/extensions/transcript/pending-wake-rearm.ts L6、L112–127、L171–262，文件名见 source/host/durable-file-policy.ts L3。两份磁盘记录（待叫醒标记与欠用户回复）在 source/host/extensions/transcript/extension.ts L60–66 创建。
+〔31〕Grok Bot 待叫醒标记（存于 host-pending-wakes.json，重启后重新盯上长命令和云端 agent，丢失的 session 以结果不明通知主线，超过 48 小时丢弃），同一固定版本的 source/host/extensions/transcript/pending-wake-rearm.ts L6、L112–127、L171–262，文件名见 source/host/durable-file-policy.ts L3。两份磁盘记录（待叫醒标记与欠用户回复）在 source/host/extensions/transcript/extension.ts L60–66 创建。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/extension.ts#L60-L66
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/pending-wake-rearm.ts#L6-L262
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/durable-file-policy.ts#L2-L3
 
-〔33〕Grok Bot 欠用户回复的记录（存于 ack-obligations.json，最多再叫醒三次，不许声称完成看不到的工作），同一固定版本的 source/host/extensions/transcript/ack-obligations.ts L6–9 与 sand-ack-obligation-store.ts。
+〔32〕Grok Bot 欠用户回复的记录（存于 ack-obligations.json，最多再叫醒三次，不许声称完成看不到的工作），同一固定版本的 source/host/extensions/transcript/ack-obligations.ts L6–9 与 sand-ack-obligation-store.ts。
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/ack-obligations.ts#L6-L9
 https://github.com/b-nnett/grok-bot-0.18-reconstructed/blob/a9f633e09d49a85829b8236331b9e21f7e612634/source/host/extensions/transcript/sand-ack-obligation-store.ts
 
-〔34〕Muse/Hatch 跟踪项：归档 opt/hatch/skills/duffel/SKILL.md L246–346（航班确认建一个跟踪项、比价与航班动态任务挂在跟踪项下、跟踪项结束即删任务）及 duffel/eval/tracked-flight-scenarios.yaml。另见（tracking.create / set_status / create_entry 等工具说明：用户没要求也要跟踪、当前状态行由系统按进展更新、escalation 升级规则、只有 active 和 completed、按证据主动关闭、每项配 workspace/goals/<slug>/GOAL.md 工作笔记），以及 goals.goals 与 goals.updates 两张表的 SQL，均为归档 opt/hatch/bin/hatch 内嵌字符串，未对照线上运行。归档文档里的用户目标见 home/hatch/docs/goals.md L1–45。
+〔33〕Muse/Hatch 跟踪项：归档 opt/hatch/skills/duffel/SKILL.md L246–346（航班确认建一个跟踪项、比价与航班动态任务挂在跟踪项下、跟踪项结束即删任务）及 duffel/eval/tracked-flight-scenarios.yaml。另见（tracking.create / set_status / create_entry 等工具说明：用户没要求也要跟踪、当前状态行由系统按进展更新、escalation 升级规则、只有 active 和 completed、按证据主动关闭、每项配 workspace/goals/<slug>/GOAL.md 工作笔记），以及 goals.goals 与 goals.updates 两张表的 SQL，均为归档 opt/hatch/bin/hatch 内嵌字符串，未对照线上运行。归档文档里的用户目标见 home/hatch/docs/goals.md L1–45。
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/opt/hatch/bin/hatch
 https://github.com/win4r/MuseAI-Skills/blob/38bbb45a2c5a0f70de975f6387385770b9ad8aac/home/hatch/docs/goals.md#L1-L45
 
-〔35〕dots 的 action-items 技能（泄露的提示词，非官方）：共享记忆里的 /action_items.md，字段含 status、blocked、blocked_by、waiting_on，确认结果才标 done，关闭七天后归档，Dreamer 只读，asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/skills/action-items/SKILL.md L8–50，以及 OpenAI/dots/dreamer.md L7、L37、L62。
+〔34〕dots 的 action-items 技能（泄露的提示词，非官方）：共享记忆里的 /action_items.md，字段含 status、blocked、blocked_by、waiting_on，确认结果才标 done，关闭七天后归档，Dreamer 只读，asgeirtj/system_prompts_leaks，60d44cc，OpenAI/dots/skills/action-items/SKILL.md L8–50，以及 OpenAI/dots/dreamer.md L7、L37、L62。
 https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/skills/action-items/SKILL.md#L8-L50
 https://github.com/asgeirtj/system_prompts_leaks/blob/60d44cc29a3c4cb226620834f9e8acc76b2acc6b/OpenAI/dots/dreamer.md#L7
 
-〔36〕Codex 后台压缩的启动阈值默认 65%，作废的请求已用的 token 照样计费，固定版本 ce0323f 的 codex-rs/core/src/config/mod.rs L226、codex-rs/core/src/session/async_compaction.rs L1–2，摘要就绪即换上见 codex-rs/core/src/session/turn.rs L1385。
+〔35〕Codex 后台压缩的启动阈值默认 65%，作废的请求已用的 token 照样计费，固定版本 ce0323f 的 codex-rs/core/src/config/mod.rs L226、codex-rs/core/src/session/async_compaction.rs L1–2，摘要就绪即换上见 codex-rs/core/src/session/turn.rs L1385。
 
-〔37〕Claude Code 官方工具文档 Monitor tool 一节：脚本在后台运行，每行输出通知模型，每次监视默认 5 分钟、最长 30 分钟到期，会话结束即停止，https://code.claude.com/docs/en/tools-reference
+〔36〕Claude Code 官方工具文档 Monitor tool 一节：脚本在后台运行，每行输出通知模型，每次监视默认 5 分钟、最长 30 分钟到期，会话结束即停止，https://code.claude.com/docs/en/tools-reference
 
-〔38〕Muse/Hatch 归档文档：home/hatch/docs/calls-texts-notifications.md「Proactive editions」一节（单条推送、来源、节奏、偏好文件），docs/feed.md L1–10，docs/ideas.md L1–8，home/hatch/PROACTIVE_PREFERENCES.md。
+〔37〕Muse/Hatch 归档文档：home/hatch/docs/calls-texts-notifications.md「Proactive editions」一节（单条推送、来源、节奏、偏好文件），docs/feed.md L1–10，docs/ideas.md L1–8，home/hatch/PROACTIVE_PREFERENCES.md。
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/config/mod.rs#L226
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/async_compaction.rs#L1-L2
 https://github.com/openai/codex/blob/ce0323f2f2d3b25e82806cd555237da3db4e1897/codex-rs/core/src/session/turn.rs#L1385
