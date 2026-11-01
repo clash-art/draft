@@ -1,0 +1,66 @@
+<svg width="1500" height="720" viewBox="0 0 1500 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="disp-zh desc-disp-zh">
+  <title id="disp-zh">连续感从哪来，并发怎么不乱：dsh Router/Worker 与 OpenMatter coordinator/worker</title>
+  <desc id="desc-disp-zh">左边是 dsh 的 Router 接消息、Worker 并发干活再汇报。右边是 OpenMatter 的 coordinator 分派、worker 干活，turn 结束后回到 coordinator。</desc>
+  <rect x="1" y="1" width="1498" height="718" rx="15" fill="#FDFDFB" stroke="#E4E5E7" stroke-width="2"/>
+  <text x="56" y="48" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="2.2">DISPATCH · 对照</text>
+  <text x="56" y="92" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="34" font-weight="600">连续感从哪来，并发怎么不乱</text>
+  <text x="56" y="128" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="17">左边是 dsh 文中的双层，右边是 OpenMatter 用 coordinatorLoop 写出来的样子。</text>
+
+  <!-- LEFT: dsh -->
+  <rect x="56" y="160" width="680" height="480" rx="14" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="80" y="200" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14" font-weight="650" letter-spacing="1.6">DSH · SUPER-AGENT</text>
+  <text x="80" y="236" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="26" font-weight="600">Router + Worker</text>
+
+  <rect x="80" y="268" width="520" height="110" rx="10" fill="#1034A6"/>
+  <text x="104" y="308" fill="#DDE4F8" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="650" letter-spacing="1.4">ROUTER</text>
+  <text x="104" y="340" fill="#FFFFFF" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="20" font-weight="650">接所有入口 · 全局协调 · 统一回复用户</text>
+  <text x="104" y="366" fill="#DDE4F8" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">新任务冷启动 · 跨任务协调</text>
+
+  <path d="M396 378V404" stroke="#1034A6" stroke-width="3"/>
+  <path d="M387 396L396 404L405 396" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="410" y="400" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="600">分派 / 订阅</text>
+
+
+  <!-- direct pass: follow-up events bypass Router -->
+  <text x="624" y="298" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14" font-weight="650">后续事件</text>
+  <path d="M656 310V404" stroke="#1034A6" stroke-width="2.5" stroke-dasharray="6 5"/>
+  <path d="M647 396L656 405L665 396" stroke="#1034A6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="666" y="362" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="600">直通</text>
+  <rect x="80" y="416" width="300" height="88" rx="10" fill="#F7F7F6" stroke="#CECFD1" stroke-width="2"/>
+  <text x="104" y="452" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="18" font-weight="650">Worker A</text>
+  <text x="104" y="480" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">上下文隔离 · 并发干活</text>
+
+  <rect x="412" y="416" width="300" height="88" rx="10" fill="#F7F7F6" stroke="#CECFD1" stroke-width="2"/>
+  <text x="436" y="452" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="18" font-weight="650">Worker B</text>
+  <text x="436" y="480" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">后续事件可直通</text>
+
+  <text x="80" y="548" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">Worker 向 Router 汇报，由 Router 统一回复。</text>
+  <text x="80" y="574" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">同一 Thread 的后续事件，程序可直接发给已订阅的 Worker。</text>
+
+  <!-- RIGHT: OpenMatter -->
+  <rect x="764" y="160" width="680" height="480" rx="14" fill="#FFFFFF" stroke="#1034A6" stroke-width="2"/>
+  <text x="788" y="200" fill="#0A2475" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14" font-weight="650" letter-spacing="1.6">OPENMATTER · COORDINATORLOOP</text>
+  <text x="788" y="236" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="26" font-weight="600">coordinator + worker</text>
+
+  <rect x="788" y="268" width="632" height="110" rx="10" fill="#1034A6"/>
+  <text x="812" y="308" fill="#DDE4F8" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="650" letter-spacing="1.4">COORDINATOR</text>
+  <text x="812" y="340" fill="#FFFFFF" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="20" font-weight="650">派活 · 改方向 · 取消 · 收束</text>
+  <text x="812" y="366" fill="#DDE4F8" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">用户只听到 coordinator 说话</text>
+
+  <path d="M1104 378V404" stroke="#1034A6" stroke-width="3"/>
+  <path d="M1095 396L1104 404L1113 396" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="1118" y="400" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="600">delegate</text>
+
+  <rect x="788" y="416" width="300" height="88" rx="10" fill="#EEF2FB" stroke="#1034A6" stroke-width="1.5"/>
+  <text x="812" y="452" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="18" font-weight="650">worker w1</text>
+  <text x="812" y="480" fill="#0A2475" font-family="JetBrains Mono, Menlo, monospace" font-size="13">work line id = worker id</text>
+
+  <rect x="1120" y="416" width="300" height="88" rx="10" fill="#EEF2FB" stroke="#1034A6" stroke-width="1.5"/>
+  <text x="1144" y="452" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="18" font-weight="650">worker w2</text>
+  <text x="1144" y="480" fill="#0A2475" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">turn 结束，结果回 coordinator</text>
+
+  <text x="788" y="548" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">没有单独的绑定表。结果进 coordinator 的下一个 turn。</text>
+  <text x="788" y="574" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">Project 模式：后续消息都先到 coordinator。</text>
+
+  <text x="56" y="680" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15">也可以写成一线一个 agent、没有 coordinator，那是 Claude Tag 预设。</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg width="1500" height="780" viewBox="0 0 1500 780" fill="none" xmlns="http://www.w3.org/2000/svg" role="img"><title>优先级与 CAS</title>
+<rect x="1" y="1" width="1498" height="778" rx="15" fill="#FDFDFB" stroke="#E4E5E7" stroke-width="2"/>
+<text x="64" y="58" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="16" font-weight="600" letter-spacing="2.2">优先级 · CAS</text>
+<text x="64" y="108" fill="#11110F" font-family="Source Serif 4, Source Serif Pro, Georgia, serif" font-size="40" font-weight="600">优先级与 CAS</text>
+<text x="64" y="146" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="18">谁能打断正在跑的推理，写入前核对 revision。</text>
+<text x="64" y="202" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="20" font-weight="650">一个 runtime 内的优先级</text>
+<text x="800" y="202" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="20" font-weight="650">写入时的 CAS</text>
+<line x1="760" y1="180" x2="760" y2="700" stroke="#E4E5E7" stroke-width="2"/>
+<rect x="96" y="230" width="420" height="130" rx="10" fill="#ECF7F1" stroke="#166747" stroke-width="2"/>
+<text x="120" y="266" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="19" font-weight="650">用户消息 / 回答</text>
+<text x="120" y="292" fill="#166747" font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" font-size="14">user · answer</text>
+<text x="120" y="322" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="16">可打断推理（先 steer 再 abort）</text>
+<text x="120" y="346" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">每次唤醒 ≤ 3</text>
+<path d="M516 295H592" stroke="#1034A6" stroke-width="3"/><path d="M582 286L592 295L582 304" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="96" y="380" width="420" height="130" rx="10" fill="#FFF4D8" stroke="#734600" stroke-width="2"/>
+<text x="120" y="416" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="19" font-weight="650">带优先级的 bot 消息</text>
+<text x="120" y="442" fill="#734600" font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" font-size="14">send_to_bot priority</text>
+<text x="120" y="472" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="16">下次模型调用前 steer 进来</text>
+<text x="120" y="496" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">服务用户的 turn 不打断，排队</text>
+<path d="M516 445H592" stroke="#1034A6" stroke-width="3"/><path d="M582 436L592 445L582 454" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="96" y="530" width="420" height="130" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+<text x="120" y="566" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="19" font-weight="650">普通 bot 消息 / 群广播</text>
+<text x="120" y="592" fill="#5D5F63" font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" font-size="14">send_to_group</text>
+<text x="120" y="622" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="16">等 turn 结束</text>
+<text x="120" y="646" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">排队</text>
+<path d="M516 595H592" stroke="#1034A6" stroke-width="3"/><path d="M582 586L592 595L582 604" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="592" y="230" width="132" height="430" rx="10" fill="#FFFFFF" stroke="#1034A6" stroke-width="2"/>
+<text x="658" y="440" fill="#1034A6" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="650" text-anchor="middle">正在跑的 turn</text>
+<text x="658" y="466" fill="#5D5F63" font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" font-size="12" text-anchor="middle">in-flight</text>
+<text x="72" y="250" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="14" text-anchor="middle">高</text>
+<path d="M72 262V632" stroke="#CECFD1" stroke-width="2"/><path d="M65 624L72 634L79 624" stroke="#CECFD1" stroke-width="2" fill="none"/>
+<text x="72" y="656" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="14" text-anchor="middle">低</text>
+<rect x="800" y="230" width="300" height="60" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+<text x="824" y="266" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="18">读到 revision r</text>
+<path d="M950 290V320" stroke="#1034A6" stroke-width="3"/><path d="M941 310L950 320L959 310" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="800" y="320" width="300" height="60" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+<text x="824" y="356" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="18">提出写入 / 回复</text>
+<path d="M950 380V410" stroke="#1034A6" stroke-width="3"/><path d="M941 400L950 410L959 400" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="800" y="410" width="300" height="84" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+<text x="824" y="444" fill="#11110F" font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" font-size="16" font-weight="600">当前 revision == r ？</text>
+<text x="824" y="474" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="14">回复：seen 之后有无新消息</text>
+<path d="M1100 440H1140" stroke="#1034A6" stroke-width="3"/><path d="M1130 431L1140 440L1130 449" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="1140" y="400" width="300" height="96" rx="10" fill="#ECF7F1" stroke="#166747" stroke-width="2"/>
+<text x="1162" y="436" fill="#166747" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="650">一致</text>
+<text x="1162" y="468" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">写入 + 记录，同一事务</text>
+<path d="M950 494V590H1140" stroke="#1034A6" stroke-width="3" fill="none"/><path d="M1130 581L1140 590L1130 599" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<rect x="1140" y="530" width="300" height="130" rx="10" fill="#FFF4D8" stroke="#734600" stroke-width="2"/>
+<text x="1162" y="564" fill="#734600" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="650">不一致</text>
+<text x="1162" y="594" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">不生效，返回 <tspan font-family="JetBrains Mono, Menlo, Noto Sans Mono CJK SC, monospace" fill="#734600">conflict</tspan></text>
+<text x="1162" y="618" fill="#11110F" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="15">+ 更新的消息</text>
+<text x="1162" y="644" fill="#5D5F63" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="14">agent 重读：重写、重发或不回</text>
+<text x="64" y="730" fill="#7A7C80" font-family="Geist, Arial, Noto Sans CJK SC, sans-serif" font-size="17">pi-bot StateGuard 按 bot 管权限，OpenMatter 管回复的新消息检查。</text>
+</svg>

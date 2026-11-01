@@ -1,0 +1,78 @@
+<svg width="1500" height="1140" viewBox="0 0 1500 1140" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="cutin-zh desc-cutin-zh">
+  <title id="cutin-zh">人怎么插话：协议一维，下游实现一维</title>
+  <desc id="desc-cutin-zh">左边是 OpenMatter 的 Turn 默认与可选扩展。右边是下游实现：安全点注入、Codex preempt、Grok Bot 整 turn 中断。下方单列 dsh Super-agent 的做法：异步 Loop、Router 合并积压、steer 进 worker。</desc>
+  <rect x="1" y="1" width="1498" height="1138" rx="15" fill="#FDFDFB" stroke="#E4E5E7" stroke-width="2"/>
+  <text x="56" y="48" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="2.2">CUT-IN · 两维</text>
+  <text x="56" y="92" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="34" font-weight="600">人怎么插话</text>
+  <text x="56" y="128" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="17">左边是协议提供什么，右边是下游怎么落地。</text>
+
+  <rect x="56" y="160" width="680" height="690" rx="14" fill="#FFFFFF" stroke="#1034A6" stroke-width="2"/>
+  <text x="80" y="200" fill="#0A2475" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14" font-weight="650" letter-spacing="1.6">OPENMATTER · 协议维</text>
+  <text x="80" y="240" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="26" font-weight="600">提供什么</text>
+  <text x="80" y="276" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15">不把 busy-merge 写进协议语义</text>
+
+  <rect x="80" y="304" width="632" height="120" rx="10" fill="#EEF2FB" stroke="#1034A6" stroke-width="1.5"/>
+  <text x="104" y="344" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="20" font-weight="650">Turn（默认）</text>
+  <text x="104" y="380" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="16">一条新消息 → 开一个新 Turn</text>
+  <text x="104" y="408" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">排队（queue）= 等当前 turn 结束再开新 Turn，属协议默认</text>
+
+  <rect x="80" y="448" width="632" height="160" rx="10" fill="#FFFFFF" stroke="#1034A6" stroke-width="2"/>
+  <text x="104" y="488" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="20" font-weight="650">可选扩展（例：steer）</text>
+  <text x="104" y="524" fill="#1034A6" font-family="JetBrains Mono, Noto Sans CJK SC, Menlo, monospace" font-size="15" font-weight="600">capabilities.steering · _meta …</text>
+  <text x="104" y="556" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="16">driver 声明才有，payload 形状由 host 定</text>
+  <text x="104" y="584" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">OpenMatter 不规定「怎么打断正在跑的推理」</text>
+
+  <text x="80" y="660" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">这一维只到 Turn + 可选扩展为止，没有默认 steer。</text>
+  <text x="80" y="688" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">进不去就仍按新 Turn 走。</text>
+
+  <path d="M752 480H792" stroke="#1034A6" stroke-width="3"/>
+  <path d="M782 471L792 480L782 489" stroke="#1034A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="772" y="462" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">实现</text>
+
+  <rect x="808" y="160" width="636" height="690" rx="14" fill="#F7F7F6" stroke="#91A6DE" stroke-width="2" stroke-dasharray="8 7"/>
+  <text x="832" y="200" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14" font-weight="650" letter-spacing="1.6">DOWNSTREAM · 实现维</text>
+  <text x="832" y="240" fill="#11110F" font-family="Noto Serif CJK SC, Georgia, serif" font-size="26" font-weight="600">怎么落地</text>
+  <text x="832" y="276" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15">host / driver / harness 各自实现</text>
+
+  <rect x="832" y="300" width="588" height="92" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="856" y="334" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="17" font-weight="650">① 安全点注入（steering driver）</text>
+  <text x="856" y="362" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">声明 steering 的 driver，在安全点注入正在跑的 turn</text>
+  <text x="856" y="382" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">已做工作保留（不限于某一个 harness）</text>
+
+  <rect x="832" y="408" width="588" height="168" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="856" y="442" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="17" font-weight="650">② Codex · instant_interrupt / preempt</text>
+  <text x="856" y="470" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">取消进行中的模型请求，并入新消息再重新请求</text>
+  <text x="856" y="492" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">已启动工具照样跑完 · 下一轮排队照旧等</text>
+  <text x="856" y="514" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">长命令转后台（pid 续查）· Code Mode 片段也可后台</text>
+  <text x="856" y="536" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">steer 时后台接着跑 · 整 turn 打断则终止片段</text>
+  <text x="856" y="560" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13">产品仍叫 steer · 0.163.0 起默认打开 · 长命令进程可留下</text>
+
+  <rect x="832" y="592" width="588" height="160" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="856" y="626" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="17" font-weight="650">③ Grok Bot · 队列 + 整 turn 中断</text>
+  <text x="856" y="654" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">用户 / 其他 agent / 定时 · 三个队列，先用户</text>
+  <text x="856" y="676" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">priority 一对一可打断非用户工作并马上叫醒</text>
+  <text x="856" y="698" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">用户任务受保护 · 直接中断正在跑的整轮 turn</text>
+  <text x="856" y="722" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13">work Task session 也可被主线换上新指令</text>
+
+  <text x="832" y="790" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="14">Codex 与 Grok Bot 是两种落地。</text>
+
+  <rect x="56" y="874" width="1388" height="212" rx="14" fill="#FFFFFF" stroke="#11110F" stroke-width="1.5"/>
+  <text x="80" y="906" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="2">DSH SUPER-AGENT · 对照</text>
+  <rect x="80" y="938" width="436" height="128" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="100" y="970" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="16" font-weight="650">异步 ReAct Loop<tspan fill="#7A7C80" font-size="13" font-weight="400">  已实现，未默认开启</tspan></text>
+  <text x="100" y="998" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">耗时命令 start() 立即返回 Started</text>
+  <text x="100" y="1022" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">结果作为新事件回来，也可以 stop()</text>
+  <text x="100" y="1046" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">新输入在当前推理步后处理</text>
+  <rect x="532" y="938" width="436" height="128" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="552" y="970" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="16" font-weight="650">Router 合并积压</text>
+  <text x="552" y="998" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">Router 忙时积下的多条 Trigger</text>
+  <text x="552" y="1022" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">在下一次模型调用时一起注入</text>
+  <line x1="552" y1="1034" x2="948" y2="1034" stroke="#CECFD1" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="552" y="1054" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5"><tspan font-weight="650">pi-bot 也合并：</tspan>Project host 用短窗口把刚到的消息合成一批</text>
+  <rect x="984" y="938" width="436" height="128" rx="10" fill="#FFFFFF" stroke="#CECFD1" stroke-width="2"/>
+  <text x="1004" y="970" fill="#11110F" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="16" font-weight="650">steer 进 worker</text>
+  <text x="1004" y="998" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">后续输入按顺序以 steer 送进正在跑的 worker</text>
+  <text x="1004" y="1022" fill="#5D5F63" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="13.5">worker 空闲时，人的消息有专门名额叫醒</text>
+
+  <text x="56" y="1108" fill="#7A7C80" font-family="Noto Sans CJK SC, Geist, Arial, sans-serif" font-size="15">对用户说话还有回复前 CAS 那一步，另说。</text>
+</svg>
