@@ -3,3 +3,8 @@ test('export rejects pages from an earlier title, body or typography',()=>{const
 test('saved revision and reordered template fields do not invalidate identical HTML',()=>{const e={title:'全文',body:'正文',template:{font_size:14,accent:'#333333'}};assert.deepEqual(assertCurrentPages({...e,revision:'saved',template:{accent:'#333333',font_size:14}},layoutSignature(e),['same page']),['same page']);});
 test('agent cover content is part of the layout signature',()=>{const e={title:'全文',body:'正文',template:{font_size:14},cover_page:{title:'A',subtitle:'B',points:['一']}};assert.throws(()=>assertCurrentPages({...e,cover_page:{...e.cover_page,points:['二']}},layoutSignature(e),['page']),/最新分页/);});
 test('the project palette is part of the layout signature',()=>{const e={title:'全文',body:'正文',template:{font_size:14},palette:{primary:'#2c1fea'}};assert.throws(()=>assertCurrentPages({...e,palette:{primary:'#4a6d47'}},layoutSignature(e),['page']),/最新分页/);});
+test('changing, adding or removing a concept illustration invalidates the rendered pages',()=>{
+ const e={title:'全文',body:'正文',template:{layout:'blueprint'},illustrations:[{slot:'cover',concept:'循环',prompt:'蓝色纸带',image:'images/old.png'}]};
+ for(const illustrations of [[],[{...e.illustrations[0],image:'images/new.png'}],[...e.illustrations,{slot:'section:01',concept:'分派',prompt:'纸页',image:'images/task.png'}]])
+  assert.throws(()=>assertCurrentPages({...e,illustrations},layoutSignature(e),['old cover']),/最新分页/);
+});

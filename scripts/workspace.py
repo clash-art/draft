@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import markdown
 from functools import lru_cache
 from wechat import prepare,build_article,image_bytes,save_json,analyze_rows,ALIASES,date_windows
+from readback import compare_readback
 
 FONTS=Path(__file__).resolve().parents[1]/'assets/fonts'
 @lru_cache(maxsize=1)
@@ -304,12 +305,15 @@ class Workspace:
     payload={k:e.get(k,'') for k in ('title','body','author','digest','cover')}
     payload['operation_id']='pending-'+hashlib.sha256((e['id']+self.account_identity()).encode()).hexdigest()
     result=self._dispatch('/api/draft/save',payload)
+    article={'title':e['title'],'content':self.audit(e)['html']}
     sync={'media_id':result['media_id'],'verified':False};save_json(state_path,sync)
     client=self.client_factory()
    try:
     remote=client.call('cgi-bin/draft/get',{'media_id':sync['media_id']})
-    if not remote.get('news_item'):raise ValueError('回读没有文章')
-    sync.update(revision=e['revision'],channel_revision=channel_revision,remote_hash=self.remote_hash(remote['news_item'][sync.get('index',0)]),verified=True,synced_at=datetime.now(timezone.utc).isoformat(),message='已同步到微信草稿并回读确认')
+    if len(remote.get('news_item',[]))<=sync.get('index',0):raise ValueError('回读没有对应的文章')
+    actual=remote['news_item'][sync.get('index',0)]
+    check=compare_readback(article,actual)
+    sync.update(revision=e['revision'],channel_revision=channel_revision,remote_hash=self.remote_hash(actual),verified=True,readback=check,synced_at=datetime.now(timezone.utc).isoformat(),message='已写入微信草稿；结构检查通过，请预览排版' if check['content_matches'] else '已写入微信草稿，但回读发现差异，请检查')
    except ValueError:sync.update(message='已写入微信，回读失败，请到微信草稿箱核对')
    save_json(state_path,sync);return sync
   if route=='/api/editor/load':
@@ -460,7 +464,11 @@ class Workspace:
    save_json(receipt,result)
    try:
     draft=client.call('cgi-bin/draft/get',{'media_id':media_id})
-    result['verified']=bool(draft.get('news_item'));result['message']='草稿已保存并回读确认' if result['verified'] else '草稿已保存，回读未返回文章'
+    result['verified']=bool(draft.get('news_item'))
+    if result['verified']:
+     result['readback']=compare_readback(article,draft['news_item'][0])
+     result['message']='草稿已保存；结构检查通过，请预览排版' if result['readback']['content_matches'] else '草稿已保存，但回读发现差异，请检查'
+    else:result['message']='草稿已保存，回读未返回文章'
    except ValueError:result['message']='草稿已保存；回读失败，可在草稿列表中确认'
    save_json(receipt,result);return result
   if route=='/api/analytics/articles':

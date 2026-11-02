@@ -103,7 +103,7 @@ class LongformMcpTests(unittest.TestCase):
   edition=self.save(template=next(t for t in server.list_channel_templates()['items'] if t['id']=='xhs-tweet'))
   pages=[self.ws.dispatch('/api/upload',{'name':f'page-{i}.png','data':png()})['ref'] for i in range(10)]
   b=self.brief()
-  with self.assertRaises(ValueError):self.save(page_images=pages+pages[:1],page_count=11,rendered_for_revision=edition['revision'])
+  with self.assertRaises(ValueError):self.save(page_images=(pages*2)[:b['max_pages']+1],page_count=b['max_pages']+1,rendered_for_revision=edition['revision'])
   exported=self.save(page_images=pages,page_count=10,rendered_for_revision=edition['revision'])
   self.assertEqual((exported['page_images'],exported['render_pending']),(pages,False))
   self.assertEqual(exported['body'],CONDENSED)

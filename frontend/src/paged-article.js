@@ -6,6 +6,7 @@ import {articleCover} from './longform-cover';
 import {pageSize,pageRatio,COVER_SAFE,exportPixelRatio} from './page-size';
 import {articleBlocks,articleSections,articleStats} from './longform-blocks';
 import {themeFor,splitTitle,mix} from './longform-themes';
+import {assertPageBounds} from './layout-quality';
 const SPLITTABLE=new Set(['lead','p','quote','list']);
 const KEEP_WITH_NEXT=new Set(['section','heading','label','refs-heading']);
 // Characters that must not start a line (and therefore a continued page).
@@ -55,6 +56,12 @@ function buildBlock(theme,block,images,figures){
  else{node=document.createElement('div');node.innerHTML=DOMPurify.sanitize(block.html||'');Object.assign(node.style,{margin:`0 0 ${theme.gap}px`,fontSize:theme.size+'px',lineHeight:String(theme.leading),color:theme.body});
   for(const el of node.querySelectorAll('pre,table'))Object.assign(el.style,{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:'100%',fontSize:'12px',lineHeight:'1.6'});
   for(const a of node.querySelectorAll('a'))Object.assign(a.style,{display:'inline',color:theme.ink,wordBreak:'break-all'})}
+ if(block.listItem){
+  Object.assign(node.style,{textAlign:'left',lineBreak:'strict',margin:`0 0 ${Math.min(theme.gap,4)}px`});
+  for(const list of node.querySelectorAll('ul,ol'))Object.assign(list.style,{margin:'0',padding:'0 0 0 1.15em',listStylePosition:'outside'});
+  for(const li of node.querySelectorAll('li'))Object.assign(li.style,{margin:'0',padding:'0'});
+  for(const p of node.querySelectorAll('li > p'))Object.assign(p.style,{margin:'0',display:'inline'});
+ }
  node.dataset.role=block.role;return node;
 }
 export async function paginateArticle(edition,api,imageMap={}){return (await layoutArticle(edition,api,imageMap)).pages}
@@ -152,7 +159,11 @@ async function layoutOnce(edition,api,imageMap,opts){
      const prev=i-1;
      if(prev>=0&&SPLITTABLE.has(blocks[prev].role)){
       const peeled=peelBlockTail(prev);
-      if(peeled.length){newPage();for(const el of peeled)current.content.append(el);ok=placeFigurePlate(node,i)}
+      if(peeled.length){
+       // Keep the lead-in with its figure only when it does not leave a mostly empty sheet.
+       if(fillOf(current.content)>=0.75){newPage();for(const el of peeled)current.content.append(el);ok=placeFigurePlate(node,i)}
+       else for(const el of peeled)current.content.append(el);
+      }
      }
     }
     if(!ok){if(!empty())newPage();ok=placeFigurePlate(node,i)}
@@ -168,10 +179,16 @@ async function layoutOnce(edition,api,imageMap,opts){
     if(['table','code','html'].includes(b.role)&&node.querySelector('img,table'))throw Error('有图片或表格超出页面，请调整模板字号或素材尺寸；全文未截断');
    }
    // Text flow: split by characters with orphan, widow and punctuation control.
+   // Move an ordinary list item intact rather than turning its continuation into another bullet.
+   if(b.listItem&&heightOf(node)<=current.content.clientHeight){
+    if(!place(node)){newPage();if(!place(node))throw Error('列表条目超出页面')}
+    tagBlock(node,i);current.roles.push(b.role);continue;
+   }
    const text=node.textContent;let offset=0;
    while(offset<text.length){
     const rest=fragment(node,offset,text.length);
     if(offset)rest.style.marginTop='0';
+    if(offset&&b.listItem)for(const li of rest.querySelectorAll('li'))li.style.listStyleType='none';
     tagBlock(rest,i);
     if(place(rest)){current.roles.push(b.role);offset=text.length;break}
     let lo=0,hi=text.length-offset;
@@ -193,12 +210,20 @@ async function layoutOnce(edition,api,imageMap,opts){
     part.style.marginBottom='0';
     tagBlock(part,i);
     current.content.append(part);
-    if(lastLineFill(part)>0.96)part.style.textAlignLast='justify';
+    if(offset&&b.listItem)for(const li of part.querySelectorAll('li'))li.style.listStyleType='none';
     current.roles.push(b.role);offset+=lo;newPage();
    }
   }
   measure.page.remove();
   for(let i=pages.length-1;i>0;i--)if(!pages[i].content.childElementCount)pages.splice(i,1);
+  // Give a short closing page a little more space between its existing paragraphs.
+  // This keeps the closing mark around three quarters down without stretching text lines.
+  const closing=pages.at(-1)?.content,closingFill=closing?fillOf(closing):1;
+  if(closingFill>=0.6&&closingFill<0.76){
+   const paragraphs=[...closing.children].filter(n=>n.dataset.role==='p'||n.dataset.role==='list');
+   const extra=Math.min(12,(0.76-closingFill)*closing.clientHeight/Math.max(1,paragraphs.length));
+   for(const n of paragraphs)n.style.marginBottom=(parseFloat(n.style.marginBottom)||0)+extra+'px';
+  }
   const source=sourceText(edition.body);
   if(contentText(source)!==pages.map(p=>contentText(p.content)).join(''))throw Error('分页内容校验失败，未生成图片');
   const want=[...source.querySelectorAll('img')].map(img=>img.getAttribute('src'));
@@ -214,12 +239,13 @@ async function layoutOnce(edition,api,imageMap,opts){
   const safe=Math.min(height,COVER_SAFE.height);
   const card=legacyCover||theme.cover({...content,sections:parts,illustrations,image:coverImage,stats,total,width,height:safe});
   const cover=legacyCover||safe>=height?card:coverFrame(card,width,height);
-  pages.forEach(p=>{delete p.content.dataset.content});
   host.append(cover);
   const fallback=await loadFonts(host,api);
   const overflows=()=>{const bottom=card.getBoundingClientRect().bottom-parseFloat(getComputedStyle(card).paddingBottom||0);return [...card.querySelectorAll('*')].some(c=>!c.closest('[style*="position: absolute"]')&&c.getBoundingClientRect().bottom>bottom+0.5)};
   for(const extra of [...card.querySelectorAll('[data-cover-optional]')].reverse()){if(legacyCover||!overflows())break;extra.remove()}
   if(!legacyCover&&overflows())throw Error('封面内容超出页面，请缩短标题');
+  assertPageBounds(cover,'封面内容');
+  pages.forEach((p,i)=>assertPageBounds(p.page,`第 ${i+2} 页内容`));
   const html=[cover.outerHTML,...pages.map(p=>p.page.outerHTML)];
   const meta={max_pages:MAX_PAGES,font_fallback:fallback,over_limit:html.length>MAX_PAGES,template:{id:template.id,name:template.name,layout:template.layout,page_ratio:pageRatio(template)},compact:opts.compact,page_count:html.length,
    sections:sectionPages.map(s=>({number:s.number,title:sourceTextOf(s.html),page:s.page+offsetCover})),
@@ -258,11 +284,16 @@ function lastLineFill(node){
  return width>0?(Math.max(...line.map(r=>r.right))-Math.min(...line.map(r=>r.left)))/width:1;
 }
 function sourceTextOf(value){const d=document.createElement('div');d.innerHTML=DOMPurify.sanitize(value||'');return d.textContent}
-// Xiaohongshu notes take at most 10 images, cover included.
-export const MAX_PAGES=10;
+// The configured image limit includes the cover.
+export const MAX_PAGES=19;
 export async function exportArticlePages(pages,api,onProgress=()=>{},{maxPages=MAX_PAGES}={}){
  if(!pages.length)throw Error('请等待分页预览完成');
- if(pages.length>maxPages)throw Error(`小红书笔记最多 ${MAX_PAGES} 张图（含封面），当前 ${pages.length} 页；请精简正文或调整分页后再导出`);
+ if(pages.length>maxPages)throw Error(`小红书笔记最多 ${maxPages} 张图（含封面），当前 ${pages.length} 页；请调整分页后再导出`);
  const host=document.createElement('div');Object.assign(host.style,{position:'fixed',left:'-12000px',top:'0'});document.body.append(host);const refs=[];
- try{for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const page=host.firstElementChild,bg=getComputedStyle(page).backgroundColor,jpeg=await toJpeg(page,{width:parseFloat(page.style.width),height:parseFloat(page.style.height),pixelRatio:exportPixelRatio(),quality:.95,backgroundColor:bg&&bg!=='transparent'&&bg!=='rgba(0, 0, 0, 0)'?bg:'#ffffff',fontEmbedCSS:await fontEmbedCSS(page,api)});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.jpg`,data:jpeg.split(',')[1]})).ref)}return refs}finally{host.remove()}
+ try{
+  // Validate every page before the first upload, so a bad later page cannot
+  // leave an apparently successful partial image set.
+  for(const html of pages){host.innerHTML=html;await loadFonts(host,api);await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));assertPageBounds(host.firstElementChild)}
+  for(let i=0;i<pages.length;i++){onProgress(`导出第 ${i+1} / ${pages.length} 页`);host.innerHTML=pages[i];await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));const page=host.firstElementChild,bg=getComputedStyle(page).backgroundColor,jpeg=await toJpeg(page,{width:parseFloat(page.style.width),height:parseFloat(page.style.height),pixelRatio:exportPixelRatio(),quality:.95,backgroundColor:bg&&bg!=='transparent'&&bg!=='rgba(0, 0, 0, 0)'?bg:'#ffffff',fontEmbedCSS:await fontEmbedCSS(page,api)});refs.push((await api('/api/upload',{name:`长文第 ${i+1} 页.jpg`,data:jpeg.split(',')[1]})).ref)}return refs
+ }finally{host.remove()}
 }

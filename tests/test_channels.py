@@ -132,3 +132,9 @@ class ChannelsTests(unittest.TestCase):
   changed=self.save(template=BUILTINS[1])
   self.assertEqual(changed['page_images'],[])
   with self.assertRaises(ValueError):self.save(page_images=[ref],page_count=1,rendered_for_revision=result['revision'])
+
+ def test_brief_instructions_match_current_page_limit(self):
+  brief=self.call('brief')
+  self.assertIn(f"最多 {brief['max_pages']} 张图",brief['instructions'])
+  self.assertNotIn('10 页',brief['instructions'])
+  self.assertNotIn('10 张图',brief['instructions'])

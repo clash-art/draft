@@ -122,13 +122,15 @@ function blueprint(template,opts){
   refsHeading:b=>el('header',{margin:'12px 0 7px'},[el('div',{display:'flex',alignItems:'center',gap:'6px'},[deco('span',smallCaps(t),['References']),deco('span',{flex:'1',borderTop:dash})]),html(el('h3',{margin:'5px 0 0',fontFamily:SERIF,fontSize:px(1.15),lineHeight:'1.35',color:t.ink,fontWeight:'900'}),b.html,t)]),
   ref:b=>refEntry(t,b,{num:{fontFamily:MONO,fontSize:'0.9em',color:t.accent},row:{padding:'0 0 1px',borderBottom:dash}}),
   end:()=>deco('div',{display:'flex',alignItems:'center',gap:'8px',margin:'12px 0 6px'},[el('span',{flex:'1',borderTop:dash}),el('span',{width:'6px',height:'6px',background:t.ink}),el('span',{flex:'1',borderTop:dash})]),
-  cover({title:main,subtitle:sub,points:items,stats,width,height}){
+  cover({title:main,lines,subtitle:sub,points:items,stats,width,height,illustrations}){
    const page=coverPage(t,width,height,{...paper,fontFamily:SANS,padding:'24px 20px 22px'});
    const mark=pos=>deco('span',{position:'absolute',width:'10px',height:'10px',...Object.fromEntries(Object.entries(pos).map(([k,v])=>[k,String(v).replace(t.ink,t.accent)]))});
    page.append(mark({top:'12px',left:'12px',borderTop:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({top:'12px',right:'12px',borderTop:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}),mark({bottom:'12px',left:'12px',borderBottom:`1px solid ${t.ink}`,borderLeft:`1px solid ${t.ink}`}),mark({bottom:'12px',right:'12px',borderBottom:`1px solid ${t.ink}`,borderRight:`1px solid ${t.ink}`}));
    page.append(deco('div',{display:'flex',justifyContent:'space-between'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent}),['Long read']),el('span',smallCaps(t,{fontSize:'9px'}),[stats.references?`${stats.figures} figures · ${stats.references} refs`:`${stats.figures} figures`])]));
    page.append(el('div',{flex:'1'}));
-   page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:'52px',lineHeight:'1.16',fontWeight:'700',letterSpacing:'-0.01em',color:t.ink,textAlign:'left',...BALANCE},[main]));
+   const titleLines=lines||(String(main).includes('\n')?String(main).split('\n'):null);
+   page.append(deco('h1',{margin:'0',fontFamily:SERIF,fontSize:'38px',lineHeight:'1.2',fontWeight:'700',letterSpacing:'-0.01em',color:t.ink,textAlign:'left',...(titleLines?{}:BALANCE)},titleLines?titleLines.map(line=>el('span',{display:'block',whiteSpace:'nowrap'},[line])):[main]));
+   if(illustrations?.cover?.src)page.append(el('img',{width:'112px',height:'96px',objectFit:'contain',alignSelf:'flex-end',margin:'12px 5px 0 0'},[],{src:illustrations.cover.src,alt:'','data-deco':'true','aria-hidden':'true'}));
    if(sub)page.append(deco('div',{marginTop:'18px',alignSelf:'flex-start',border:`1px solid ${t.accent}`,background:'#ffffff',fontSize:'18px',lineHeight:'1.4',fontWeight:'700',padding:'6px 10px',color:t.ink,...BALANCE},[sub]));
    if(items.length)page.append(optional(deco('div',{marginTop:'14px'},pointList(items,(s,i,label)=>el('div',{display:'flex',gap:'8px',padding:'4px 0',borderTop:dash,fontSize:'13.5px',lineHeight:'1.35',fontWeight:'700'},[el('span',smallCaps(t,{fontSize:'9px',color:t.accent,width:'16px'}),[s.number]),label])))));
    page.append(el('div',{flex:'1.3'}));

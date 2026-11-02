@@ -25,8 +25,8 @@ test('reference parsing accepts common numbering styles and keeps names intact',
 
 test('unrecognised Markdown is passed through instead of dropped',()=>{
  const blocks=articleBlocks('导语\n\n> 引用\n\n- 一\n- 二\n\n```\ncode\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n---\n\n## 参考资料\n\n不带编号的来源');
- assert.deepEqual(blocks.map(b=>b.role),['lead','quote','list','code','table','hr','refs-heading','ref']);
- assert.match(blocks[2].html,/<li>二<\/li>/);
+ assert.deepEqual(blocks.map(b=>b.role),['lead','quote','list','list','code','table','hr','refs-heading','ref']);
+ assert.match(blocks[3].html,/<li>二<\/li>/);
  assert.match(blocks.at(-1).html,/不带编号的来源/);
 });
 
@@ -42,4 +42,20 @@ test('agent-authored page breaks become break blocks and the condensed edition m
 
 test('bare-domain links are recognised as reference URLs',()=>{
  assert.deepEqual(parseReference('〔1〕Hermes github.com/NousResearch/hermes-agent'),{number:'〔1〕',name:'Hermes',url:'github.com/NousResearch/hermes-agent'});
+});
+
+test('list items are independent flow blocks so a page can move a whole item',()=>{
+ const blocks=articleBlocks('正文\n\n- **连续。** 同一个 agent。\n- **高效。** 能并发。');
+ const items=blocks.filter(b=>b.role==='list');
+ assert.equal(items.length,2);
+ assert.ok(items.every(b=>b.listItem));
+ assert.match(items[0].html,/<li><strong>连续。<\/strong> 同一个 agent。<\/li>/);
+ assert.match(items[1].html,/<li><strong>高效。<\/strong> 能并发。<\/li>/);
+});
+
+test('ordered flow items retain their original number across pages',()=>{
+ const items=articleBlocks('3. 第三件事\n4. 第四件事');
+ assert.equal(items.length,2);
+ assert.match(items[0].html,/<ol start="3">/);
+ assert.match(items[1].html,/<ol start="4">/);
 });

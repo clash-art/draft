@@ -40,9 +40,10 @@ class BridgeTests(unittest.TestCase):
   remote={'title':'测试','content':'<p>正文</p>','thumb_media_id':'cover'}
   client.call.side_effect=lambda route,data: {'media_id':'remote-one'} if route.endswith('/add') else {'news_item':[dict(remote)]} if route.endswith('/get') else {'errcode':0}
   first=self.ws.dispatch('/api/editor/save',{'title':'测试','body':'正文'})
-  with patch.object(self.ws,'audit',return_value={'errors':[]}),patch.object(self.ws,'image_path',return_value=Path('/mock.png')),patch('workspace.image_bytes',return_value=(b'x','image/png','x')),patch('workspace.build_article',return_value=remote):
+  with patch.object(self.ws,'audit',return_value={'errors':[],'html':'<p>正文</p>'}),patch.object(self.ws,'image_path',return_value=Path('/mock.png')),patch('workspace.image_bytes',return_value=(b'x','image/png','x')),patch('workspace.build_article',return_value=remote):
    args={'id':first['id'],'expected_revision':first['revision']}
    receipt=self.ws.dispatch('/api/pending/sync',args)
+   self.assertTrue(receipt['readback']['content_matches'])
    self.assertTrue(receipt['verified']);self.ws.dispatch('/api/pending/sync',args)
    self.assertEqual(sum(c.args[0].endswith('/add') for c in client.call.call_args_list),1)
    second=self.ws.dispatch('/api/editor/save',{'title':'第二版','body':'正文二','expected_revision':first['revision']})
@@ -63,6 +64,23 @@ class BridgeTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,'已关联发布'):self.ws.dispatch('/api/pending/sync',{'id':e['id'],'expected_revision':e['revision']})
   self.ws.dispatch('/api/publication/metric',{'id':e['id'],'msgid':'123_1'})
   self.assertEqual(self.ws.dispatch('/api/editor/load',{})['sync']['publication']['msgid'],'123_1')
+ def test_sync_persists_link_loss_warning_without_retrying_or_claiming_content_matches(self):
+  from unittest.mock import patch
+  client=Mock();self.ws.client_factory=lambda:client
+  content='<p><a href="https://github.com/openma-ai/OpenMatter">OpenMatter</a></p>'
+  expected={'title':'测试','content':content,'thumb_media_id':'cover'}
+  remote={**expected,'content':'<p>OpenMatter</p>'}
+  client.call.side_effect=lambda route,data:{'media_id':'remote-one'} if route.endswith('/add') else {'news_item':[remote]}
+  e=self.ws.dispatch('/api/editor/save',{'title':'测试','body':content})
+  with patch.object(self.ws,'audit',return_value={'errors':[],'html':content}),patch.object(self.ws,'image_path',return_value=Path('/mock.png')),patch('workspace.image_bytes',return_value=(b'x','image/png','x')),patch('workspace.build_article',return_value=expected):
+   args={'id':e['id'],'expected_revision':e['revision']}
+   result=self.ws.dispatch('/api/pending/sync',args)
+   self.assertTrue(result['verified'])
+   self.assertFalse(result['readback']['content_matches'])
+   self.assertIn('OpenMatter',' '.join(result['readback']['issues']))
+   self.assertEqual(self.ws.dispatch('/api/editor/load',{})['sync']['readback'],result['readback'])
+   self.ws.dispatch('/api/pending/sync',args)
+   self.assertEqual(sum(c.args[0].endswith('/add') for c in client.call.call_args_list),1)
  def test_reviews_are_article_specific(self):
   first=self.ws.dispatch('/api/editor/save',{'title':'一','body':'一'})
   self.ws.dispatch('/api/review/publish',{'revision':first['revision'],'summary':'第一篇建议','findings':[]})
